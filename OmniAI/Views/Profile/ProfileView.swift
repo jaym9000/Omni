@@ -73,7 +73,7 @@ struct ProfileView: View {
                         }
                     }
                     .padding()
-                    .background(Color.omniCardSoftBlue)
+                    .background(Color.omniCardLavender)
                     .cornerRadius(16)
                     .shadow(color: Color.black.opacity(0.03), radius: 4, x: 0, y: 2)
                 
@@ -110,7 +110,7 @@ struct ProfileView: View {
                                 action: {}
                             )
                         }
-                        .background(Color.omniCardSoftBlue)
+                        .background(Color.omniCardBeige)
                         .cornerRadius(16)
                         .shadow(color: Color.black.opacity(0.03), radius: 2, x: 0, y: 1)
                     }
@@ -193,7 +193,7 @@ struct ProfileView: View {
                                 action: {}
                             )
                         }
-                        .background(Color.omniCardSoftBlue)
+                        .background(Color.omniCardBeige)
                         .cornerRadius(16)
                         .shadow(color: Color.black.opacity(0.03), radius: 2, x: 0, y: 1)
                     }
@@ -231,7 +231,7 @@ struct ProfileView: View {
                                 action: {}
                             )
                         }
-                        .background(Color.omniCardSoftBlue)
+                        .background(Color.omniCardBeige)
                         .cornerRadius(16)
                         .shadow(color: Color.black.opacity(0.03), radius: 2, x: 0, y: 1)
                     }
@@ -291,7 +291,7 @@ struct ProfileView: View {
                                 action: { showDeleteAlert = true }
                             )
                         }
-                        .background(Color.omniCardSoftBlue)
+                        .background(Color.omniCardBeige)
                         .cornerRadius(16)
                         .shadow(color: Color.black.opacity(0.03), radius: 2, x: 0, y: 1)
                     }

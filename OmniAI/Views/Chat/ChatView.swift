@@ -125,28 +125,44 @@ struct ChatView: View {
                     .padding(.vertical, 16)
                     .background(Color.omniBackground)
                 } else {
-                    // Voice input placeholder
-                    VStack(spacing: 16) {
-                        Button(action: {}) {
-                            Image(systemName: "mic.fill")
-                                .font(.system(size: 32))
-                                .foregroundColor(.white)
-                                .frame(width: 80, height: 80)
-                                .background(
+                    // Voice input - therapeutic design
+                    VStack(spacing: 24) {
+                        Spacer()
+                        
+                        VStack(spacing: 16) {
+                            // Mic button with improved design
+                            Button(action: {}) {
+                                ZStack {
+                                    // Outer glow ring
+                                    Circle()
+                                        .stroke(Color.omniprimary.opacity(0.3), lineWidth: 2)
+                                        .frame(width: 100, height: 100)
+                                    
+                                    // Main mic button
                                     Circle()
                                         .fill(
                                             LinearGradient(
-                                                colors: [Color.omniprimary, Color.omnisecondary],
+                                                colors: [Color.omniprimary, Color.omniprimary.opacity(0.8)],
                                                 startPoint: .topLeading,
                                                 endPoint: .bottomTrailing
                                             )
                                         )
-                                )
+                                        .frame(width: 80, height: 80)
+                                        .shadow(color: Color.omniprimary.opacity(0.3), radius: 8, x: 0, y: 4)
+                                    
+                                    Image(systemName: "mic.fill")
+                                        .font(.system(size: 28))
+                                        .foregroundColor(.white)
+                                }
+                            }
+                            .scaleEffect(1.0) // Can animate this for recording state
+                            
+                            Text("Tap and hold to speak")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.omniTextSecondary)
                         }
                         
-                        Text("Tap and hold to speak")
-                            .font(.system(size: 14))
-                            .foregroundColor(.omniTextSecondary)
+                        Spacer()
                     }
                     .padding(.vertical, 32)
                     .background(Color.omniBackground)

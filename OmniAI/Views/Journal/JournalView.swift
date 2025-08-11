@@ -151,7 +151,7 @@ struct JournalOptionRow: View {
                     .foregroundColor(.omniTextTertiary)
             }
             .padding()
-            .background(Color.omniCardSoftBlue)
+            .background(Color.omniCardBeige)
             .cornerRadius(12)
         }
         .buttonStyle(PlainButtonStyle())
@@ -266,7 +266,7 @@ struct JournalEntryCard: View {
             }
         }
         .padding()
-        .background(Color.omniSecondaryBackground)
+        .background(Color.omniCardLavender)
         .cornerRadius(12)
     }
     

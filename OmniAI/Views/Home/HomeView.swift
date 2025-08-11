@@ -198,45 +198,46 @@ struct AnxietyCard: View {
     let action: () -> Void
     
     var body: some View {
-        Button(action: action) {
-            VStack(spacing: 12) {
-                // Header section - compact
-                VStack(spacing: 8) {
-                    // Icon centered
-                    ZStack {
-                        Circle()
-                            .fill(
-                                LinearGradient(
-                                    colors: [Color.moodCalm.opacity(0.3), Color.moodCalm.opacity(0.1)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
+        VStack(spacing: 12) {
+            // Header section - compact
+            VStack(spacing: 8) {
+                // Icon centered
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.moodCalm.opacity(0.3), Color.moodCalm.opacity(0.1)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
                             )
-                            .frame(width: 40, height: 40)
-                        
-                        Image(systemName: "leaf.fill")
-                            .font(.system(size: 18))
-                            .foregroundColor(.moodCalm)
-                    }
+                        )
+                        .frame(width: 40, height: 40)
                     
-                    VStack(spacing: 2) {
-                        Text("Anxiety Management")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.omniTextPrimary)
-                        
-                        Text("Guided breathing & mindfulness")
-                            .font(.system(size: 12))
-                            .foregroundColor(.omniTextSecondary)
-                    }
-                    .multilineTextAlignment(.center)
+                    Image(systemName: "leaf.fill")
+                        .font(.system(size: 18))
+                        .foregroundColor(.moodCalm)
                 }
                 
-                // Compact question and CTA
-                Text("Ready to work on managing anxiety today?")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.omniTextPrimary)
-                    .multilineTextAlignment(.center)
-                
+                VStack(spacing: 2) {
+                    Text("Anxiety Management")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(.omniTextPrimary)
+                    
+                    Text("Guided breathing & mindfulness")
+                        .font(.system(size: 12))
+                        .foregroundColor(.omniTextSecondary)
+                }
+                .multilineTextAlignment(.center)
+            }
+            
+            // Compact question
+            Text("Ready to work on managing anxiety today?")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.omniTextPrimary)
+                .multilineTextAlignment(.center)
+            
+            // Only the button is clickable
+            Button(action: action) {
                 HStack(spacing: 6) {
                     Image(systemName: "play.fill")
                         .font(.system(size: 12))
@@ -250,43 +251,43 @@ struct AnxietyCard: View {
                 .padding(.vertical, 10)
                 .background(
                     LinearGradient(
-                        colors: [Color.moodCalm, Color.moodCalm.opacity(0.8)],
+                        colors: [Color.omniprimary, Color.omniprimary.opacity(0.8)],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
                 )
                 .cornerRadius(20)
-                .shadow(color: Color.moodCalm.opacity(0.3), radius: 3, x: 0, y: 2)
+                .shadow(color: Color.omniprimary.opacity(0.3), radius: 3, x: 0, y: 2)
             }
-            .padding(18)
-            .frame(maxWidth: .infinity)
-            .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color.omniCardSoftBlue,
-                                Color.moodCalm.opacity(0.08)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 20)
-                    .stroke(
-                        LinearGradient(
-                            colors: [Color.moodCalm.opacity(0.2), Color.moodCalm.opacity(0.1)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 1
-                    )
-            )
-            .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
+            .buttonStyle(PlainButtonStyle())
         }
-        .buttonStyle(PlainButtonStyle())
+        .padding(18)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.omniCardLavender,
+                            Color.omniprimary.opacity(0.05)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(
+                    LinearGradient(
+                        colors: [Color.omniprimary.opacity(0.2), Color.omniprimary.opacity(0.1)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
+        )
+        .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
     }
 }
 
