@@ -183,10 +183,13 @@ struct MoodButton: View {
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(isSelected ? mood.color : .omniTextSecondary)
                     .animation(.easeInOut(duration: 0.2), value: isSelected)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                     .multilineTextAlignment(.center)
             }
             .frame(minHeight: 70)
-            .padding(.horizontal, 4)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 2)
             .padding(.vertical, 8)
         }
         .buttonStyle(PlainButtonStyle())

@@ -13,7 +13,7 @@ enum MoodType: String, CaseIterable, Codable {
         case .happy: return "🙂"       // Gentler smile instead of bright grin
         case .anxious: return "😔"     // Thoughtful instead of alarming sweaty face
         case .sad: return "🙁"         // Subtle frown instead of crying
-        case .overwhelmed: return "😮‍💨" // Exhaling face instead of exploding head
+        case .overwhelmed: return "🫨"     // Shaking face - gentle but expressive
         case .calm: return "😌"        // Keep the peaceful relieved face
         }
     }
