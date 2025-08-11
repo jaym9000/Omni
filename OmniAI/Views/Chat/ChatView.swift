@@ -169,20 +169,21 @@ struct ChatView: View {
     }
     
     private func setupChat() {
-        // Add welcome message
+        // Add welcome message - use mood-specific prompt if available
+        let welcomeContent: String
+        if let prompt = initialPrompt, !prompt.isEmpty {
+            // Use the mood-specific prompt as the AI's first message
+            welcomeContent = prompt
+        } else {
+            // Generic welcome for regular chat
+            welcomeContent = "Hi there! 👋 How are you feeling today? You can chat with me by typing below."
+        }
+        
         let welcomeMessage = ChatMessage(
-            content: "Hi there! 👋 How are you feeling today? You can chat with me by typing below.",
+            content: welcomeContent,
             isUser: false
         )
         messages.append(welcomeMessage)
-        
-        // If there's an initial prompt, send it
-        if let prompt = initialPrompt, !prompt.isEmpty {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                messages.append(ChatMessage(content: prompt, isUser: true))
-                generateResponse(for: prompt)
-            }
-        }
     }
     
     private func sendMessage() {
