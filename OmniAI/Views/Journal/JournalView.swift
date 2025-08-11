@@ -313,19 +313,21 @@ struct JournalEntryView: View {
                             .cornerRadius(12)
                     }
                     
-                    // Mood selector
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("How are you feeling?")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.omniTextSecondary)
-                        
-                        HStack(spacing: 12) {
-                            ForEach(MoodType.allCases, id: \.self) { moodType in
-                                Button(action: { selectedMood = moodType }) {
-                                    Text(moodType.emoji)
-                                        .font(.system(size: 30))
-                                        .opacity(selectedMood == moodType ? 1.0 : 0.5)
-                                        .scaleEffect(selectedMood == moodType ? 1.2 : 1.0)
+                    // Mood selector for non-tagged entries
+                    if type != .tagged {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("How are you feeling?")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.omniTextSecondary)
+                            
+                            HStack(spacing: 12) {
+                                ForEach(MoodType.allCases, id: \.self) { moodType in
+                                    Button(action: { selectedMood = moodType }) {
+                                        Text(moodType.emoji)
+                                            .font(.system(size: 30))
+                                            .opacity(selectedMood == moodType ? 1.0 : 0.5)
+                                            .scaleEffect(selectedMood == moodType ? 1.2 : 1.0)
+                                    }
                                 }
                             }
                         }
