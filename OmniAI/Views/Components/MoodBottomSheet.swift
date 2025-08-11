@@ -97,15 +97,15 @@ struct MoodBottomSheet: View {
         
         switch mood {
         case .happy:
-            return "I see you're feeling happy today! 😊 That's wonderful. What's been the highlight of your day so far? I'd love to hear what's bringing you this joy."
+            return "I see you're feeling happy today! That's wonderful. What's been the highlight of your day so far? I'd love to hear what's bringing you this joy."
         case .anxious:
-            return "I notice you're feeling anxious right now. 😰 I'm here to support you through this. What's on your mind that's making you feel this way? We can work through it together."
+            return "I notice you're feeling anxious right now. I'm here to support you through this. What's on your mind that's making you feel this way? We can work through it together."
         case .sad:
-            return "I can see you're feeling sad today. 😢 I'm here to listen and support you. Would you like to share what's been weighing on your heart? Sometimes talking about it can help."
+            return "I can see you're feeling sad today. I'm here to listen and support you. Would you like to share what's been weighing on your heart? Sometimes talking about it can help."
         case .overwhelmed:
-            return "I see you're feeling overwhelmed right now. 🤯 That can be really tough to handle. Let's take this one step at a time. What's making you feel like there's too much going on?"
+            return "I see you're feeling overwhelmed right now. That can be really tough to handle. Let's take this one step at a time. What's making you feel like there's too much going on?"
         case .calm:
-            return "I notice you're feeling calm and peaceful today. 😌 That's beautiful. What's been helping you feel this way? I'd love to hear about what's going well for you."
+            return "I notice you're feeling calm and peaceful today. That's beautiful. What's been helping you feel this way? I'd love to hear about what's going well for you."
         }
     }
 }
