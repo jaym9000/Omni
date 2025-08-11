@@ -24,6 +24,8 @@ struct MainTabView: View {
                 }
                 .tag(2)
         }
+        .environment(\.horizontalSizeClass, .compact)
+        .environment(\.verticalSizeClass, .regular)
         .accentColor(.omniprimary)
     }
 }

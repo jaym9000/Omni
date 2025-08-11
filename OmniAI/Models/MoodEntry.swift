@@ -10,11 +10,11 @@ enum MoodType: String, CaseIterable, Codable {
     
     var emoji: String {
         switch self {
-        case .happy: return "😊"
-        case .anxious: return "😰"
-        case .sad: return "😢"
-        case .overwhelmed: return "🤯"
-        case .calm: return "😌"
+        case .happy: return "🙂"       // Gentler smile instead of bright grin
+        case .anxious: return "😔"     // Thoughtful instead of alarming sweaty face
+        case .sad: return "🙁"         // Subtle frown instead of crying
+        case .overwhelmed: return "😮‍💨" // Exhaling face instead of exploding head
+        case .calm: return "😌"        // Keep the peaceful relieved face
         }
     }
     

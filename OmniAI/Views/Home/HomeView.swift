@@ -87,7 +87,7 @@ struct HomeView: View {
                         .font(.system(size: 14))
                         .foregroundColor(.omniTextSecondary)
                     
-                    HStack(spacing: 16) {
+                    HStack(spacing: 0) {
                         ForEach(MoodType.allCases, id: \.self) { mood in
                             MoodButton(
                                 mood: mood,
@@ -97,6 +97,7 @@ struct HomeView: View {
                                     showMoodSheet = true
                                 }
                             )
+                            .frame(maxWidth: .infinity)
                         }
                     }
                     .frame(maxWidth: .infinity)
@@ -115,7 +116,7 @@ struct HomeView: View {
                 
                 Spacer(minLength: 100)
             }
-            .padding(.horizontal)
+            .padding(.horizontal, 20)
         }
         .sheet(isPresented: $showMoodSheet) {
             MoodBottomSheet(
@@ -145,6 +146,7 @@ struct HomeView: View {
         .fullScreenCover(isPresented: $showAnxietySession) {
             AnxietySessionView()
         }
+        .background(Color.omniBackground)
         .onAppear {
             checkDailyPrompt()
         }
@@ -181,8 +183,11 @@ struct MoodButton: View {
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(isSelected ? mood.color : .omniTextSecondary)
                     .animation(.easeInOut(duration: 0.2), value: isSelected)
+                    .multilineTextAlignment(.center)
             }
-            .frame(width: 70, height: 70)
+            .frame(minHeight: 70)
+            .padding(.horizontal, 4)
+            .padding(.vertical, 8)
         }
         .buttonStyle(PlainButtonStyle())
     }
@@ -194,58 +199,92 @@ struct AnxietyCard: View {
     
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 16) {
-                // Meditation illustration
-                Image("anxiety-management")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 80, height: 80)
-                    .cornerRadius(12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
+            VStack(spacing: 12) {
+                // Header section - compact
+                VStack(spacing: 8) {
+                    // Icon centered
+                    ZStack {
+                        Circle()
                             .fill(
                                 LinearGradient(
-                                    colors: [Color.moodCalm.opacity(0.2), Color.moodCalm.opacity(0.1)],
+                                    colors: [Color.moodCalm.opacity(0.3), Color.moodCalm.opacity(0.1)],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
                             )
-                    )
-                
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Ready to work on managing anxiety today?")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.omniTextPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    
-                    HStack {
-                        Text("Let's Start")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.omniprimary)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 8)
-                            .background(
-                                RoundedRectangle(cornerRadius: 20)
-                                    .stroke(Color.omniprimary, lineWidth: 1.5)
-                            )
+                            .frame(width: 40, height: 40)
                         
-                        Spacer()
+                        Image(systemName: "leaf.fill")
+                            .font(.system(size: 18))
+                            .foregroundColor(.moodCalm)
                     }
+                    
+                    VStack(spacing: 2) {
+                        Text("Anxiety Management")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.omniTextPrimary)
+                        
+                        Text("Guided breathing & mindfulness")
+                            .font(.system(size: 12))
+                            .foregroundColor(.omniTextSecondary)
+                    }
+                    .multilineTextAlignment(.center)
                 }
                 
-                Spacer(minLength: 0)
+                // Compact question and CTA
+                Text("Ready to work on managing anxiety today?")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.omniTextPrimary)
+                    .multilineTextAlignment(.center)
+                
+                HStack(spacing: 6) {
+                    Image(systemName: "play.fill")
+                        .font(.system(size: 12))
+                        .foregroundColor(.white)
+                    
+                    Text("Let's Start")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white)
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+                .background(
+                    LinearGradient(
+                        colors: [Color.moodCalm, Color.moodCalm.opacity(0.8)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .cornerRadius(20)
+                .shadow(color: Color.moodCalm.opacity(0.3), radius: 3, x: 0, y: 2)
             }
-            .padding()
+            .padding(18)
             .frame(maxWidth: .infinity)
             .background(
-                LinearGradient(
-                    colors: [Color.omniCardBeige.opacity(0.6), Color.omniCardBeige.opacity(0.3)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.omniCardSoftBlue,
+                                Color.moodCalm.opacity(0.08)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
             )
-            .cornerRadius(16)
-            .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(
+                        LinearGradient(
+                            colors: [Color.moodCalm.opacity(0.2), Color.moodCalm.opacity(0.1)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            )
+            .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
         }
         .buttonStyle(PlainButtonStyle())
     }
@@ -350,8 +389,8 @@ struct DailyPromptCard: View {
                     }
                     .background(
                         RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.white)
-                            .shadow(color: Color.black.opacity(0.08), radius: 2, x: 0, y: 1)
+                            .fill(Color.omniCardSoftBlue)
+                            .shadow(color: Color.black.opacity(0.04), radius: 2, x: 0, y: 1)
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)

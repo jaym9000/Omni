@@ -5,11 +5,25 @@ struct ProfileView: View {
     @EnvironmentObject var premiumManager: PremiumManager
     @EnvironmentObject var themeManager: ThemeManager
     @State private var showSignOutAlert = false
+    @State private var showDeleteAlert = false
+    
+    private var appVersion: String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "Unknown"
+        return "Version \(version) (\(build))"
+    }
     
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
+                    // Centered Profile Title
+                    Text("Profile")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundColor(.omniTextPrimary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top)
+                    
                     // User Profile Card
                     VStack(spacing: 24) {
                         HStack {
@@ -59,11 +73,49 @@ struct ProfileView: View {
                         }
                     }
                     .padding()
-                    .background(Color.white)
+                    .background(Color.omniCardSoftBlue)
                     .cornerRadius(16)
-                    .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
+                    .shadow(color: Color.black.opacity(0.03), radius: 4, x: 0, y: 2)
                 
-                    // Preferences Section
+                    // Account Settings Section
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("ACCOUNT")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.omniTextTertiary)
+                            .padding(.horizontal)
+                        
+                        VStack(spacing: 0) {
+                            ProfileSettingRow(
+                                icon: "person.fill",
+                                iconColor: .omniprimary,
+                                title: "Personal Information",
+                                action: {}
+                            )
+                            
+                            Divider().padding(.leading, 50)
+                            
+                            ProfileSettingRow(
+                                icon: "creditcard.fill",
+                                iconColor: .omniprimary,
+                                title: "Subscription Management",
+                                trailing: AnyView(
+                                    Text("Premium")
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundColor(.omniprimary)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 2)
+                                        .background(Color.omniprimary.opacity(0.1))
+                                        .cornerRadius(8)
+                                ),
+                                action: {}
+                            )
+                        }
+                        .background(Color.omniCardSoftBlue)
+                        .cornerRadius(16)
+                        .shadow(color: Color.black.opacity(0.03), radius: 2, x: 0, y: 1)
+                    }
+                
+                    // App Preferences Section
                     VStack(alignment: .leading, spacing: 16) {
                         Text("PREFERENCES")
                             .font(.system(size: 14, weight: .bold))
@@ -72,17 +124,8 @@ struct ProfileView: View {
                         
                         VStack(spacing: 0) {
                             ProfileSettingRow(
-                                icon: "person.fill",
-                                iconColor: .brown,
-                                title: "Personal Information",
-                                action: {}
-                            )
-                            
-                            Divider().padding(.leading, 50)
-                            
-                            ProfileSettingRow(
                                 icon: "bell.fill",
-                                iconColor: .brown,
+                                iconColor: .blue,
                                 title: "Notifications",
                                 trailing: AnyView(
                                     Text("Coming Soon")
@@ -98,24 +141,10 @@ struct ProfileView: View {
                             
                             Divider().padding(.leading, 50)
                             
-                            ProfileSettingRow(
-                                icon: "heart.fill",
-                                iconColor: .brown,
-                                title: "Edit Companion",
-                                trailing: AnyView(
-                                    Image(systemName: "lock.fill")
-                                        .font(.system(size: 12))
-                                        .foregroundColor(.omniprimary)
-                                ),
-                                action: {}
-                            )
-                            
-                            Divider().padding(.leading, 50)
-                            
                             HStack {
                                 Image(systemName: "moon.fill")
                                     .font(.system(size: 16))
-                                    .foregroundColor(.brown)
+                                    .foregroundColor(.indigo)
                                     .frame(width: 24)
                                 
                                 Text("Dark Mode")
@@ -135,7 +164,7 @@ struct ProfileView: View {
                             HStack {
                                 Image(systemName: "faceid")
                                     .font(.system(size: 16))
-                                    .foregroundColor(.brown)
+                                    .foregroundColor(.green)
                                     .frame(width: 24)
                                 
                                 Text("App Lock (Face ID / Touch ID)")
@@ -153,30 +182,131 @@ struct ProfileView: View {
                             Divider().padding(.leading, 50)
                             
                             ProfileSettingRow(
-                                icon: "creditcard.fill",
-                                iconColor: .brown,
-                                title: "Subscription Management",
+                                icon: "heart.fill",
+                                iconColor: .pink,
+                                title: "Edit Companion",
                                 trailing: AnyView(
-                                    Text("Free")
-                                        .font(.system(size: 12, weight: .medium))
+                                    Image(systemName: "lock.fill")
+                                        .font(.system(size: 12))
                                         .foregroundColor(.omniprimary)
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 2)
-                                        .background(Color.omniprimary.opacity(0.1))
-                                        .cornerRadius(8)
                                 ),
                                 action: {}
                             )
                         }
-                        .background(Color.white)
+                        .background(Color.omniCardSoftBlue)
                         .cornerRadius(16)
-                        .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+                        .shadow(color: Color.black.opacity(0.03), radius: 2, x: 0, y: 1)
                     }
                 
+                    // Support & Legal Section
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("SUPPORT & LEGAL")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.omniTextTertiary)
+                            .padding(.horizontal)
+                        
+                        VStack(spacing: 0) {
+                            ProfileSettingRow(
+                                icon: "questionmark.circle.fill",
+                                iconColor: .orange,
+                                title: "Help & Support",
+                                action: {}
+                            )
+                            
+                            Divider().padding(.leading, 50)
+                            
+                            ProfileSettingRow(
+                                icon: "shield.checkerboard",
+                                iconColor: .teal,
+                                title: "Privacy Policy",
+                                action: {}
+                            )
+                            
+                            Divider().padding(.leading, 50)
+                            
+                            ProfileSettingRow(
+                                icon: "doc.text.fill",
+                                iconColor: .purple,
+                                title: "Terms & Conditions",
+                                action: {}
+                            )
+                        }
+                        .background(Color.omniCardSoftBlue)
+                        .cornerRadius(16)
+                        .shadow(color: Color.black.opacity(0.03), radius: 2, x: 0, y: 1)
+                    }
+                
+                    // Emergency Resources
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("EMERGENCY")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.omniTextTertiary)
+                            .padding(.horizontal)
+                        
+                        Button(action: {}) {
+                            HStack {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .font(.system(size: 16))
+                                    .foregroundColor(.white)
+                                
+                                Text("Crisis Resources")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(.white)
+                                
+                                Spacer()
+                                
+                                Image(systemName: "arrow.up.right")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.white)
+                            }
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(Color.red.opacity(0.9))
+                            .cornerRadius(16)
+                            .shadow(color: Color.red.opacity(0.3), radius: 4, x: 0, y: 2)
+                        }
+                    }
+                
+                    // Account Actions Section
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("ACCOUNT ACTIONS")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.omniTextTertiary)
+                            .padding(.horizontal)
+                        
+                        VStack(spacing: 0) {
+                            ProfileSettingRow(
+                                icon: "rectangle.portrait.and.arrow.right",
+                                iconColor: .gray,
+                                title: "Logout",
+                                action: { showSignOutAlert = true }
+                            )
+                            
+                            Divider().padding(.leading, 50)
+                            
+                            ProfileSettingRow(
+                                icon: "trash.fill",
+                                iconColor: .red,
+                                title: "Delete Account",
+                                action: { showDeleteAlert = true }
+                            )
+                        }
+                        .background(Color.omniCardSoftBlue)
+                        .cornerRadius(16)
+                        .shadow(color: Color.black.opacity(0.03), radius: 2, x: 0, y: 1)
+                    }
+                    
+                    // Version
+                    Text(appVersion)
+                        .font(.system(size: 14))
+                        .foregroundColor(.omniTextTertiary)
+                        .padding(.top, 20)
+                        .padding(.bottom, 40)
                 }
                 .padding()
             }
-            .navigationTitle("Profile")
+            .navigationBarHidden(true)
+            .background(Color.omniBackground)
             .alert("Sign Out", isPresented: $showSignOutAlert) {
                 Button("Cancel", role: .cancel) { }
                 Button("Sign Out", role: .destructive) {
@@ -184,6 +314,14 @@ struct ProfileView: View {
                 }
             } message: {
                 Text("Are you sure you want to sign out?")
+            }
+            .alert("Delete Account", isPresented: $showDeleteAlert) {
+                Button("Cancel", role: .cancel) { }
+                Button("Delete", role: .destructive) {
+                    // Handle account deletion
+                }
+            } message: {
+                Text("This action cannot be undone. All your data will be permanently deleted.")
             }
         }
     }

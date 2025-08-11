@@ -9,37 +9,39 @@ class ThemeManager: ObservableObject {
     }
 }
 
-// MARK: - Color Palette
+// MARK: - Therapeutic Color Palette (Research-Based)
 extension Color {
-    // Primary Colors - Light Blue Theme
-    static let omniprimary = Color(hex: "6BA6CD")
-    static let omnisecondary = Color(hex: "8BC1D8")
+    // Primary Colors - Calming Sage Green (scientifically proven to reduce anxiety)
+    static let omniprimary = Color(hex: "7FB069")      // Soft sage green - therapeutic & calming
+    static let omnisecondary = Color(hex: "A8C686")    // Lighter sage for accents
     
-    // Background Colors
-    static let omniBackground = Color(UIColor.systemBackground)
-    static let omniSecondaryBackground = Color(UIColor.secondarySystemBackground)
-    static let omniTertiaryBackground = Color(UIColor.tertiarySystemBackground)
+    // Background Colors - Warm & Nurturing (avoiding clinical white)
+    static let omniBackground = Color(hex: "F9F7F4")         // Warm cream instead of stark white
+    static let omniSecondaryBackground = Color(hex: "F0EDE8") // Soft beige
+    static let omniTertiaryBackground = Color(hex: "E8F4F8")  // Barely-there blue tint
     
-    // Text Colors
-    static let omniTextPrimary = Color(UIColor.label)
-    static let omniTextSecondary = Color(UIColor.secondaryLabel)
-    static let omniTextTertiary = Color(UIColor.tertiaryLabel)
+    // Text Colors - Softer, warmer grays (less harsh than pure black)
+    static let omniTextPrimary = Color(hex: "3A3D42")        // Warm dark gray
+    static let omniTextSecondary = Color(hex: "6B7280")      // Medium warm gray  
+    static let omniTextTertiary = Color(hex: "9CA3AF")       // Light warm gray
     
-    // Card Colors
-    static let omniCardBeige = Color(hex: "F5F1E8")
-    static let omniCardBeigeDark = Color(hex: "2C2A26")
+    // Card Colors - Therapeutic tones
+    static let omniCardBeige = Color(hex: "F0EDE8")          // Soft warm beige
+    static let omniCardBeigeDark = Color(hex: "2C2A26")      // Keep for dark mode
+    static let omniCardSoftBlue = Color(hex: "E8F4F8")       // Calming blue tint
+    static let omniCardLavender = Color(hex: "F0EEFF")       // Stress-reducing lavender
     
-    // Mood Colors
-    static let moodHappy = Color(hex: "FFD700")
-    static let moodAnxious = Color(hex: "FF6B6B")
-    static let moodSad = Color(hex: "6495ED")
-    static let moodOverwhelmed = Color(hex: "FF8C00")
-    static let moodCalm = Color(hex: "98D8C8")
+    // Therapeutic Mood Colors (muted, non-stimulating)
+    static let moodHappy = Color(hex: "F4E5A3")        // Soft warm yellow (less intense)
+    static let moodAnxious = Color(hex: "D4A5A5")      // Muted coral (less alarming)
+    static let moodSad = Color(hex: "B8D4E3")          // Soft periwinkle blue
+    static let moodOverwhelmed = Color(hex: "E5C4A3")  // Muted peach (less intense than orange)
+    static let moodCalm = Color(hex: "C4E4C4")         // Gentle sage green
     
-    // Status Colors
-    static let omniSuccess = Color(hex: "4CAF50")
-    static let omniWarning = Color(hex: "FFC107")
-    static let omniError = Color(hex: "F44336")
+    // Status Colors - Softer, less alarming versions
+    static let omniSuccess = Color(hex: "7FB069")      // Matches primary green
+    static let omniWarning = Color(hex: "E5C4A3")      // Soft amber
+    static let omniError = Color(hex: "D4A5A5")        // Muted coral (less harsh)
     
     init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)

@@ -9,10 +9,17 @@ struct JournalView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
-                    // Journal Options Header
+                    // Header
+                    Text("Journal")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundColor(.omniTextPrimary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top)
+                    
+                    // Journal Options Section
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Journal Options")
-                            .font(.system(size: 24, weight: .bold))
+                            .font(.system(size: 20, weight: .semibold))
                             .foregroundColor(.omniTextPrimary)
                         
                         VStack(spacing: 12) {
@@ -52,7 +59,7 @@ struct JournalView: View {
                     VStack(alignment: .leading, spacing: 16) {
                         HStack {
                             Text("My Journal Log")
-                                .font(.system(size: 24, weight: .bold))
+                                .font(.system(size: 20, weight: .semibold))
                                 .foregroundColor(.omniTextPrimary)
                             
                             Spacer()
@@ -61,7 +68,7 @@ struct JournalView: View {
                                 HStack(spacing: 4) {
                                     Image(systemName: "calendar")
                                         .font(.system(size: 14))
-                                    Text("See all")
+                                    Text("Calendar")
                                         .font(.system(size: 14, weight: .medium))
                                 }
                                 .foregroundColor(.omniprimary)
@@ -73,37 +80,41 @@ struct JournalView: View {
                                 JournalEntryCard(entry: entry)
                             }
                         } else {
-                            // Sample entries to match the design
-                            VStack(spacing: 12) {
-                                SampleJournalEntry(
-                                    type: .tagged,
-                                    title: "Tagged Journal",
-                                    timeAgo: "5 days ago",
-                                    content: "Ai",
-                                    tags: "Happy, Work"
-                                )
-                                
-                                SampleJournalEntry(
-                                    type: .themed,
-                                    title: "Themed Journal",
-                                    timeAgo: "5 days ago",
-                                    content: "Good, everything",
-                                    prompt: "How are you feeling this morning, and..."
-                                )
-                                
-                                SampleJournalEntry(
-                                    type: .freeForm,
-                                    title: "Free-form Journal",
-                                    timeAgo: "23 days ago",
-                                    content: "Feedback board in app"
-                                )
+                            // Empty state - properly centered
+                            GeometryReader { geometry in
+                                VStack(spacing: 20) {
+                                    Spacer()
+                                    
+                                    VStack(spacing: 16) {
+                                        Image(systemName: "book.closed")
+                                            .font(.system(size: 56))
+                                            .foregroundColor(.omniTextTertiary.opacity(0.6))
+                                        
+                                        VStack(spacing: 8) {
+                                            Text("No journal entries yet")
+                                                .font(.system(size: 18, weight: .medium))
+                                                .foregroundColor(.omniTextPrimary)
+                                            
+                                            Text("Start writing to see your entries here.")
+                                                .font(.system(size: 14))
+                                                .foregroundColor(.omniTextSecondary)
+                                        }
+                                        .multilineTextAlignment(.center)
+                                    }
+                                    
+                                    Spacer()
+                                }
+                                .frame(maxWidth: .infinity)
+                                .frame(height: max(200, geometry.size.height * 0.4))
                             }
+                            .frame(minHeight: 200)
                         }
                     }
                 }
                 .padding()
             }
-            .navigationTitle("Journal")
+            .navigationBarHidden(true)
+            .background(Color.omniBackground)
             .sheet(isPresented: $showNewEntry) {
                 if selectedEntryType == .themed {
                     ThemedJournalEntryView()
@@ -140,7 +151,7 @@ struct JournalOptionRow: View {
                     .foregroundColor(.omniTextTertiary)
             }
             .padding()
-            .background(Color.omniSecondaryBackground)
+            .background(Color.omniCardSoftBlue)
             .cornerRadius(12)
         }
         .buttonStyle(PlainButtonStyle())
