@@ -10,6 +10,9 @@ struct HomeView: View {
     @State private var showRecentChats = false
     @State private var showChat = false
     @State private var showAnxietySession = false
+    @State private var showJournal = false
+    @State private var journalMood: MoodType?
+    @State private var chatInitialPrompt = ""
     @AppStorage("todaysGratitude") private var todaysGratitude = ""
     @AppStorage("lastGratitudeDate") private var lastGratitudeDate = ""
     
@@ -42,7 +45,10 @@ struct HomeView: View {
                 .padding(.top)
                 
                 // Chat with Omni Button
-                Button(action: { showChat = true }) {
+                Button(action: { 
+                    chatInitialPrompt = ""
+                    showChat = true 
+                }) {
                     HStack {
                         Text("💬")
                             .font(.system(size: 20))
@@ -114,7 +120,15 @@ struct HomeView: View {
         .sheet(isPresented: $showMoodSheet) {
             MoodBottomSheet(
                 selectedMood: selectedMood,
-                onClose: { showMoodSheet = false }
+                onClose: { showMoodSheet = false },
+                onTalkToOmni: { prompt in
+                    chatInitialPrompt = prompt
+                    showChat = true
+                },
+                onJournal: { mood in
+                    journalMood = mood
+                    showJournal = true
+                }
             )
             .presentationDetents([.height(300), .medium])
             .presentationDragIndicator(.visible)
@@ -122,8 +136,11 @@ struct HomeView: View {
         .sheet(isPresented: $showRecentChats) {
             RecentChatsView()
         }
+        .sheet(isPresented: $showJournal) {
+            JournalEntryView(mood: journalMood)
+        }
         .fullScreenCover(isPresented: $showChat) {
-            ChatView()
+            ChatView(initialPrompt: chatInitialPrompt)
         }
         .fullScreenCover(isPresented: $showAnxietySession) {
             AnxietySessionView()

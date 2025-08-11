@@ -3,8 +3,8 @@ import SwiftUI
 struct MoodBottomSheet: View {
     let selectedMood: MoodType?
     let onClose: () -> Void
-    @State private var showChat = false
-    @State private var showJournal = false
+    let onTalkToOmni: (String) -> Void
+    let onJournal: (MoodType?) -> Void
     
     var body: some View {
         VStack(spacing: 24) {
@@ -44,7 +44,7 @@ struct MoodBottomSheet: View {
             VStack(spacing: 12) {
                 // Talk to Omni Button
                 Button(action: { 
-                    showChat = true
+                    onTalkToOmni(generateMoodPrompt())
                     onClose()
                 }) {
                     HStack {
@@ -62,7 +62,7 @@ struct MoodBottomSheet: View {
                 
                 // Journal Button
                 Button(action: { 
-                    showJournal = true
+                    onJournal(selectedMood)
                     onClose()
                 }) {
                     HStack {
@@ -90,12 +90,6 @@ struct MoodBottomSheet: View {
                     RoundedRectangle(cornerRadius: 16)
                 )
         )
-        .fullScreenCover(isPresented: $showChat) {
-            ChatView(initialPrompt: generateMoodPrompt())
-        }
-        .sheet(isPresented: $showJournal) {
-            JournalEntryView(mood: selectedMood)
-        }
     }
     
     private func generateMoodPrompt() -> String {
@@ -117,6 +111,11 @@ struct MoodBottomSheet: View {
 }
 
 #Preview {
-    MoodBottomSheet(selectedMood: .happy, onClose: {})
-        .environmentObject(PremiumManager())
+    MoodBottomSheet(
+        selectedMood: .happy, 
+        onClose: {},
+        onTalkToOmni: { _ in },
+        onJournal: { _ in }
+    )
+    .environmentObject(PremiumManager())
 }
