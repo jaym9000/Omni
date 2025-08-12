@@ -26,7 +26,7 @@ struct MainTabView: View {
         }
         .environment(\.horizontalSizeClass, .compact)
         .environment(\.verticalSizeClass, .regular)
-        .accentColor(.omniprimary)
+        .accentColor(.omniPrimary)
     }
 }
 

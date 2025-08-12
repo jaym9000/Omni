@@ -40,7 +40,7 @@ struct RecentChatsView: View {
                     Button("Done") {
                         dismiss()
                     }
-                    .foregroundColor(.omniprimary)
+                    .foregroundColor(.omniPrimary)
                 }
             }
             .fullScreenCover(item: $selectedSession) { session in

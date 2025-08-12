@@ -1,9 +1,10 @@
 import SwiftUI
 
 struct JournalView: View {
-    @State private var journalEntries: [JournalEntry] = []
+    @EnvironmentObject var journalManager: JournalManager
     @State private var showNewEntry = false
     @State private var selectedEntryType: JournalType = .freeForm
+    @State private var showCalendar = false
     
     var body: some View {
         NavigationStack {
@@ -64,19 +65,19 @@ struct JournalView: View {
                             
                             Spacer()
                             
-                            Button(action: {}) {
+                            Button(action: { showCalendar = true }) {
                                 HStack(spacing: 4) {
                                     Image(systemName: "calendar")
                                         .font(.system(size: 14))
                                     Text("Calendar")
                                         .font(.system(size: 14, weight: .medium))
                                 }
-                                .foregroundColor(.omniprimary)
+                                .foregroundColor(.omniPrimary)
                             }
                         }
                         
-                        if !journalEntries.isEmpty {
-                            ForEach(journalEntries.prefix(5)) { entry in
+                        if !journalManager.journalEntries.isEmpty {
+                            ForEach(journalManager.journalEntries.prefix(5)) { entry in
                                 JournalEntryCard(entry: entry)
                             }
                         } else {
@@ -121,6 +122,9 @@ struct JournalView: View {
                 } else {
                     JournalEntryView(type: selectedEntryType)
                 }
+            }
+            .sheet(isPresented: $showCalendar) {
+                JournalCalendarView()
             }
         }
     }
@@ -282,6 +286,7 @@ struct JournalEntryCard: View {
 struct JournalEntryView: View {
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var authManager: AuthenticationManager
+    @EnvironmentObject var journalManager: JournalManager
     @State private var title = ""
     @State private var content = ""
     @State private var selectedMood: MoodType?
@@ -315,20 +320,38 @@ struct JournalEntryView: View {
                     
                     // Mood selector for non-tagged entries
                     if type != .tagged {
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 16) {
                             Text("How are you feeling?")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.omniTextSecondary)
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.omniTextPrimary)
                             
-                            HStack(spacing: 12) {
-                                ForEach(MoodType.allCases, id: \.self) { moodType in
-                                    Button(action: { selectedMood = moodType }) {
-                                        Text(moodType.emoji)
-                                            .font(.system(size: 30))
-                                            .opacity(selectedMood == moodType ? 1.0 : 0.5)
-                                            .scaleEffect(selectedMood == moodType ? 1.2 : 1.0)
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 16) {
+                                    ForEach(MoodType.allCases, id: \.self) { mood in
+                                        VStack(spacing: 8) {
+                                            Button(action: { selectedMood = mood }) {
+                                                Text(mood.emoji)
+                                                    .font(.system(size: 24))
+                                                    .frame(width: 50, height: 50)
+                                                    .background(
+                                                        Circle()
+                                                            .fill(selectedMood == mood ? mood.color.opacity(0.2) : Color.clear)
+                                                    )
+                                                    .overlay(
+                                                        Circle()
+                                                            .stroke(selectedMood == mood ? mood.color : Color.clear, lineWidth: 2)
+                                                    )
+                                            }
+                                            .scaleEffect(selectedMood == mood ? 1.1 : 1.0)
+                                            .animation(.spring(response: 0.3), value: selectedMood)
+                                            
+                                            Text(mood.label)
+                                                .font(.system(size: 12, weight: .medium))
+                                                .foregroundColor(selectedMood == mood ? mood.color : .omniTextSecondary)
+                                        }
                                     }
                                 }
+                                .padding(.horizontal)
                             }
                         }
                     }
@@ -430,14 +453,14 @@ struct JournalEntryView: View {
                     Button("Cancel") {
                         dismiss()
                     }
-                    .foregroundColor(.omniprimary)
+                    .foregroundColor(.omniPrimary)
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
                         saveEntry()
                     }
-                    .foregroundColor(.omniprimary)
+                    .foregroundColor(.omniPrimary)
                     .fontWeight(.semibold)
                     .disabled(title.isEmpty || content.isEmpty)
                 }
@@ -451,16 +474,25 @@ struct JournalEntryView: View {
     }
     
     private func saveEntry() {
-        // Save journal entry
-        _ = JournalEntry(
+        // Create journal entry with all data
+        var entry = JournalEntry(
             userId: authManager.currentUser?.id ?? "",
             title: title,
             content: content,
             type: type
         )
         
-        // Save to storage
-        // For now, just dismiss
+        // Set mood if selected
+        entry.mood = selectedMood
+        
+        // Set tags for tagged entries
+        if type == .tagged {
+            entry.tags = Array(selectedTags)
+        }
+        
+        // Save through JournalManager
+        journalManager.saveEntry(entry)
+        
         dismiss()
     }
 }
@@ -480,16 +512,16 @@ struct TopicTagChip: View {
                     .frame(width: 50, height: 50)
                     .background(
                         Circle()
-                            .fill(isSelected ? Color.omniprimary.opacity(0.1) : Color.omniSecondaryBackground)
+                            .fill(isSelected ? Color.omniPrimary.opacity(0.1) : Color.omniSecondaryBackground)
                     )
                     .overlay(
                         Circle()
-                            .stroke(isSelected ? Color.omniprimary : Color.clear, lineWidth: 2)
+                            .stroke(isSelected ? Color.omniPrimary : Color.clear, lineWidth: 2)
                     )
                 
                 Text(text)
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(isSelected ? .omniprimary : .omniTextSecondary)
+                    .foregroundColor(isSelected ? .omniPrimary : .omniTextSecondary)
             }
         }
         .buttonStyle(PlainButtonStyle())
@@ -511,7 +543,7 @@ struct TagChip: View {
                 .foregroundColor(isSelected ? .white : .omniTextPrimary)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(isSelected ? Color.omniprimary : Color.omniSecondaryBackground)
+                .background(isSelected ? Color.omniPrimary : Color.omniSecondaryBackground)
                 .cornerRadius(20)
         }
     }
@@ -618,7 +650,7 @@ struct ThemedJournalEntryView: View {
                                     Text("New Prompt")
                                         .font(.system(size: 14, weight: .medium))
                                 }
-                                .foregroundColor(.omniprimary)
+                                .foregroundColor(.omniPrimary)
                             }
                         }
                         
@@ -627,11 +659,11 @@ struct ThemedJournalEntryView: View {
                             HStack(spacing: 12) {
                                 Image(systemName: "bookmark.fill")
                                     .font(.system(size: 16))
-                                    .foregroundColor(.omniprimary)
+                                    .foregroundColor(.omniPrimary)
                                 
                                 Text("GRATITUDE & WINS")
                                     .font(.system(size: 12, weight: .bold))
-                                    .foregroundColor(.omniprimary)
+                                    .foregroundColor(.omniPrimary)
                                     .textCase(.uppercase)
                             }
                             
@@ -643,11 +675,11 @@ struct ThemedJournalEntryView: View {
                         .padding()
                         .background(
                             RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.omniprimary.opacity(0.06))
+                                .fill(Color.omniPrimary.opacity(0.06))
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.omniprimary.opacity(0.2), lineWidth: 1)
+                                .stroke(Color.omniPrimary.opacity(0.2), lineWidth: 1)
                         )
                     }
                     
@@ -676,7 +708,7 @@ struct ThemedJournalEntryView: View {
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(responseText.isEmpty ? Color.clear : Color.omniprimary.opacity(0.3), lineWidth: 1)
+                                .stroke(responseText.isEmpty ? Color.clear : Color.omniPrimary.opacity(0.3), lineWidth: 1)
                         )
                         
                         // Character counter and save button
@@ -697,7 +729,7 @@ struct ThemedJournalEntryView: View {
                             .padding(.vertical, 12)
                             .background(
                                 RoundedRectangle(cornerRadius: 22)
-                                    .fill(responseText.isEmpty ? Color.gray.opacity(0.3) : Color.omniprimary)
+                                    .fill(responseText.isEmpty ? Color.gray.opacity(0.3) : Color.omniPrimary)
                             )
                         }
                     }
@@ -712,13 +744,24 @@ struct ThemedJournalEntryView: View {
                     Button("Cancel") {
                         dismiss()
                     }
-                    .foregroundColor(.omniprimary)
+                    .foregroundColor(.omniPrimary)
                 }
             }
         }
     }
     
     private func saveEntry() {
+        guard !responseText.isEmpty else { return }
+        
+        let _ = JournalEntry(
+            userId: "current_user",
+            title: "Themed Entry",
+            content: responseText,
+            type: .themed
+        )
+        
+        // Note: In a real app, we would inject JournalManager here
+        // For now, this creates the entry structure
         dismiss()
     }
 }

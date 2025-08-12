@@ -10,7 +10,7 @@ struct WelcomeView: View {
         ZStack {
             // Background gradient
             LinearGradient(
-                colors: [Color.omniprimary.opacity(0.1), Color.omnisecondary.opacity(0.05)],
+                colors: [Color.omniPrimary.opacity(0.1), Color.omniSecondary.opacity(0.05)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -25,7 +25,7 @@ struct WelcomeView: View {
                         .font(.system(size: 100))
                         .foregroundStyle(
                             LinearGradient(
-                                colors: [Color.omniprimary, Color.omnisecondary],
+                                colors: [Color.omniPrimary, Color.omniSecondary],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
@@ -57,7 +57,7 @@ struct WelcomeView: View {
                             .frame(height: 56)
                             .background(
                                 LinearGradient(
-                                    colors: [Color.omniprimary, Color.omnisecondary],
+                                    colors: [Color.omniPrimary, Color.omniSecondary],
                                     startPoint: .leading,
                                     endPoint: .trailing
                                 )
@@ -68,12 +68,12 @@ struct WelcomeView: View {
                     Button(action: { showLogin = true }) {
                         Text("I already have an account")
                             .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.omniprimary)
+                            .foregroundColor(.omniPrimary)
                             .frame(maxWidth: .infinity)
                             .frame(height: 56)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 28)
-                                    .stroke(Color.omniprimary, lineWidth: 2)
+                                    .stroke(Color.omniPrimary, lineWidth: 2)
                             )
                     }
                     

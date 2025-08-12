@@ -14,7 +14,7 @@ struct EmailVerificationView: View {
                 .font(.system(size: 80))
                 .foregroundStyle(
                     LinearGradient(
-                        colors: [Color.omniprimary, Color.omnisecondary],
+                        colors: [Color.omniPrimary, Color.omniSecondary],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -58,7 +58,7 @@ struct EmailVerificationView: View {
                 .frame(height: 56)
                 .background(
                     LinearGradient(
-                        colors: [Color.omniprimary, Color.omnisecondary],
+                        colors: [Color.omniPrimary, Color.omniSecondary],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
@@ -70,7 +70,7 @@ struct EmailVerificationView: View {
                 Button(action: resendEmail) {
                     Text("Resend Verification Email")
                         .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.omniprimary)
+                        .foregroundColor(.omniPrimary)
                 }
                 .padding(.horizontal, 24)
                 

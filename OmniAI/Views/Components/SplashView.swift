@@ -13,7 +13,7 @@ struct SplashView: View {
                 colors: [
                     Color.omniBackground,
                     Color.omniCardLavender,
-                    Color.omniprimary.opacity(0.1)
+                    Color.omniPrimary.opacity(0.1)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -27,7 +27,7 @@ struct SplashView: View {
                     ForEach(0..<6, id: \.self) { index in
                         Image(systemName: "leaf.fill")
                             .font(.system(size: CGFloat(20 + index * 4)))
-                            .foregroundColor(.omniprimary.opacity(0.2))
+                            .foregroundColor(.omniPrimary.opacity(0.2))
                             .rotationEffect(.degrees(Double(index * 60)))
                             .offset(
                                 x: CGFloat(cos(Double(index) * .pi / 3) * 60),
@@ -40,7 +40,7 @@ struct SplashView: View {
                     ZStack {
                         // Head/body silhouette
                         Circle()
-                            .fill(Color.omniprimary.opacity(0.8))
+                            .fill(Color.omniPrimary.opacity(0.8))
                             .frame(width: 80, height: 80)
                             .overlay(
                                 Circle()
@@ -77,7 +77,7 @@ struct SplashView: View {
                     VStack(spacing: 4) {
                         Text("Therapeutic Support")
                             .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.omniprimary)
+                            .foregroundColor(.omniPrimary)
                         
                         Text("Your safe space for mental wellness")
                             .font(.system(size: 14, weight: .medium))

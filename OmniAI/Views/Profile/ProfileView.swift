@@ -6,6 +6,12 @@ struct ProfileView: View {
     @EnvironmentObject var themeManager: ThemeManager
     @State private var showSignOutAlert = false
     @State private var showDeleteAlert = false
+    @State private var showEditProfile = false
+    @State private var showPersonalInfo = false
+    @State private var showCompanionEdit = false
+    @State private var showCrisisResources = false
+    @State private var showHelpSupport = false
+    @State private var biometricAuthEnabled = false
     
     private var appVersion: String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
@@ -29,7 +35,7 @@ struct ProfileView: View {
                         HStack {
                             Spacer()
                             
-                            Button(action: {}) {
+                            Button(action: { showEditProfile = true }) {
                                 Image(systemName: "pencil")
                                     .font(.system(size: 16))
                                     .foregroundColor(.omniTextSecondary)
@@ -43,16 +49,21 @@ struct ProfileView: View {
                                     .fill(Color.omniTextTertiary.opacity(0.1))
                                     .frame(width: 80, height: 80)
                                 
-                                Text(getInitials())
-                                    .font(.system(size: 32, weight: .semibold))
-                                    .foregroundColor(.omniTextPrimary)
+                                if let avatarEmoji = authManager.currentUser?.avatarURL {
+                                    Text(avatarEmoji)
+                                        .font(.system(size: 40))
+                                } else {
+                                    Text(getInitials())
+                                        .font(.system(size: 32, weight: .semibold))
+                                        .foregroundColor(.omniTextPrimary)
+                                }
                             }
                             
                             // Daily Affirmations Feature Card
                             HStack {
                                 Image(systemName: "sparkles")
                                     .font(.system(size: 16))
-                                    .foregroundColor(.omniprimary)
+                                    .foregroundColor(.omniPrimary)
                                 
                                 Text("Receive daily positive affirmations")
                                     .font(.system(size: 14, weight: .medium))
@@ -87,24 +98,24 @@ struct ProfileView: View {
                         VStack(spacing: 0) {
                             ProfileSettingRow(
                                 icon: "person.fill",
-                                iconColor: .omniprimary,
+                                iconColor: .omniPrimary,
                                 title: "Personal Information",
-                                action: {}
+                                action: { showPersonalInfo = true }
                             )
                             
                             Divider().padding(.leading, 50)
                             
                             ProfileSettingRow(
                                 icon: "creditcard.fill",
-                                iconColor: .omniprimary,
+                                iconColor: .omniPrimary,
                                 title: "Subscription Management",
                                 trailing: AnyView(
                                     Text("Premium")
                                         .font(.system(size: 12, weight: .medium))
-                                        .foregroundColor(.omniprimary)
+                                        .foregroundColor(.omniPrimary)
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 2)
-                                        .background(Color.omniprimary.opacity(0.1))
+                                        .background(Color.omniPrimary.opacity(0.1))
                                         .cornerRadius(8)
                                 ),
                                 action: {}
@@ -173,7 +184,12 @@ struct ProfileView: View {
                                 
                                 Spacer()
                                 
-                                Toggle("", isOn: .constant(false))
+                                Toggle("", isOn: $biometricAuthEnabled)
+                                    .onChange(of: biometricAuthEnabled) { enabled in
+                                        Task {
+                                            await authManager.toggleBiometricAuth(enabled)
+                                        }
+                                    }
                                     .labelsHidden()
                                     .scaleEffect(0.8)
                             }
@@ -185,12 +201,7 @@ struct ProfileView: View {
                                 icon: "heart.fill",
                                 iconColor: .pink,
                                 title: "Edit Companion",
-                                trailing: AnyView(
-                                    Image(systemName: "lock.fill")
-                                        .font(.system(size: 12))
-                                        .foregroundColor(.omniprimary)
-                                ),
-                                action: {}
+                                action: { showCompanionEdit = true }
                             )
                         }
                         .background(Color.omniCardBeige)
@@ -210,7 +221,7 @@ struct ProfileView: View {
                                 icon: "questionmark.circle.fill",
                                 iconColor: .orange,
                                 title: "Help & Support",
-                                action: {}
+                                action: { showHelpSupport = true }
                             )
                             
                             Divider().padding(.leading, 50)
@@ -243,7 +254,7 @@ struct ProfileView: View {
                             .foregroundColor(.omniTextTertiary)
                             .padding(.horizontal)
                         
-                        Button(action: {}) {
+                        Button(action: { showCrisisResources = true }) {
                             HStack {
                                 Image(systemName: "exclamationmark.triangle.fill")
                                     .font(.system(size: 16))
@@ -307,6 +318,9 @@ struct ProfileView: View {
             }
             .navigationBarHidden(true)
             .background(Color.omniBackground)
+            .onAppear {
+                biometricAuthEnabled = authManager.currentUser?.biometricAuthEnabled ?? false
+            }
             .alert("Sign Out", isPresented: $showSignOutAlert) {
                 Button("Cancel", role: .cancel) { }
                 Button("Sign Out", role: .destructive) {
@@ -322,6 +336,21 @@ struct ProfileView: View {
                 }
             } message: {
                 Text("This action cannot be undone. All your data will be permanently deleted.")
+            }
+            .sheet(isPresented: $showEditProfile) {
+                EditProfileSheet()
+            }
+            .sheet(isPresented: $showPersonalInfo) {
+                PersonalInformationView()
+            }
+            .sheet(isPresented: $showCompanionEdit) {
+                CompanionEditSheet()
+            }
+            .sheet(isPresented: $showCrisisResources) {
+                CrisisResourcesView()
+            }
+            .sheet(isPresented: $showHelpSupport) {
+                HelpSupportView()
             }
         }
     }

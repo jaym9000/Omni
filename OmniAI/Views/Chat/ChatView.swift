@@ -37,7 +37,7 @@ struct ChatView: View {
                         .frame(height: 44)
                         .background(
                             selectedInputMode == .chat ? 
-                            Color.omniprimary : 
+                            Color.omniPrimary : 
                             Color.clear
                         )
                         .cornerRadius(22, corners: [.topLeft, .bottomLeft])
@@ -55,7 +55,7 @@ struct ChatView: View {
                         .frame(height: 44)
                         .background(
                             selectedInputMode == .voice ? 
-                            Color.omniprimary :
+                            Color.omniPrimary :
                             Color.clear
                         )
                         .cornerRadius(22, corners: [.topRight, .bottomRight])
@@ -116,7 +116,7 @@ struct ChatView: View {
                                 .frame(width: 36, height: 36)
                                 .background(
                                     Circle()
-                                        .fill(inputText.isEmpty ? Color.omniTextTertiary.opacity(0.3) : Color.omniprimary)
+                                        .fill(inputText.isEmpty ? Color.omniTextTertiary.opacity(0.3) : Color.omniPrimary)
                                 )
                         }
                         .disabled(inputText.isEmpty)
@@ -135,20 +135,20 @@ struct ChatView: View {
                                 ZStack {
                                     // Outer glow ring
                                     Circle()
-                                        .stroke(Color.omniprimary.opacity(0.3), lineWidth: 2)
+                                        .stroke(Color.omniPrimary.opacity(0.3), lineWidth: 2)
                                         .frame(width: 100, height: 100)
                                     
                                     // Main mic button
                                     Circle()
                                         .fill(
                                             LinearGradient(
-                                                colors: [Color.omniprimary, Color.omniprimary.opacity(0.8)],
+                                                colors: [Color.omniPrimary, Color.omniPrimary.opacity(0.8)],
                                                 startPoint: .topLeading,
                                                 endPoint: .bottomTrailing
                                             )
                                         )
                                         .frame(width: 80, height: 80)
-                                        .shadow(color: Color.omniprimary.opacity(0.3), radius: 8, x: 0, y: 4)
+                                        .shadow(color: Color.omniPrimary.opacity(0.3), radius: 8, x: 0, y: 4)
                                     
                                     Image(systemName: "mic.fill")
                                         .font(.system(size: 28))
@@ -175,7 +175,7 @@ struct ChatView: View {
                     Button("Close") {
                         dismiss()
                     }
-                    .foregroundColor(.omniprimary)
+                    .foregroundColor(.omniPrimary)
                 }
             }
         }
@@ -262,7 +262,7 @@ struct MessageBubble: View {
                         message.isUser ?
                         AnyView(
                             LinearGradient(
-                                colors: [Color.omniprimary, Color.omnisecondary],
+                                colors: [Color.omniPrimary, Color.omniSecondary],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )

@@ -35,7 +35,7 @@ struct SignUpView: View {
                         .font(.system(size: 60))
                         .foregroundStyle(
                             LinearGradient(
-                                colors: [Color.omniprimary, Color.omnisecondary],
+                                colors: [Color.omniPrimary, Color.omniSecondary],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
@@ -72,7 +72,7 @@ struct SignUpView: View {
                         .cornerRadius(12)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(focusedField == .name ? Color.omniprimary : Color.clear, lineWidth: 2)
+                                .stroke(focusedField == .name ? Color.omniPrimary : Color.clear, lineWidth: 2)
                         )
                     }
                     
@@ -97,7 +97,7 @@ struct SignUpView: View {
                         .cornerRadius(12)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(focusedField == .email ? Color.omniprimary : Color.clear, lineWidth: 2)
+                                .stroke(focusedField == .email ? Color.omniPrimary : Color.clear, lineWidth: 2)
                         )
                     }
                     
@@ -131,7 +131,7 @@ struct SignUpView: View {
                         .cornerRadius(12)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(focusedField == .password ? Color.omniprimary : Color.clear, lineWidth: 2)
+                                .stroke(focusedField == .password ? Color.omniPrimary : Color.clear, lineWidth: 2)
                         )
                     }
                     
@@ -165,7 +165,7 @@ struct SignUpView: View {
                         .cornerRadius(12)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(focusedField == .confirmPassword ? Color.omniprimary : Color.clear, lineWidth: 2)
+                                .stroke(focusedField == .confirmPassword ? Color.omniPrimary : Color.clear, lineWidth: 2)
                         )
                     }
                     
@@ -173,7 +173,7 @@ struct SignUpView: View {
                     HStack {
                         Button(action: { agreedToTerms.toggle() }) {
                             Image(systemName: agreedToTerms ? "checkmark.square.fill" : "square")
-                                .foregroundColor(agreedToTerms ? .omniprimary : .omniTextTertiary)
+                                .foregroundColor(agreedToTerms ? .omniPrimary : .omniTextTertiary)
                                 .font(.system(size: 20))
                         }
                         
@@ -182,13 +182,13 @@ struct SignUpView: View {
                             .foregroundColor(.omniTextSecondary)
                         + Text("Terms & Conditions")
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.omniprimary)
+                            .foregroundColor(.omniPrimary)
                         + Text(" and ")
                             .font(.system(size: 14))
                             .foregroundColor(.omniTextSecondary)
                         + Text("Privacy Policy")
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.omniprimary)
+                            .foregroundColor(.omniPrimary)
                         
                         Spacer()
                     }
@@ -210,7 +210,7 @@ struct SignUpView: View {
                 .frame(height: 56)
                 .background(
                     LinearGradient(
-                        colors: [Color.omniprimary, Color.omnisecondary],
+                        colors: [Color.omniPrimary, Color.omniSecondary],
                         startPoint: .leading,
                         endPoint: .trailing
                     )

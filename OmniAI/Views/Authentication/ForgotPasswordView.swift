@@ -19,7 +19,7 @@ struct ForgotPasswordView: View {
                         .font(.system(size: 60))
                         .foregroundStyle(
                             LinearGradient(
-                                colors: [Color.omniprimary, Color.omnisecondary],
+                                colors: [Color.omniPrimary, Color.omniSecondary],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
@@ -72,7 +72,7 @@ struct ForgotPasswordView: View {
                 .frame(height: 56)
                 .background(
                     LinearGradient(
-                        colors: [Color.omniprimary, Color.omnisecondary],
+                        colors: [Color.omniPrimary, Color.omniSecondary],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
@@ -91,7 +91,7 @@ struct ForgotPasswordView: View {
                     Button("Cancel") {
                         dismiss()
                     }
-                    .foregroundColor(.omniprimary)
+                    .foregroundColor(.omniPrimary)
                 }
             }
             .alert("Success", isPresented: $showSuccess) {

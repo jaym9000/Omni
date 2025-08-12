@@ -24,7 +24,7 @@ struct PremiumUpgradePrompt: View {
             VStack(spacing: 12) {
                 Image(systemName: "lock.fill")
                     .font(.system(size: 24))
-                    .foregroundColor(.omniprimary)
+                    .foregroundColor(.omniPrimary)
                 
                 Text(feature.displayName)
                     .font(.system(size: 18, weight: .semibold))
@@ -42,7 +42,7 @@ struct PremiumUpgradePrompt: View {
                     .padding(.vertical, 8)
                     .background(
                         LinearGradient(
-                            colors: [Color.omniprimary, Color.omnisecondary],
+                            colors: [Color.omniPrimary, Color.omniSecondary],
                             startPoint: .leading,
                             endPoint: .trailing
                         )
@@ -75,7 +75,7 @@ struct PremiumUpgradeView: View {
                             .font(.system(size: 60))
                             .foregroundStyle(
                                 LinearGradient(
-                                    colors: [Color.omniprimary, Color.omnisecondary],
+                                    colors: [Color.omniPrimary, Color.omniSecondary],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
@@ -97,7 +97,7 @@ struct PremiumUpgradeView: View {
                             HStack(spacing: 16) {
                                 Image(systemName: feature.icon)
                                     .font(.system(size: 24))
-                                    .foregroundColor(.omniprimary)
+                                    .foregroundColor(.omniPrimary)
                                     .frame(width: 40)
                                 
                                 VStack(alignment: .leading, spacing: 4) {
@@ -145,7 +145,7 @@ struct PremiumUpgradeView: View {
                     .frame(height: 56)
                     .background(
                         LinearGradient(
-                            colors: [Color.omniprimary, Color.omnisecondary],
+                            colors: [Color.omniPrimary, Color.omniSecondary],
                             startPoint: .leading,
                             endPoint: .trailing
                         )
@@ -161,7 +161,7 @@ struct PremiumUpgradeView: View {
                         }
                     }
                     .font(.system(size: 14))
-                    .foregroundColor(.omniprimary)
+                    .foregroundColor(.omniPrimary)
                     
                     Spacer(minLength: 50)
                 }
@@ -172,7 +172,7 @@ struct PremiumUpgradeView: View {
                     Button("Close") {
                         dismiss()
                     }
-                    .foregroundColor(.omniprimary)
+                    .foregroundColor(.omniPrimary)
                 }
             }
         }

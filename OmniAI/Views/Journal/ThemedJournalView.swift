@@ -2,6 +2,8 @@ import SwiftUI
 
 struct ThemedJournalView: View {
     @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var journalManager: JournalManager
+    @EnvironmentObject var authManager: AuthenticationManager
     @State private var currentPrompt = "What's one small win you had today, no matter how minor?"
     @State private var responseText = ""
     @State private var isCompleted = false
@@ -47,7 +49,7 @@ struct ThemedJournalView: View {
                                     Text("New Prompt")
                                         .font(.system(size: 14, weight: .medium))
                                 }
-                                .foregroundColor(.omniprimary)
+                                .foregroundColor(.omniPrimary)
                             }
                         }
                         
@@ -56,11 +58,11 @@ struct ThemedJournalView: View {
                             HStack(spacing: 12) {
                                 Image(systemName: "bookmark.fill")
                                     .font(.system(size: 16))
-                                    .foregroundColor(.omniprimary)
+                                    .foregroundColor(.omniPrimary)
                                 
                                 Text("GRATITUDE & WINS")
                                     .font(.system(size: 12, weight: .bold))
-                                    .foregroundColor(.omniprimary)
+                                    .foregroundColor(.omniPrimary)
                                     .textCase(.uppercase)
                             }
                             
@@ -72,11 +74,11 @@ struct ThemedJournalView: View {
                         .padding()
                         .background(
                             RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.omniprimary.opacity(0.06))
+                                .fill(Color.omniPrimary.opacity(0.06))
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.omniprimary.opacity(0.2), lineWidth: 1)
+                                .stroke(Color.omniPrimary.opacity(0.2), lineWidth: 1)
                         )
                     }
                     
@@ -105,7 +107,7 @@ struct ThemedJournalView: View {
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(responseText.isEmpty ? Color.clear : Color.omniprimary.opacity(0.3), lineWidth: 1)
+                                .stroke(responseText.isEmpty ? Color.clear : Color.omniPrimary.opacity(0.3), lineWidth: 1)
                         )
                         
                         // Character counter and save button
@@ -126,7 +128,7 @@ struct ThemedJournalView: View {
                             .padding(.vertical, 12)
                             .background(
                                 RoundedRectangle(cornerRadius: 22)
-                                    .fill(responseText.isEmpty ? Color.gray.opacity(0.3) : Color.omniprimary)
+                                    .fill(responseText.isEmpty ? Color.gray.opacity(0.3) : Color.omniPrimary)
                             )
                         }
                     }
@@ -141,15 +143,26 @@ struct ThemedJournalView: View {
                     Button("Cancel") {
                         dismiss()
                     }
-                    .foregroundColor(.omniprimary)
+                    .foregroundColor(.omniPrimary)
                 }
             }
         }
     }
     
     private func saveEntry() {
-        // Save the themed journal entry
-        // For now, just dismiss
+        guard !responseText.isEmpty else { return }
+        
+        var entry = JournalEntry(
+            userId: authManager.currentUser?.id ?? "current_user",
+            title: "Themed Entry",
+            content: responseText,
+            type: .themed
+        )
+        
+        // Set the prompt for themed entries
+        entry.prompt = currentPrompt
+        
+        journalManager.saveEntry(entry)
         dismiss()
     }
 }

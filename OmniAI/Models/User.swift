@@ -9,7 +9,7 @@ enum AuthProvider: String, Codable {
 struct User: Codable, Identifiable {
     let id: String
     let email: String
-    let displayName: String
+    var displayName: String
     var emailVerified: Bool
     let authProvider: AuthProvider
     var avatarURL: String?

@@ -141,4 +141,57 @@ class AuthenticationManager: ObservableObject {
         // Simulate password reset
         try await Task.sleep(nanoseconds: 1_000_000_000)
     }
+    
+    func updateProfile(displayName: String, avatarEmoji: String? = nil, bio: String? = nil) async {
+        await MainActor.run {
+            guard var user = self.currentUser else { return }
+            
+            // Update user properties
+            user.displayName = displayName
+            if let avatarEmoji = avatarEmoji {
+                user.avatarURL = avatarEmoji
+            }
+            user.updatedAt = Date()
+            
+            self.currentUser = user
+            
+            // Save to UserDefaults
+            if let encoded = try? JSONEncoder().encode(user) {
+                UserDefaults.standard.set(encoded, forKey: "currentUser")
+            }
+        }
+    }
+    
+    func updateCompanionSettings(name: String, personality: String) async {
+        await MainActor.run {
+            guard var user = self.currentUser else { return }
+            
+            user.companionName = name
+            user.companionPersonality = personality
+            user.updatedAt = Date()
+            
+            self.currentUser = user
+            
+            // Save to UserDefaults
+            if let encoded = try? JSONEncoder().encode(user) {
+                UserDefaults.standard.set(encoded, forKey: "currentUser")
+            }
+        }
+    }
+    
+    func toggleBiometricAuth(_ enabled: Bool) async {
+        await MainActor.run {
+            guard var user = self.currentUser else { return }
+            
+            user.biometricAuthEnabled = enabled
+            user.updatedAt = Date()
+            
+            self.currentUser = user
+            
+            // Save to UserDefaults
+            if let encoded = try? JSONEncoder().encode(user) {
+                UserDefaults.standard.set(encoded, forKey: "currentUser")
+            }
+        }
+    }
 }

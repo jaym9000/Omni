@@ -24,7 +24,7 @@ struct LoginView: View {
                         .font(.system(size: 60))
                         .foregroundStyle(
                             LinearGradient(
-                                colors: [Color.omniprimary, Color.omnisecondary],
+                                colors: [Color.omniPrimary, Color.omniSecondary],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
@@ -63,7 +63,7 @@ struct LoginView: View {
                         .cornerRadius(12)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(focusedField == .email ? Color.omniprimary : Color.clear, lineWidth: 2)
+                                .stroke(focusedField == .email ? Color.omniPrimary : Color.clear, lineWidth: 2)
                         )
                     }
                     
@@ -97,7 +97,7 @@ struct LoginView: View {
                         .cornerRadius(12)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(focusedField == .password ? Color.omniprimary : Color.clear, lineWidth: 2)
+                                .stroke(focusedField == .password ? Color.omniPrimary : Color.clear, lineWidth: 2)
                         )
                     }
                     
@@ -107,7 +107,7 @@ struct LoginView: View {
                         Button(action: { showForgotPassword = true }) {
                             Text("Forgot Password?")
                                 .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.omniprimary)
+                                .foregroundColor(.omniPrimary)
                         }
                     }
                 }
@@ -128,7 +128,7 @@ struct LoginView: View {
                 .frame(height: 56)
                 .background(
                     LinearGradient(
-                        colors: [Color.omniprimary, Color.omnisecondary],
+                        colors: [Color.omniPrimary, Color.omniSecondary],
                         startPoint: .leading,
                         endPoint: .trailing
                     )

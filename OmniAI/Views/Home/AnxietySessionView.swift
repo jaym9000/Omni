@@ -139,7 +139,7 @@ struct AnxietySessionView: View {
                     Button("Close") {
                         dismiss()
                     }
-                    .foregroundColor(.omniprimary)
+                    .foregroundColor(.omniPrimary)
                 }
             }
             .sheet(item: $selectedTechnique) { technique in
@@ -215,7 +215,7 @@ struct StatCard: View {
         VStack(spacing: 8) {
             Image(systemName: icon)
                 .font(.system(size: 20))
-                .foregroundColor(.omniprimary)
+                .foregroundColor(.omniPrimary)
             
             Text(value)
                 .font(.system(size: 16, weight: .bold))
@@ -388,7 +388,7 @@ struct TechniqueDetailView: View {
                                     .font(.system(size: 14, weight: .bold))
                                     .foregroundColor(.white)
                                     .frame(width: 24, height: 24)
-                                    .background(Color.omniprimary)
+                                    .background(Color.omniPrimary)
                                     .cornerRadius(12)
                                 
                                 Text(step)
@@ -435,7 +435,7 @@ struct TechniqueDetailView: View {
                     Button("Done") {
                         dismiss()
                     }
-                    .foregroundColor(.omniprimary)
+                    .foregroundColor(.omniPrimary)
                 }
             }
         }

@@ -58,7 +58,7 @@ struct HomeView: View {
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: 56)
-                    .background(Color.omniprimary)
+                    .background(Color.omniPrimary)
                     .cornerRadius(14)
                 }
                 
@@ -254,13 +254,13 @@ struct AnxietyCard: View {
                 .padding(.vertical, 10)
                 .background(
                     LinearGradient(
-                        colors: [Color.omniprimary, Color.omniprimary.opacity(0.8)],
+                        colors: [Color.omniPrimary, Color.omniPrimary.opacity(0.8)],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
                 )
                 .cornerRadius(20)
-                .shadow(color: Color.omniprimary.opacity(0.3), radius: 3, x: 0, y: 2)
+                .shadow(color: Color.omniPrimary.opacity(0.3), radius: 3, x: 0, y: 2)
             }
             .buttonStyle(PlainButtonStyle())
         }
@@ -272,7 +272,7 @@ struct AnxietyCard: View {
                     LinearGradient(
                         colors: [
                             Color.omniCardLavender,
-                            Color.omniprimary.opacity(0.05)
+                            Color.omniPrimary.opacity(0.05)
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -283,7 +283,7 @@ struct AnxietyCard: View {
             RoundedRectangle(cornerRadius: 20)
                 .stroke(
                     LinearGradient(
-                        colors: [Color.omniprimary.opacity(0.2), Color.omniprimary.opacity(0.1)],
+                        colors: [Color.omniPrimary.opacity(0.2), Color.omniPrimary.opacity(0.1)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
@@ -329,7 +329,7 @@ struct DailyPromptCard: View {
                         Text("REFLECT")
                             .font(.system(size: 12, weight: .bold))
                     }
-                    .foregroundColor(.omniprimary)
+                    .foregroundColor(.omniPrimary)
                 }
             }
             
@@ -345,7 +345,7 @@ struct DailyPromptCard: View {
             }
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.omniprimary.opacity(0.08))
+            .background(Color.omniPrimary.opacity(0.08))
             .cornerRadius(12)
             
             // Input or Display
@@ -353,7 +353,7 @@ struct DailyPromptCard: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Today's Gratitude")
                         .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(.omniprimary)
+                        .foregroundColor(.omniPrimary)
                         .textCase(.uppercase)
                     
                     Text(text)
@@ -363,15 +363,15 @@ struct DailyPromptCard: View {
                     Button(action: { isCompleted = false }) {
                         Label("Edit", systemImage: "pencil")
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.omniprimary)
+                            .foregroundColor(.omniPrimary)
                     }
                 }
                 .padding()
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.omniprimary, lineWidth: 2)
-                        .background(Color.omniprimary.opacity(0.05))
+                        .stroke(Color.omniPrimary, lineWidth: 2)
+                        .background(Color.omniPrimary.opacity(0.05))
                 )
             } else {
                 VStack(spacing: 16) {
@@ -398,7 +398,7 @@ struct DailyPromptCard: View {
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
-                            .stroke(text.isEmpty ? Color.clear : Color.omniprimary.opacity(0.3), lineWidth: 1)
+                            .stroke(text.isEmpty ? Color.clear : Color.omniPrimary.opacity(0.3), lineWidth: 1)
                     )
                     
                     HStack {
@@ -424,7 +424,7 @@ struct DailyPromptCard: View {
                         .padding(.vertical, 12)
                         .background(
                             RoundedRectangle(cornerRadius: 22)
-                                .fill(text.isEmpty ? Color.gray.opacity(0.3) : Color.omniprimary)
+                                .fill(text.isEmpty ? Color.gray.opacity(0.3) : Color.omniPrimary)
                         )
                     }
                 }

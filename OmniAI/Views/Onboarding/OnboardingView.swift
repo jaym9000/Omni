@@ -13,7 +13,7 @@ struct OnboardingView: View {
             title: "Welcome to Your Safe Space",
             description: "Omni is here to support you on your mental health journey with compassion and understanding.",
             imageName: "heart.circle.fill",
-            color: .omniprimary
+            color: .omniPrimary
         ),
         OnboardingPage(
             title: "Track Your Mood",
@@ -25,7 +25,7 @@ struct OnboardingView: View {
             title: "Journal Your Thoughts",
             description: "Express yourself freely through guided prompts or free-form journaling.",
             imageName: "book.fill",
-            color: .omnisecondary
+            color: .omniSecondary
         )
     ]
     
@@ -49,7 +49,7 @@ struct OnboardingView: View {
         ZStack {
             // Background
             LinearGradient(
-                colors: [Color.omniprimary.opacity(0.1), Color.omnisecondary.opacity(0.05)],
+                colors: [Color.omniPrimary.opacity(0.1), Color.omniSecondary.opacity(0.05)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -60,7 +60,7 @@ struct OnboardingView: View {
                 HStack(spacing: 8) {
                     ForEach(0..<5) { index in
                         RoundedRectangle(cornerRadius: 2)
-                            .fill(index <= currentPage ? Color.omniprimary : Color.omniprimary.opacity(0.3))
+                            .fill(index <= currentPage ? Color.omniPrimary : Color.omniPrimary.opacity(0.3))
                             .frame(height: 4)
                     }
                 }
@@ -100,7 +100,7 @@ struct OnboardingView: View {
                                 currentPage -= 1
                             }
                         }
-                        .foregroundColor(.omniprimary)
+                        .foregroundColor(.omniPrimary)
                     }
                     
                     Spacer()
@@ -113,7 +113,7 @@ struct OnboardingView: View {
                             .padding(.vertical, 12)
                             .background(
                                 LinearGradient(
-                                    colors: [Color.omniprimary, Color.omnisecondary],
+                                    colors: [Color.omniPrimary, Color.omniSecondary],
                                     startPoint: .leading,
                                     endPoint: .trailing
                                 )
@@ -283,14 +283,14 @@ struct PersonalityOption: View {
                 Spacer()
                 
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundColor(isSelected ? .omniprimary : .omniTextTertiary)
+                    .foregroundColor(isSelected ? .omniPrimary : .omniTextTertiary)
             }
             .padding()
-            .background(isSelected ? Color.omniprimary.opacity(0.1) : Color.omniSecondaryBackground)
+            .background(isSelected ? Color.omniPrimary.opacity(0.1) : Color.omniSecondaryBackground)
             .cornerRadius(12)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? Color.omniprimary : Color.clear, lineWidth: 2)
+                    .stroke(isSelected ? Color.omniPrimary : Color.clear, lineWidth: 2)
             )
         }
     }
@@ -354,11 +354,11 @@ struct GoalOption: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
                 .frame(maxWidth: .infinity)
-                .background(isSelected ? Color.omniprimary : Color.omniSecondaryBackground)
+                .background(isSelected ? Color.omniPrimary : Color.omniSecondaryBackground)
                 .cornerRadius(12)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(isSelected ? Color.clear : Color.omniprimary.opacity(0.3), lineWidth: 1)
+                        .stroke(isSelected ? Color.clear : Color.omniPrimary.opacity(0.3), lineWidth: 1)
                 )
         }
     }

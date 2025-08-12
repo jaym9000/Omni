@@ -56,7 +56,7 @@ struct MoodBottomSheet: View {
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: 48)
-                    .background(Color.omniprimary)
+                    .background(Color.omniPrimary)
                     .cornerRadius(12)
                 }
                 
@@ -71,13 +71,13 @@ struct MoodBottomSheet: View {
                         Text("Journal about it")
                             .font(.system(size: 16, weight: .medium))
                     }
-                    .foregroundColor(.omniprimary)
+                    .foregroundColor(.omniPrimary)
                     .frame(maxWidth: .infinity)
                     .frame(height: 48)
                     .background(Color.clear)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.omniprimary.opacity(0.3), lineWidth: 1)
+                            .stroke(Color.omniPrimary.opacity(0.3), lineWidth: 1)
                     )
                 }
             }
