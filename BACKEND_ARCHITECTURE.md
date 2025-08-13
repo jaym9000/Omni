@@ -8,7 +8,7 @@ This document outlines the backend architecture for OmniAI, a mental health ther
 ### SwiftUI App Architecture
 - **Local-First Data Storage**: Journal entries persist locally using JSON files in Documents directory
 - **Service-Based Architecture**: Modular managers (AuthenticationManager, JournalManager, PremiumManager)
-- **Firebase Integration**: Installed but currently unused, available for future scaling
+- **Local-First Approach**: All data currently stored locally, ready for backend integration
 - **Therapeutic Design**: Evidence-based color schemes, gentle UX patterns, crisis-aware interface
 
 ### Data Models

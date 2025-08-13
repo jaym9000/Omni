@@ -7,7 +7,6 @@ struct ProfileView: View {
     @State private var showSignOutAlert = false
     @State private var showDeleteAlert = false
     @State private var showEditProfile = false
-    @State private var showPersonalInfo = false
     @State private var showCompanionEdit = false
     @State private var showCrisisResources = false
     @State private var showHelpSupport = false
@@ -96,15 +95,6 @@ struct ProfileView: View {
                             .padding(.horizontal)
                         
                         VStack(spacing: 0) {
-                            ProfileSettingRow(
-                                icon: "person.fill",
-                                iconColor: .omniPrimary,
-                                title: "Personal Information",
-                                action: { showPersonalInfo = true }
-                            )
-                            
-                            Divider().padding(.leading, 50)
-                            
                             ProfileSettingRow(
                                 icon: "creditcard.fill",
                                 iconColor: .omniPrimary,
@@ -339,9 +329,6 @@ struct ProfileView: View {
             }
             .sheet(isPresented: $showEditProfile) {
                 EditProfileSheet()
-            }
-            .sheet(isPresented: $showPersonalInfo) {
-                PersonalInformationView()
             }
             .sheet(isPresented: $showCompanionEdit) {
                 CompanionEditSheet()

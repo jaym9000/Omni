@@ -1,6 +1,37 @@
 import SwiftUI
 import MessageUI
 
+struct InfoRow: View {
+    let icon: String
+    let title: String
+    let value: String
+    let iconColor: Color
+    var valueColor: Color = .omniTextPrimary
+    
+    var body: some View {
+        HStack {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundColor(iconColor)
+                .frame(width: 24)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.subheadline)
+                    .foregroundColor(.omniTextSecondary)
+                
+                Text(value)
+                    .font(.body)
+                    .fontWeight(.medium)
+                    .foregroundColor(valueColor)
+            }
+            
+            Spacer()
+        }
+        .padding(.vertical, 8)
+    }
+}
+
 struct HelpSupportView: View {
     @Environment(\.dismiss) var dismiss
     @Environment(\.colorScheme) var colorScheme
