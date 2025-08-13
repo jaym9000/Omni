@@ -28,6 +28,7 @@
 		898AA9D983214C54B23A6E8E /* OmniAI/Views/Profile/CompanionEditSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA11311476D4E7F8169B70E /* OmniAI/Views/Profile/CompanionEditSheet.swift */; };
 		9839C6D93EAF249AE8FC494B /* OmniAI/Services/AuthenticationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E4A151F1F1D424D3D28F2AA /* OmniAI/Services/AuthenticationManager.swift */; };
 		98AEDB5FF8E0430BAAA7B54E /* OmniAI/Views/Profile/HelpSupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EA158E8C1ED4D909446DF22 /* OmniAI/Views/Profile/HelpSupportView.swift */; };
+		98AEDB5FF8E0430BAAA7B55F /* OmniAI/Views/Profile/EvidenceSourcesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EA158E8C1ED4D909446DF23 /* OmniAI/Views/Profile/EvidenceSourcesView.swift */; };
 		9951659CEF2400F5A74E07ED /* OmniAI/Views/Components/MoodBottomSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C77B97B1DC9465688BF64806 /* OmniAI/Views/Components/MoodBottomSheet.swift */; };
 		9E2BE49425AFDC871E0858FB /* OmniAI/Views/Authentication/EmailVerificationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 235D1CC2A08534781E7A6957 /* OmniAI/Views/Authentication/EmailVerificationView.swift */; };
 		A1998D33F44308818C27B734 /* OmniAI/Views/Home/RecentChatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D7E6D6F346CFE34DC304303 /* OmniAI/Views/Home/RecentChatsView.swift */; };
@@ -46,6 +47,7 @@
 /* Begin PBXFileReference section */
 		0197C1B12CE9F989EBA091F8 /* OmniAI/Views/Authentication/SignUpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Authentication/SignUpView.swift; sourceTree = "<group>"; };
 		0EA158E8C1ED4D909446DF22 /* OmniAI/Views/Profile/HelpSupportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Profile/HelpSupportView.swift; sourceTree = "<group>"; };
+		0EA158E8C1ED4D909446DF23 /* OmniAI/Views/Profile/EvidenceSourcesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Profile/EvidenceSourcesView.swift; sourceTree = "<group>"; };
 		1707B5BC08B8108FCB473CC4 /* OmniAI/Views/Authentication/AuthenticationRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Authentication/AuthenticationRootView.swift; sourceTree = "<group>"; };
 		1D1A1A262C8F123400123456 /* OmniAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OmniAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1D1A1A292C8F123400123456 /* OmniAIApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAIApp.swift; sourceTree = "<group>"; };
@@ -174,6 +176,7 @@
 				2CA11311476D4E7F8169B70E /* OmniAI/Views/Profile/CompanionEditSheet.swift */,
 				F73589E241BE45EB82914253 /* OmniAI/Views/Profile/CrisisResourcesView.swift */,
 				0EA158E8C1ED4D909446DF22 /* OmniAI/Views/Profile/HelpSupportView.swift */,
+				0EA158E8C1ED4D909446DF23 /* OmniAI/Views/Profile/EvidenceSourcesView.swift */,
 				746C0A1676285E6A9BF92223 /* OmniAI/Views/Authentication/LoginView.swift */,
 				97BFC0C6E3C3284C125F935D /* OmniAI/Views/Authentication/WelcomeView.swift */,
 				1707B5BC08B8108FCB473CC4 /* OmniAI/Views/Authentication/AuthenticationRootView.swift */,
@@ -282,6 +285,7 @@
 				898AA9D983214C54B23A6E8E /* OmniAI/Views/Profile/CompanionEditSheet.swift in Sources */,
 				14CE8E952BFF498596A26FAE /* OmniAI/Views/Profile/CrisisResourcesView.swift in Sources */,
 				98AEDB5FF8E0430BAAA7B54E /* OmniAI/Views/Profile/HelpSupportView.swift in Sources */,
+				98AEDB5FF8E0430BAAA7B55F /* OmniAI/Views/Profile/EvidenceSourcesView.swift in Sources */,
 				522C50837053EC91C8CC13A4 /* OmniAI/Views/Authentication/LoginView.swift in Sources */,
 				CB846EEC2F1BEEEFCFF817E1 /* OmniAI/Views/Authentication/WelcomeView.swift in Sources */,
 				B1F4F6F11D8EB631F9B8A0D9 /* OmniAI/Views/Authentication/AuthenticationRootView.swift in Sources */,

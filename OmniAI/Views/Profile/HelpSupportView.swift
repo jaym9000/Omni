@@ -38,6 +38,8 @@ struct HelpSupportView: View {
     @Environment(\.openURL) var openURL
     @State private var showMailComposer = false
     @State private var showShareSheet = false
+    @State private var showEvidenceSources = false
+    @State private var showChatAssistant = false
     
     private var appVersion: String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
@@ -53,13 +55,48 @@ struct HelpSupportView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 20) {
-                    // FAQ Section
+                VStack(spacing: 24) {
+                    // Contact Support Section
                     VStack(alignment: .leading, spacing: 16) {
-                        Text("FREQUENTLY ASKED QUESTIONS")
-                            .font(.footnote)
-                            .fontWeight(.bold)
-                            .foregroundColor(.omniTextTertiary)
+                        Text("Contact Support")
+                            .font(.headline)
+                            .foregroundColor(.omniTextPrimary)
+                        
+                        VStack(spacing: 12) {
+                            ContactOptionCard(
+                                icon: "envelope",
+                                iconColor: .blue.opacity(0.8),
+                                title: "Email Support",
+                                subtitle: "Get help via email within 24 hours"
+                            ) {
+                                sendSupportEmail()
+                            }
+                            
+                            ContactOptionCard(
+                                icon: "message",
+                                iconColor: .blue.opacity(0.8),
+                                title: "Chat with AI Assistant",
+                                subtitle: "Get immediate answers to common questions"
+                            ) {
+                                showChatAssistant = true
+                            }
+                            
+                            ContactOptionCard(
+                                icon: "books.vertical",
+                                iconColor: .blue.opacity(0.8),
+                                title: "Evidence & Sources",
+                                subtitle: "View research citations and therapeutic sources"
+                            ) {
+                                showEvidenceSources = true
+                            }
+                        }
+                    }
+                    
+                    // Frequently Asked Questions
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("Frequently Asked Questions")
+                            .font(.headline)
+                            .foregroundColor(.omniTextPrimary)
                         
                         VStack(spacing: 0) {
                             FAQRow(
@@ -70,29 +107,29 @@ struct HelpSupportView: View {
                             Divider().padding(.leading, 16)
                             
                             FAQRow(
-                                question: "Is my data secure and private?",
+                                question: "Is my data private and secure?",
                                 answer: "Yes, your data is encrypted and stored securely. We never share your personal information with third parties. All conversations remain private."
                             )
                             
                             Divider().padding(.leading, 16)
                             
                             FAQRow(
-                                question: "How do I change my companion's personality?",
+                                question: "How can I customize my AI companion?",
                                 answer: "Go to Profile > Edit Companion to change your AI companion's name and personality type to better suit your preferences."
                             )
                             
                             Divider().padding(.leading, 16)
                             
                             FAQRow(
-                                question: "Can I use the app offline?",
-                                answer: "Some features like journaling work offline, but AI conversations require an internet connection for the best experience."
+                                question: "Can I export my journal entries?",
+                                answer: "Premium users can export their journal entries in PDF or text format. Go to Journal > Export to download your entries."
                             )
                             
                             Divider().padding(.leading, 16)
                             
                             FAQRow(
-                                question: "How do I enable Face ID/Touch ID?",
-                                answer: "Go to Profile > App Lock (Face ID / Touch ID) and toggle it on. This adds an extra layer of security to protect your data."
+                                question: "How do I cancel my subscription?",
+                                answer: "You can manage your subscription through your device's Settings > [Your Name] > Subscriptions. Select OmniAI and choose 'Cancel Subscription'."
                             )
                         }
                         .background(Color.omniCardBeige)
@@ -100,121 +137,98 @@ struct HelpSupportView: View {
                         .shadow(color: Color.black.opacity(0.03), radius: 4, x: 0, y: 2)
                     }
                     
-                    // Contact Support
+                    // Additional Support Options
                     VStack(alignment: .leading, spacing: 16) {
-                        Text("CONTACT SUPPORT")
-                            .font(.footnote)
-                            .fontWeight(.bold)
-                            .foregroundColor(.omniTextTertiary)
-                        
-                        VStack(spacing: 0) {
-                            SupportActionRow(
-                                icon: "envelope.fill",
-                                title: "Email Support",
-                                subtitle: "Get help via email",
-                                iconColor: .blue
-                            ) {
-                                sendSupportEmail()
-                            }
-                            
-                            Divider().padding(.leading, 50)
-                            
-                            SupportActionRow(
-                                icon: "exclamationmark.triangle.fill",
-                                title: "Report a Bug",
-                                subtitle: "Help us improve the app",
-                                iconColor: .orange
-                            ) {
-                                reportBug()
-                            }
-                            
-                            Divider().padding(.leading, 50)
-                            
-                            SupportActionRow(
-                                icon: "star.fill",
-                                title: "Rate the App",
-                                subtitle: "Share your feedback",
-                                iconColor: .yellow
-                            ) {
-                                rateApp()
-                            }
-                        }
-                        .background(Color.omniCardLavender)
-                        .cornerRadius(16)
-                        .shadow(color: Color.black.opacity(0.03), radius: 4, x: 0, y: 2)
-                    }
-                    
-                    // App Information
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("APP INFORMATION")
-                            .font(.footnote)
-                            .fontWeight(.bold)
-                            .foregroundColor(.omniTextTertiary)
+                        Text("Additional Support")
+                            .font(.headline)
+                            .foregroundColor(.omniTextPrimary)
                         
                         VStack(spacing: 12) {
-                            InfoRow(
-                                icon: "app.badge.fill",
-                                title: "App Version",
-                                value: appVersion,
-                                iconColor: colorScheme == .dark ? .omniNeonSage : .omniPrimary
-                            )
+                            Button(action: {
+                                reportBug()
+                            }) {
+                                HStack {
+                                    ZStack {
+                                        Circle()
+                                            .fill(Color.orange.opacity(0.1))
+                                            .frame(width: 40, height: 40)
+                                        
+                                        Image(systemName: "ladybug")
+                                            .font(.system(size: 18))
+                                            .foregroundColor(.orange)
+                                    }
+                                    
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("Report a Bug")
+                                            .font(.subheadline)
+                                            .fontWeight(.medium)
+                                            .foregroundColor(.omniTextPrimary)
+                                        
+                                        Text("Help us improve the app")
+                                            .font(.caption)
+                                            .foregroundColor(.omniTextSecondary)
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.omniTextTertiary)
+                                }
+                                .padding()
+                                .background(Color.omniCardLavender)
+                                .cornerRadius(12)
+                            }
+                            .buttonStyle(PlainButtonStyle())
                             
-                            InfoRow(
-                                icon: "iphone",
-                                title: "Device",
-                                value: deviceInfo,
-                                iconColor: .gray
-                            )
-                            
-                            InfoRow(
-                                icon: "calendar.badge.clock",
-                                title: "Last Updated",
-                                value: getLastUpdateDate(),
-                                iconColor: .purple
-                            )
+                            Button(action: {
+                                rateApp()
+                            }) {
+                                HStack {
+                                    ZStack {
+                                        Circle()
+                                            .fill(Color.yellow.opacity(0.1))
+                                            .frame(width: 40, height: 40)
+                                        
+                                        Image(systemName: "star.fill")
+                                            .font(.system(size: 18))
+                                            .foregroundColor(.yellow)
+                                    }
+                                    
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("Rate the App")
+                                            .font(.subheadline)
+                                            .fontWeight(.medium)
+                                            .foregroundColor(.omniTextPrimary)
+                                        
+                                        Text("Share your feedback on the App Store")
+                                            .font(.caption)
+                                            .foregroundColor(.omniTextSecondary)
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.omniTextTertiary)
+                                }
+                                .padding()
+                                .background(Color.omniCardSoftBlue)
+                                .cornerRadius(12)
+                            }
+                            .buttonStyle(PlainButtonStyle())
                         }
-                        .padding()
-                        .background(Color.omniCardSoftBlue)
-                        .cornerRadius(16)
-                        .shadow(color: Color.black.opacity(0.03), radius: 4, x: 0, y: 2)
                     }
                     
-                    // Debug Information (for support)
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("DEBUG INFORMATION")
-                            .font(.footnote)
-                            .fontWeight(.bold)
-                            .foregroundColor(.omniTextTertiary)
-                        
-                        Button(action: {
-                            copyDebugInfo()
-                        }) {
-                            HStack {
-                                Image(systemName: "doc.on.clipboard.fill")
-                                    .font(.system(size: 16))
-                                    .foregroundColor(colorScheme == .dark ? .omniNeonLavender : .purple)
-                                
-                                Text("Copy Debug Information")
-                                    .font(.body)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.omniTextPrimary)
-                                
-                                Spacer()
-                                
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(.omniTextTertiary)
-                            }
-                            .padding()
-                            .background(Color.omniCardBeige)
-                            .cornerRadius(12)
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        
-                        Text("Copy this information when contacting support for faster assistance.")
+                    // App Version Info (smaller, at bottom)
+                    HStack {
+                        Spacer()
+                        Text(appVersion)
                             .font(.caption)
                             .foregroundColor(.omniTextTertiary)
+                        Spacer()
                     }
+                    .padding(.top, 8)
                 }
                 .padding()
             }
@@ -227,6 +241,42 @@ struct HelpSupportView: View {
                         dismiss()
                     }
                     .foregroundColor(colorScheme == .dark ? .omniNeonSage : .omniPrimary)
+                }
+            }
+        }
+        .sheet(isPresented: $showEvidenceSources) {
+            EvidenceSourcesView()
+        }
+        .sheet(isPresented: $showChatAssistant) {
+            // This would show a chat interface for support
+            // For now, we'll show a placeholder
+            NavigationStack {
+                VStack {
+                    Spacer()
+                    Image(systemName: "message.circle.fill")
+                        .font(.system(size: 60))
+                        .foregroundColor(.omniPrimary)
+                    Text("AI Support Assistant")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .padding(.top)
+                    Text("Coming soon! Our AI assistant will help answer your questions instantly.")
+                        .font(.body)
+                        .foregroundColor(.omniTextSecondary)
+                        .multilineTextAlignment(.center)
+                        .padding()
+                    Spacer()
+                }
+                .padding()
+                .navigationTitle("Chat Support")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("Done") {
+                            showChatAssistant = false
+                        }
+                        .foregroundColor(colorScheme == .dark ? .omniNeonSage : .omniPrimary)
+                    }
                 }
             }
         }
@@ -381,6 +431,54 @@ struct SupportActionRow: View {
                     .foregroundColor(.omniTextTertiary)
             }
             .padding()
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// New Contact Option Card Component
+struct ContactOptionCard: View {
+    let icon: String
+    let iconColor: Color
+    let title: String
+    let subtitle: String
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 16) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(iconColor.opacity(0.1))
+                        .frame(width: 48, height: 48)
+                    
+                    Image(systemName: icon)
+                        .font(.system(size: 20))
+                        .foregroundColor(iconColor)
+                }
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(.omniTextPrimary)
+                    
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundColor(.omniTextSecondary)
+                        .lineLimit(2)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14))
+                    .foregroundColor(.omniTextTertiary)
+            }
+            .padding()
+            .background(Color.omniCardBeige)
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.03), radius: 4, x: 0, y: 2)
         }
         .buttonStyle(PlainButtonStyle())
     }
