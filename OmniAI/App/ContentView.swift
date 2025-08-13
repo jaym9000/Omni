@@ -4,6 +4,8 @@ struct ContentView: View {
     @EnvironmentObject var authManager: AuthenticationManager
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var showSplash = true
+    @State private var showLogin = false
+    @State private var showSignUp = false
     
     var body: some View {
         ZStack {
@@ -20,7 +22,16 @@ struct ContentView: View {
                         MainTabView()
                     }
                 } else {
-                    AuthenticationRootView()
+                    // Enhanced welcome flow with value-first approach
+                    NavigationStack {
+                        WelcomeView(showLogin: $showLogin, showSignUp: $showSignUp)
+                            .navigationDestination(isPresented: $showLogin) {
+                                LoginView()
+                            }
+                            .navigationDestination(isPresented: $showSignUp) {
+                                SignUpView()
+                            }
+                    }
                 }
             }
         }

@@ -30,12 +30,14 @@ struct OnboardingView: View {
     ]
     
     let goals = [
-        "Manage Anxiety",
-        "Improve Mood",
-        "Better Sleep",
-        "Stress Relief",
-        "Self-Discovery",
-        "Build Resilience"
+        "Feeling anxious or overwhelmed",
+        "Feeling sad or depressed", 
+        "Stress from school/work",
+        "Problems in relationships",
+        "Low self-esteem or confidence",
+        "Trouble sleeping",
+        "Grieving or loss",
+        "Other/Not sure"
     ]
     
     let personalities = [
