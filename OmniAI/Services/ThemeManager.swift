@@ -57,6 +57,61 @@ struct Typography {
     static let caption2 = Font.system(size: 11, weight: .regular, design: .default)
 }
 
+// MARK: - Therapeutic Button Styles
+struct TherapeuticPressStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .opacity(configuration.isPressed ? 0.9 : 1.0)
+            .animation(.spring(response: 0.2, dampingFraction: 0.7), value: configuration.isPressed)
+    }
+}
+
+struct SoftPressStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
+            .opacity(configuration.isPressed ? 0.8 : 1.0)
+            .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
+    }
+}
+
+struct IconPressStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.85 : 1.0)
+            .opacity(configuration.isPressed ? 0.7 : 1.0)
+            .animation(.spring(response: 0.15, dampingFraction: 0.6), value: configuration.isPressed)
+    }
+}
+
+struct CardPressStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+            .brightness(configuration.isPressed ? -0.05 : 0)
+            .animation(.easeInOut(duration: 0.2), value: configuration.isPressed)
+    }
+}
+
+extension View {
+    func therapeuticPressStyle() -> some View {
+        self.buttonStyle(TherapeuticPressStyle())
+    }
+    
+    func softPressStyle() -> some View {
+        self.buttonStyle(SoftPressStyle())
+    }
+    
+    func iconPressStyle() -> some View {
+        self.buttonStyle(IconPressStyle())
+    }
+    
+    func cardPressStyle() -> some View {
+        self.buttonStyle(CardPressStyle())
+    }
+}
+
 // MARK: - Spacing
 struct Spacing {
     static let xs: CGFloat = 4

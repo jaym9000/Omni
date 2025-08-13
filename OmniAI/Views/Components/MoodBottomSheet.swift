@@ -6,6 +6,12 @@ struct MoodBottomSheet: View {
     let onTalkToOmni: (String) -> Void
     let onJournal: (MoodType?) -> Void
     
+    @State private var emojiScale: CGFloat = 0.5
+    @State private var emojiOpacity: Double = 0
+    @State private var emojiRotation: Double = -15
+    @State private var buttonsOffset: CGFloat = 30
+    @State private var buttonsOpacity: Double = 0
+    
     var body: some View {
         VStack(spacing: 24) {
             // Safe area spacer for proper spacing
@@ -28,19 +34,23 @@ struct MoodBottomSheet: View {
             .padding(.horizontal, 24)
             .padding(.top, 8)
             
-            // Mood display
+            // Mood display with bounce animation
             if let mood = selectedMood {
                 VStack(spacing: 12) {
                     Text(mood.emoji)
                         .font(.system(size: 60))
+                        .scaleEffect(emojiScale)
+                        .opacity(emojiOpacity)
+                        .rotationEffect(.degrees(emojiRotation))
                     
                     Text(mood.label)
                         .font(.system(size: 18, weight: .medium))
                         .foregroundColor(.omniTextPrimary)
+                        .opacity(emojiOpacity)
                 }
             }
             
-            // Action buttons
+            // Action buttons with slide-up animation
             VStack(spacing: 12) {
                 // Talk to Omni Button
                 Button(action: { 
@@ -59,6 +69,8 @@ struct MoodBottomSheet: View {
                     .background(Color.omniPrimary)
                     .cornerRadius(12)
                 }
+                .buttonStyle(TherapeuticPressStyle())
+                .scaleEffect(buttonsOpacity > 0 ? 1.0 : 0.95)
                 
                 // Journal Button
                 Button(action: { 
@@ -80,9 +92,13 @@ struct MoodBottomSheet: View {
                             .stroke(Color.omniPrimary.opacity(0.3), lineWidth: 1)
                     )
                 }
+                .buttonStyle(SoftPressStyle())
+                .scaleEffect(buttonsOpacity > 0 ? 1.0 : 0.95)
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 32)
+            .offset(y: buttonsOffset)
+            .opacity(buttonsOpacity)
         }
         .background(
             Color.white
@@ -90,6 +106,44 @@ struct MoodBottomSheet: View {
                     RoundedRectangle(cornerRadius: 16)
                 )
         )
+        .onAppear {
+            animateEntrance()
+        }
+    }
+    
+    private func animateEntrance() {
+        // Emoji bounce animation
+        withAnimation(
+            .spring(response: 0.4, dampingFraction: 0.6)
+        ) {
+            emojiScale = 1.0
+            emojiOpacity = 1.0
+            emojiRotation = 0
+        }
+        
+        // Slight overshoot for extra bounce
+        withAnimation(
+            .spring(response: 0.3, dampingFraction: 0.5)
+            .delay(0.1)
+        ) {
+            emojiScale = 1.05
+        }
+        
+        withAnimation(
+            .spring(response: 0.3, dampingFraction: 0.7)
+            .delay(0.2)
+        ) {
+            emojiScale = 1.0
+        }
+        
+        // Buttons slide up
+        withAnimation(
+            .spring(response: 0.5, dampingFraction: 0.8)
+            .delay(0.2)
+        ) {
+            buttonsOffset = 0
+            buttonsOpacity = 1.0
+        }
     }
     
     private func generateMoodPrompt() -> String {

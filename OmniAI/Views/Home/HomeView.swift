@@ -16,6 +16,14 @@ struct HomeView: View {
     @AppStorage("todaysGratitude") private var todaysGratitude = ""
     @AppStorage("lastGratitudeDate") private var lastGratitudeDate = ""
     
+    // Animation states
+    @State private var welcomeOpacity = 0.0
+    @State private var welcomeOffset: CGFloat = 20
+    @State private var chatButtonScale = 0.95
+    @State private var chatButtonPulse = false
+    @State private var moodButtonsVisible = false
+    @State private var cardsVisible = false
+    
     private let dailyPrompt = "What's one thing you're grateful for today?"
     private let charLimit = 280
     
@@ -32,7 +40,7 @@ struct HomeView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                // Welcome Header
+                // Welcome Header with animation
                 VStack(spacing: 8) {
                     Text("Welcome to Omni!")
                         .font(.system(size: 28, weight: .bold, design: .rounded))
@@ -43,8 +51,10 @@ struct HomeView: View {
                         .foregroundColor(.omniTextSecondary)
                 }
                 .padding(.top)
+                .opacity(welcomeOpacity)
+                .offset(y: welcomeOffset)
                 
-                // Chat with Omni Button
+                // Chat with Omni Button with pulse animation
                 Button(action: { 
                     chatInitialPrompt = ""
                     showChat = true 
@@ -61,6 +71,13 @@ struct HomeView: View {
                     .background(Color.omniPrimary)
                     .cornerRadius(14)
                 }
+                .buttonStyle(TherapeuticPressStyle())
+                .scaleEffect(chatButtonScale)
+                .opacity(welcomeOpacity)
+                .shadow(color: chatButtonPulse ? Color.omniPrimary.opacity(0.6) : Color.omniPrimary.opacity(0.3), 
+                        radius: chatButtonPulse ? 12 : 8, 
+                        x: 0, 
+                        y: chatButtonPulse ? 6 : 4)
                 
                 // View Chat History
                 Button(action: { showRecentChats = true }) {
@@ -76,6 +93,7 @@ struct HomeView: View {
                     .foregroundColor(.omniTextSecondary)
                     .padding(.horizontal, 8)
                 }
+                .buttonStyle(SoftPressStyle())
                 
                 // Mood Tracker
                 VStack(alignment: .leading, spacing: 16) {
@@ -88,30 +106,53 @@ struct HomeView: View {
                         .foregroundColor(.omniTextSecondary)
                     
                     HStack(spacing: 0) {
-                        ForEach(MoodType.allCases, id: \.self) { mood in
+                        ForEach(Array(MoodType.allCases.enumerated()), id: \.element) { index, mood in
                             MoodButton(
                                 mood: mood,
                                 isSelected: selectedMood == mood,
                                 action: {
-                                    selectedMood = mood
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                        selectedMood = mood
+                                    }
                                     showMoodSheet = true
                                 }
                             )
                             .frame(maxWidth: .infinity)
+                            .opacity(moodButtonsVisible ? 1 : 0)
+                            .offset(y: moodButtonsVisible ? 0 : 20)
+                            .animation(
+                                .spring(response: 0.5, dampingFraction: 0.8)
+                                .delay(Double(index) * 0.08),
+                                value: moodButtonsVisible
+                            )
                         }
                     }
                     .frame(maxWidth: .infinity)
                 }
                 
-                // Anxiety Card
+                // Anxiety Card with entrance animation
                 AnxietyCard(action: { showAnxietySession = true })
+                    .opacity(cardsVisible ? 1 : 0)
+                    .offset(y: cardsVisible ? 0 : 30)
+                    .animation(
+                        .spring(response: 0.6, dampingFraction: 0.8)
+                        .delay(0.4),
+                        value: cardsVisible
+                    )
                 
-                // Daily Prompt
+                // Daily Prompt with entrance animation
                 DailyPromptCard(
                     prompt: dailyPrompt,
                     text: $gratitudeText,
                     isCompleted: $isGratitudeCompleted,
                     charLimit: charLimit
+                )
+                .opacity(cardsVisible ? 1 : 0)
+                .offset(y: cardsVisible ? 0 : 30)
+                .animation(
+                    .spring(response: 0.6, dampingFraction: 0.8)
+                    .delay(0.5),
+                    value: cardsVisible
                 )
                 
                 Spacer(minLength: 100)
@@ -149,6 +190,7 @@ struct HomeView: View {
         .background(Color.omniBackground)
         .onAppear {
             checkDailyPrompt()
+            animateViewEntrance()
         }
     }
     
@@ -161,6 +203,38 @@ struct HomeView: View {
             gratitudeText = ""
             isGratitudeCompleted = false
             todaysGratitude = ""
+        }
+    }
+    
+    private func animateViewEntrance() {
+        // Welcome animation
+        withAnimation(.easeOut(duration: 0.6)) {
+            welcomeOpacity = 1.0
+            welcomeOffset = 0
+        }
+        
+        // Chat button animation
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.2)) {
+            chatButtonScale = 1.0
+        }
+        
+        // Start subtle pulse animation for chat button
+        withAnimation(
+            .easeInOut(duration: 2.0)
+            .repeatForever(autoreverses: true)
+            .delay(1.0)
+        ) {
+            chatButtonPulse = true
+        }
+        
+        // Mood buttons staggered entrance
+        withAnimation(.spring().delay(0.3)) {
+            moodButtonsVisible = true
+        }
+        
+        // Cards entrance
+        withAnimation(.spring().delay(0.4)) {
+            cardsVisible = true
         }
     }
 }
@@ -199,13 +273,22 @@ struct MoodButton: View {
 // MARK: - Anxiety Card Component
 struct AnxietyCard: View {
     let action: () -> Void
+    @State private var breathingScale: CGFloat = 1.0
+    @State private var glowOpacity: Double = 0.3
     
     var body: some View {
         VStack(spacing: 12) {
             // Header section - compact
             VStack(spacing: 8) {
-                // Icon centered
+                // Icon centered with breathing animation
                 ZStack {
+                    // Breathing glow effect
+                    Circle()
+                        .fill(Color.moodCalm.opacity(glowOpacity))
+                        .frame(width: 50, height: 50)
+                        .scaleEffect(breathingScale * 1.2)
+                        .blur(radius: 4)
+                    
                     Circle()
                         .fill(
                             LinearGradient(
@@ -215,10 +298,12 @@ struct AnxietyCard: View {
                             )
                         )
                         .frame(width: 40, height: 40)
+                        .scaleEffect(breathingScale)
                     
                     Image(systemName: "leaf.fill")
                         .font(.system(size: 18))
                         .foregroundColor(.moodCalm)
+                        .scaleEffect(breathingScale)
                 }
                 
                 VStack(spacing: 2) {
@@ -262,7 +347,7 @@ struct AnxietyCard: View {
                 .cornerRadius(20)
                 .shadow(color: Color.omniPrimary.opacity(0.3), radius: 3, x: 0, y: 2)
             }
-            .buttonStyle(PlainButtonStyle())
+            .buttonStyle(TherapeuticPressStyle())
         }
         .padding(18)
         .frame(maxWidth: .infinity)
@@ -291,6 +376,19 @@ struct AnxietyCard: View {
                 )
         )
         .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
+        .onAppear {
+            startBreathingAnimation()
+        }
+    }
+    
+    private func startBreathingAnimation() {
+        withAnimation(
+            .easeInOut(duration: 3.5)
+            .repeatForever(autoreverses: true)
+        ) {
+            breathingScale = 1.15
+            glowOpacity = 0.5
+        }
     }
 }
 
@@ -331,6 +429,7 @@ struct DailyPromptCard: View {
                     }
                     .foregroundColor(.omniPrimary)
                 }
+                .buttonStyle(IconPressStyle())
             }
             
             // Prompt
@@ -365,6 +464,7 @@ struct DailyPromptCard: View {
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(.omniPrimary)
                     }
+                    .buttonStyle(SoftPressStyle())
                 }
                 .padding()
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -420,6 +520,7 @@ struct DailyPromptCard: View {
                             }
                         }
                         .disabled(text.isEmpty || isSaving)
+                        .buttonStyle(TherapeuticPressStyle())
                         .padding(.horizontal, 24)
                         .padding(.vertical, 12)
                         .background(

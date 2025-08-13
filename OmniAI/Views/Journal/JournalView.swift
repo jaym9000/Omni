@@ -5,17 +5,21 @@ struct JournalView: View {
     @State private var showNewEntry = false
     @State private var selectedEntryType: JournalType = .freeForm
     @State private var showCalendar = false
+    @State private var headerOpacity: Double = 0
+    @State private var optionsVisible = false
+    @State private var entriesVisible = false
     
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
-                    // Header
+                    // Header with fade-in animation
                     Text("Journal")
                         .font(.system(size: 28, weight: .bold))
                         .foregroundColor(.omniTextPrimary)
                         .frame(maxWidth: .infinity)
                         .padding(.top)
+                        .opacity(headerOpacity)
                     
                     // Journal Options Section
                     VStack(alignment: .leading, spacing: 16) {
@@ -24,7 +28,7 @@ struct JournalView: View {
                             .foregroundColor(.omniTextPrimary)
                         
                         VStack(spacing: 12) {
-                            // Free-form text entry
+                            // Free-form text entry with staggered animation
                             JournalOptionRow(
                                 icon: "pencil",
                                 title: "Free-form text entry",
@@ -32,6 +36,13 @@ struct JournalView: View {
                                     selectedEntryType = .freeForm
                                     showNewEntry = true
                                 }
+                            )
+                            .opacity(optionsVisible ? 1 : 0)
+                            .offset(x: optionsVisible ? 0 : -30)
+                            .animation(
+                                .spring(response: 0.5, dampingFraction: 0.8)
+                                .delay(0.1),
+                                value: optionsVisible
                             )
                             
                             // Tag entries with mood or topics
@@ -43,6 +54,13 @@ struct JournalView: View {
                                     showNewEntry = true
                                 }
                             )
+                            .opacity(optionsVisible ? 1 : 0)
+                            .offset(x: optionsVisible ? 0 : -30)
+                            .animation(
+                                .spring(response: 0.5, dampingFraction: 0.8)
+                                .delay(0.2),
+                                value: optionsVisible
+                            )
                             
                             // Referenced journal themes
                             JournalOptionRow(
@@ -52,6 +70,13 @@ struct JournalView: View {
                                     selectedEntryType = .themed
                                     showNewEntry = true
                                 }
+                            )
+                            .opacity(optionsVisible ? 1 : 0)
+                            .offset(x: optionsVisible ? 0 : -30)
+                            .animation(
+                                .spring(response: 0.5, dampingFraction: 0.8)
+                                .delay(0.3),
+                                value: optionsVisible
                             )
                         }
                     }
@@ -77,8 +102,15 @@ struct JournalView: View {
                         }
                         
                         if !journalManager.journalEntries.isEmpty {
-                            ForEach(journalManager.journalEntries.prefix(5)) { entry in
+                            ForEach(Array(journalManager.journalEntries.prefix(5).enumerated()), id: \.element.id) { index, entry in
                                 JournalEntryCard(entry: entry)
+                                    .opacity(entriesVisible ? 1 : 0)
+                                    .offset(y: entriesVisible ? 0 : 20)
+                                    .animation(
+                                        .spring(response: 0.5, dampingFraction: 0.8)
+                                        .delay(Double(index) * 0.1 + 0.4),
+                                        value: entriesVisible
+                                    )
                             }
                         } else {
                             // Empty state - properly centered
@@ -116,6 +148,9 @@ struct JournalView: View {
             }
             .navigationBarHidden(true)
             .background(Color.omniBackground)
+            .onAppear {
+                animateViewEntrance()
+            }
             .sheet(isPresented: $showNewEntry) {
                 if selectedEntryType == .themed {
                     ThemedJournalEntryView()
@@ -126,6 +161,20 @@ struct JournalView: View {
             .sheet(isPresented: $showCalendar) {
                 JournalCalendarView()
             }
+        }
+    }
+    
+    private func animateViewEntrance() {
+        withAnimation(.easeOut(duration: 0.5)) {
+            headerOpacity = 1.0
+        }
+        
+        withAnimation(.spring().delay(0.1)) {
+            optionsVisible = true
+        }
+        
+        withAnimation(.spring().delay(0.3)) {
+            entriesVisible = true
         }
     }
 }

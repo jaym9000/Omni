@@ -7,6 +7,10 @@ struct ChatView: View {
     @State private var inputText = ""
     @State private var isTyping = false
     @FocusState private var isInputFocused: Bool
+    @State private var sendButtonScale: CGFloat = 1.0
+    @State private var inputFieldScale: CGFloat = 1.0
+    @State private var micButtonScale: CGFloat = 1.0
+    @State private var micButtonGlow: Bool = false
     let initialPrompt: String?
     
     init(initialPrompt: String? = nil) {
@@ -100,16 +104,32 @@ struct ChatView: View {
                             .background(
                                 RoundedRectangle(cornerRadius: 24)
                                     .fill(Color.white)
-                                    .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
+                                    .shadow(color: isInputFocused ? Color.omniPrimary.opacity(0.2) : Color.black.opacity(0.1), 
+                                            radius: isInputFocused ? 4 : 2, 
+                                            x: 0, 
+                                            y: isInputFocused ? 2 : 1)
                             )
                             .overlay(
                                 RoundedRectangle(cornerRadius: 24)
-                                    .stroke(Color.omniTextTertiary.opacity(0.2), lineWidth: 1)
+                                    .stroke(isInputFocused ? Color.omniPrimary.opacity(0.4) : Color.omniTextTertiary.opacity(0.2), 
+                                            lineWidth: isInputFocused ? 1.5 : 1)
                             )
                             .focused($isInputFocused)
                             .lineLimit(1...5)
+                            .scaleEffect(inputFieldScale)
+                            .animation(.spring(response: 0.3), value: isInputFocused)
                         
-                        Button(action: sendMessage) {
+                        Button(action: {
+                            withAnimation(.spring(response: 0.2, dampingFraction: 0.6)) {
+                                sendButtonScale = 0.8
+                            }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                withAnimation(.spring(response: 0.2, dampingFraction: 0.6)) {
+                                    sendButtonScale = 1.0
+                                }
+                                sendMessage()
+                            }
+                        }) {
                             Image(systemName: "arrow.up")
                                 .font(.system(size: 18, weight: .semibold))
                                 .foregroundColor(.white)
@@ -120,6 +140,8 @@ struct ChatView: View {
                                 )
                         }
                         .disabled(inputText.isEmpty)
+                        .scaleEffect(sendButtonScale)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: inputText.isEmpty)
                     }
                     .padding(.horizontal)
                     .padding(.vertical, 16)
@@ -130,13 +152,31 @@ struct ChatView: View {
                         Spacer()
                         
                         VStack(spacing: 16) {
-                            // Mic button with improved design
-                            Button(action: {}) {
+                            // Mic button with improved design and animations
+                            Button(action: {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                                    micButtonScale = 1.2
+                                }
+                                withAnimation(
+                                    .easeInOut(duration: 1.5)
+                                    .repeatForever(autoreverses: true)
+                                ) {
+                                    micButtonGlow = true
+                                }
+                            }) {
                                 ZStack {
+                                    // Pulsing glow effect
+                                    Circle()
+                                        .fill(Color.omniPrimary.opacity(micButtonGlow ? 0.3 : 0.1))
+                                        .frame(width: 120, height: 120)
+                                        .blur(radius: micButtonGlow ? 8 : 4)
+                                        .scaleEffect(micButtonGlow ? 1.2 : 1.0)
+                                    
                                     // Outer glow ring
                                     Circle()
-                                        .stroke(Color.omniPrimary.opacity(0.3), lineWidth: 2)
+                                        .stroke(Color.omniPrimary.opacity(micButtonGlow ? 0.5 : 0.3), lineWidth: 2)
                                         .frame(width: 100, height: 100)
+                                        .scaleEffect(micButtonScale)
                                     
                                     // Main mic button
                                     Circle()
@@ -148,14 +188,18 @@ struct ChatView: View {
                                             )
                                         )
                                         .frame(width: 80, height: 80)
-                                        .shadow(color: Color.omniPrimary.opacity(0.3), radius: 8, x: 0, y: 4)
+                                        .shadow(color: Color.omniPrimary.opacity(micButtonGlow ? 0.5 : 0.3), 
+                                                radius: micButtonGlow ? 12 : 8, 
+                                                x: 0, 
+                                                y: micButtonGlow ? 6 : 4)
+                                        .scaleEffect(micButtonScale)
                                     
                                     Image(systemName: "mic.fill")
                                         .font(.system(size: 28))
                                         .foregroundColor(.white)
+                                        .scaleEffect(micButtonScale)
                                 }
                             }
-                            .scaleEffect(1.0) // Can animate this for recording state
                             
                             Text("Tap and hold to speak")
                                 .font(.system(size: 16, weight: .medium))
@@ -247,6 +291,8 @@ struct ChatView: View {
 // MARK: - Message Bubble
 struct MessageBubble: View {
     let message: ChatMessage
+    @State private var messageOpacity: Double = 0
+    @State private var messageOffset: CGFloat = 20
     
     var body: some View {
         HStack {
@@ -278,6 +324,14 @@ struct MessageBubble: View {
             .frame(maxWidth: 280, alignment: message.isUser ? .trailing : .leading)
             
             if !message.isUser { Spacer() }
+        }
+        .opacity(messageOpacity)
+        .offset(x: message.isUser ? messageOffset : -messageOffset)
+        .onAppear {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                messageOpacity = 1.0
+                messageOffset = 0
+            }
         }
     }
     
