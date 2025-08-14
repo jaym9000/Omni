@@ -57,9 +57,9 @@ struct RecentChatsView: View {
         // Load chat sessions from storage
         // For demo, create sample sessions
         chatSessions = [
-            ChatSession(userId: "user1", title: "Feeling anxious today"),
-            ChatSession(userId: "user1", title: "Morning check-in"),
-            ChatSession(userId: "user1", title: "Dealing with stress")
+            ChatSession(userId: UUID(), title: "Feeling anxious today"),
+            ChatSession(userId: UUID(), title: "Morning check-in"),
+            ChatSession(userId: UUID(), title: "Dealing with stress")
         ]
     }
 }

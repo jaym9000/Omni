@@ -8,26 +8,66 @@ enum JournalType: String, Codable {
 }
 
 struct JournalEntry: Codable, Identifiable {
-    let id: String
-    let userId: String
+    let id: UUID
+    let userId: UUID
     var title: String
     var content: String
     let type: JournalType
     var tags: [String] = []
     var mood: MoodType?
-    let createdAt: Date
-    var updatedAt: Date
     var isFavorite: Bool = false
     var prompt: String?
     
-    init(userId: String, title: String, content: String, type: JournalType) {
-        self.id = UUID().uuidString
+    // Supabase timestamp handling
+    private var _createdAt: String
+    private var _updatedAt: String
+    
+    var createdAt: Date {
+        get { 
+            let formatter = ISO8601DateFormatter()
+            return formatter.date(from: _createdAt) ?? Date()
+        }
+        set { 
+            let formatter = ISO8601DateFormatter()
+            _createdAt = formatter.string(from: newValue)
+        }
+    }
+    
+    var updatedAt: Date {
+        get { 
+            let formatter = ISO8601DateFormatter()
+            return formatter.date(from: _updatedAt) ?? Date()
+        }
+        set { 
+            let formatter = ISO8601DateFormatter()
+            _updatedAt = formatter.string(from: newValue)
+        }
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case userId = "user_id"
+        case title
+        case content
+        case type
+        case tags
+        case mood
+        case isFavorite = "is_favorite"
+        case prompt
+        case _createdAt = "created_at"
+        case _updatedAt = "updated_at"
+    }
+    
+    init(userId: UUID, title: String, content: String, type: JournalType) {
+        self.id = UUID()
         self.userId = userId
         self.title = title
         self.content = content
         self.type = type
-        self.createdAt = Date()
-        self.updatedAt = Date()
+        
+        let now = ISO8601DateFormatter().string(from: Date())
+        self._createdAt = now
+        self._updatedAt = now
     }
 }
 

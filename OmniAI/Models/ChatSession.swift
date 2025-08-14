@@ -1,35 +1,95 @@
 import Foundation
 
 struct ChatSession: Codable, Identifiable {
-    let id: String
-    let userId: String
+    let id: UUID
+    let userId: UUID
     var title: String
-    var messages: [ChatMessage]
-    let createdAt: Date
-    var updatedAt: Date
     var isActive: Bool = true
     
-    init(userId: String, title: String = "New Chat") {
-        self.id = UUID().uuidString
+    // Supabase timestamp handling
+    private var _createdAt: String
+    private var _updatedAt: String
+    
+    var createdAt: Date {
+        get { 
+            let formatter = ISO8601DateFormatter()
+            return formatter.date(from: _createdAt) ?? Date()
+        }
+        set { 
+            let formatter = ISO8601DateFormatter()
+            _createdAt = formatter.string(from: newValue)
+        }
+    }
+    
+    var updatedAt: Date {
+        get { 
+            let formatter = ISO8601DateFormatter()
+            return formatter.date(from: _updatedAt) ?? Date()
+        }
+        set { 
+            let formatter = ISO8601DateFormatter()
+            _updatedAt = formatter.string(from: newValue)
+        }
+    }
+    
+    // Messages will be loaded separately for performance
+    var messages: [ChatMessage] = []
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case userId = "user_id"
+        case title
+        case isActive = "is_active"
+        case _createdAt = "created_at"
+        case _updatedAt = "updated_at"
+    }
+    
+    init(userId: UUID, title: String = "New Chat") {
+        self.id = UUID()
         self.userId = userId
         self.title = title
-        self.messages = []
-        self.createdAt = Date()
-        self.updatedAt = Date()
+        
+        let now = ISO8601DateFormatter().string(from: Date())
+        self._createdAt = now
+        self._updatedAt = now
     }
 }
 
 struct ChatMessage: Codable, Identifiable {
-    let id: String
+    let id: UUID
+    let sessionId: UUID
     let content: String
     let isUser: Bool
-    let timestamp: Date
     var isTyping: Bool = false
     
-    init(content: String, isUser: Bool) {
-        self.id = UUID().uuidString
+    // Supabase timestamp handling
+    private var _timestamp: String
+    
+    var timestamp: Date {
+        get { 
+            let formatter = ISO8601DateFormatter()
+            return formatter.date(from: _timestamp) ?? Date()
+        }
+        set { 
+            let formatter = ISO8601DateFormatter()
+            _timestamp = formatter.string(from: newValue)
+        }
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case sessionId = "session_id"
+        case content
+        case isUser = "is_user"
+        case isTyping = "is_typing"
+        case _timestamp = "timestamp"
+    }
+    
+    init(content: String, isUser: Bool, sessionId: UUID) {
+        self.id = UUID()
+        self.sessionId = sessionId
         self.content = content
         self.isUser = isUser
-        self.timestamp = Date()
+        self._timestamp = ISO8601DateFormatter().string(from: Date())
     }
 }

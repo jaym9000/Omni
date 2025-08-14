@@ -153,7 +153,7 @@ struct ThemedJournalView: View {
         guard !responseText.isEmpty else { return }
         
         var entry = JournalEntry(
-            userId: authManager.currentUser?.id ?? "current_user",
+            userId: authManager.currentUser?.id ?? UUID(),
             title: "Themed Entry",
             content: responseText,
             type: .themed

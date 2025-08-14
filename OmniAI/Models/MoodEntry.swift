@@ -40,17 +40,38 @@ enum MoodType: String, CaseIterable, Codable {
 }
 
 struct MoodEntry: Codable, Identifiable {
-    let id: String
-    let userId: String
+    let id: UUID
+    let userId: UUID
     let mood: MoodType
-    let timestamp: Date
     var note: String?
     
-    init(userId: String, mood: MoodType, note: String? = nil) {
-        self.id = UUID().uuidString
+    // Supabase timestamp handling
+    private var _timestamp: String
+    
+    var timestamp: Date {
+        get { 
+            let formatter = ISO8601DateFormatter()
+            return formatter.date(from: _timestamp) ?? Date()
+        }
+        set { 
+            let formatter = ISO8601DateFormatter()
+            _timestamp = formatter.string(from: newValue)
+        }
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case userId = "user_id"
+        case mood
+        case note
+        case _timestamp = "timestamp"
+    }
+    
+    init(userId: UUID, mood: MoodType, note: String? = nil) {
+        self.id = UUID()
         self.userId = userId
         self.mood = mood
-        self.timestamp = Date()
         self.note = note
+        self._timestamp = ISO8601DateFormatter().string(from: Date())
     }
 }

@@ -36,12 +36,12 @@ class JournalManager: ObservableObject {
         }
     }
     
-    func deleteEntry(_ id: String) {
+    func deleteEntry(_ id: UUID) {
         journalEntries.removeAll { $0.id == id }
         persistEntries()
     }
     
-    func toggleFavorite(_ id: String) {
+    func toggleFavorite(_ id: UUID) {
         if let index = journalEntries.firstIndex(where: { $0.id == id }) {
             journalEntries[index].isFavorite.toggle()
             persistEntries()
@@ -233,7 +233,7 @@ class JournalManager: ObservableObject {
     
     private func createSampleEntry(daysAgo: Int, title: String, content: String, mood: MoodType, tags: [String], isFavorite: Bool = false) -> JournalEntry {
         var entry = JournalEntry(
-            userId: "demo_user",
+            userId: UUID(),
             title: title,
             content: content,
             type: .tagged

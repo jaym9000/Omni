@@ -525,7 +525,7 @@ struct JournalEntryView: View {
     private func saveEntry() {
         // Create journal entry with all data
         var entry = JournalEntry(
-            userId: authManager.currentUser?.id ?? "",
+            userId: authManager.currentUser?.id ?? UUID(),
             title: title,
             content: content,
             type: type
@@ -803,7 +803,7 @@ struct ThemedJournalEntryView: View {
         guard !responseText.isEmpty else { return }
         
         let _ = JournalEntry(
-            userId: "current_user",
+            userId: UUID(),
             title: "Themed Entry",
             content: responseText,
             type: .themed
