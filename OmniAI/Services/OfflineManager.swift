@@ -14,7 +14,9 @@ class OfflineManager: ObservableObject {
     
     func startMonitoring() {
         // Monitor network connectivity
-        checkConnectionStatus()
+        Task {
+            await checkConnectionStatus()
+        }
         
         // Set up periodic sync check
         Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { _ in
@@ -62,7 +64,7 @@ class OfflineManager: ObservableObject {
     
     // MARK: - Pending Operations Queue
     
-    private struct PendingOperation: Codable {
+    struct PendingOperation: Codable {
         let id: UUID
         let type: OperationType
         let data: Data

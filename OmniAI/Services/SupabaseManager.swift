@@ -1,7 +1,6 @@
 import Supabase
 import Foundation
 
-@MainActor
 class SupabaseManager: ObservableObject {
     static let shared = SupabaseManager()
     
@@ -25,8 +24,8 @@ class SupabaseManager: ObservableObject {
     }
     
     // MARK: - Connection Status
-    @Published var isConnected = true
-    @Published var lastSyncTime: Date?
+    @MainActor @Published var isConnected = true
+    @MainActor @Published var lastSyncTime: Date?
     
     func checkConnection() async {
         do {

@@ -4,7 +4,6 @@ struct ChatSession: Codable, Identifiable {
     let id: UUID
     let userId: UUID
     var title: String
-    var isActive: Bool = true
     
     // Supabase timestamp handling
     private var _createdAt: String
@@ -39,7 +38,6 @@ struct ChatSession: Codable, Identifiable {
         case id
         case userId = "user_id"
         case title
-        case isActive = "is_active"
         case _createdAt = "created_at"
         case _updatedAt = "updated_at"
     }
@@ -60,19 +58,18 @@ struct ChatMessage: Codable, Identifiable {
     let sessionId: UUID
     let content: String
     let isUser: Bool
-    var isTyping: Bool = false
     
     // Supabase timestamp handling
-    private var _timestamp: String
+    private var _createdAt: String
     
     var timestamp: Date {
         get { 
             let formatter = ISO8601DateFormatter()
-            return formatter.date(from: _timestamp) ?? Date()
+            return formatter.date(from: _createdAt) ?? Date()
         }
         set { 
             let formatter = ISO8601DateFormatter()
-            _timestamp = formatter.string(from: newValue)
+            _createdAt = formatter.string(from: newValue)
         }
     }
     
@@ -81,8 +78,7 @@ struct ChatMessage: Codable, Identifiable {
         case sessionId = "session_id"
         case content
         case isUser = "is_user"
-        case isTyping = "is_typing"
-        case _timestamp = "timestamp"
+        case _createdAt = "created_at"
     }
     
     init(content: String, isUser: Bool, sessionId: UUID) {
@@ -90,6 +86,6 @@ struct ChatMessage: Codable, Identifiable {
         self.sessionId = sessionId
         self.content = content
         self.isUser = isUser
-        self._timestamp = ISO8601DateFormatter().string(from: Date())
+        self._createdAt = ISO8601DateFormatter().string(from: Date())
     }
 }

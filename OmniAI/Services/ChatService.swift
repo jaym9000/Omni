@@ -1,6 +1,9 @@
 import Foundation
 import Supabase
+import Realtime
 import SwiftUI
+import PostgREST
+import Functions
 
 @MainActor
 class ChatService: ObservableObject {
@@ -53,7 +56,6 @@ class ChatService: ObservableObject {
                 .from("chat_sessions")
                 .select()
                 .eq("user_id", value: userId)
-                .eq("is_active", value: true)
                 .order("updated_at", ascending: false)
                 .execute()
                 .value
@@ -79,7 +81,7 @@ class ChatService: ObservableObject {
                 .from("chat_messages")
                 .select()
                 .eq("session_id", value: sessionId)
-                .order("timestamp", ascending: true)
+                .order("created_at", ascending: true)
                 .execute()
                 .value
             
@@ -130,22 +132,97 @@ class ChatService: ObservableObject {
         isTyping = true
         defer { isTyping = false }
         
-        // Simulate AI processing time
-        try? await Task.sleep(nanoseconds: UInt64.random(in: 1_000_000_000...3_000_000_000))
-        
-        let aiResponses = [
-            "I understand how you're feeling. It's completely normal to have these emotions, and I'm here to support you through this.",
-            "Thank you for sharing that with me. Your feelings are valid, and it's important to acknowledge them. How can we work through this together?",
-            "I hear you. It sounds like you're going through something challenging. Remember that you're not alone in this journey.",
-            "That's a lot to process. Take your time with these feelings. What do you think might help you feel more grounded right now?",
-            "I appreciate you opening up to me. Your mental health matters, and taking time to reflect like this is a positive step."
+        do {
+            // Get current user session for authentication
+            let session = try await supabase.auth.session
+            
+            // Prepare conversation history (last 10 messages for context)
+            let recentMessages = messages.suffix(10).map { message in
+                return [
+                    "role": message.isUser ? "user" : "assistant",
+                    "content": message.content
+                ]
+            }
+            
+            // Call Supabase Edge Function for AI response
+            let requestBody: [String: Any] = [
+                "message": userMessage,
+                "sessionId": sessionId.uuidString,
+                "conversationHistory": recentMessages
+            ]
+            
+            // Convert to JSON Data
+            let jsonData = try JSONSerialization.data(withJSONObject: requestBody)
+            
+            // Create URL request manually for Edge Function
+            let url = URL(string: "https://rchropdkyqpfyjwgdudv.supabase.co/functions/v1/ai-chat")!
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = jsonData
+            
+            // Make the request
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            // Check response status
+            if let httpResponse = response as? HTTPURLResponse {
+                print("Edge Function Response Status: \(httpResponse.statusCode)")
+                
+                if httpResponse.statusCode == 200 {
+                    // Parse AI response
+                    if let aiResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                       let content = aiResponse["content"] as? String {
+                        
+                        // Check for crisis detection
+                        let crisisDetected = aiResponse["crisisDetected"] as? Bool ?? false
+                        let requiresEscalation = aiResponse["requiresEscalation"] as? Bool ?? false
+                        
+                        // Create AI message
+                        let aiMessage = ChatMessage(content: content, isUser: false, sessionId: sessionId)
+                        
+                        // Add to local messages (Edge Function already stored in DB)
+                        messages.append(aiMessage)
+                        
+                        // Handle crisis situation if detected
+                        if crisisDetected || requiresEscalation {
+                            await handleCrisisResponse(requiresEscalation: requiresEscalation)
+                        }
+                        
+                        print("✅ OpenAI Response Received: \(content.prefix(50))...")
+                        return
+                    }
+                }
+            }
+            
+            // Fallback if response parsing fails
+            print("⚠️ Edge Function response parsing failed, using fallback")
+            await handleFallbackResponse(for: sessionId, userMessage: userMessage)
+            
+        } catch {
+            print("❌ AI Chat Error: \(error)")
+            // Fallback to supportive response if Edge Function fails
+            await handleFallbackResponse(for: sessionId, userMessage: userMessage)
+        }
+    }
+    
+    private func handleFallbackResponse(for sessionId: UUID, userMessage: String) async {
+        // Enhanced therapeutic responses until Edge Function is deployed
+        let therapeuticResponses = [
+            "I hear you and I'm here to support you. It sounds like you're going through something challenging right now. Would you like to talk more about what's on your mind? Remember, your feelings are valid and it's okay to take things one step at a time.",
+            "Thank you for sharing that with me. Your feelings are completely valid, and it takes courage to express them. I'm here to listen without judgment. What do you think might help you feel more supported right now?",
+            "I understand that you're experiencing something difficult. It's important to acknowledge these feelings rather than push them away. You're not alone in this journey. What has helped you cope with challenging emotions before?",
+            "I appreciate you opening up about this. Your mental health and emotional well-being matter deeply. Sometimes just expressing what we're feeling can provide some relief. How are you taking care of yourself today?",
+            "What you're sharing sounds really tough, and I want you to know that your feelings make complete sense. It's okay to feel whatever you're feeling. Would it help to explore what's behind these emotions, or would you prefer to focus on some grounding techniques?",
+            "I can hear that this is weighing on you. Thank you for trusting me with what you're experiencing. Remember that healing isn't linear, and it's okay to have difficult moments. What would feel most supportive for you right now?"
         ]
         
-        let response = aiResponses.randomElement() ?? "I'm here to listen and support you."
-        let aiMessage = ChatMessage(content: response, isUser: false, sessionId: sessionId)
+        let fallbackResponse = therapeuticResponses.randomElement() ?? therapeuticResponses[0]
+        
+        let aiMessage = ChatMessage(content: fallbackResponse, isUser: false, sessionId: sessionId)
         
         do {
-            // Insert AI message into Supabase
+            // Insert fallback message into Supabase
             try await supabase
                 .from("chat_messages")
                 .insert(aiMessage)
@@ -154,8 +231,19 @@ class ChatService: ObservableObject {
             // Add to local messages
             messages.append(aiMessage)
         } catch {
-            // Fallback to local message for development
+            // Local-only fallback
             messages.append(aiMessage)
+        }
+    }
+    
+    private func handleCrisisResponse(requiresEscalation: Bool) async {
+        if requiresEscalation {
+            // Show immediate crisis resources
+            await MainActor.run {
+                // This would trigger a crisis intervention UI
+                // For now, we'll just log it
+                print("CRISIS INTERVENTION TRIGGERED - User needs immediate support")
+            }
         }
     }
     
@@ -164,45 +252,35 @@ class ChatService: ObservableObject {
     func subscribeToMessages(sessionId: UUID) {
         messagesSubscription?.cancel()
         
-        messagesSubscription = Task {
-            do {
-                let channel = await supabase.channel("chat_messages")
-                
-                let subscription = await channel.onPostgresChange(
-                    AnyAction.self,
-                    schema: "public",
-                    table: "chat_messages",
-                    filter: "session_id=eq.\(sessionId)"
-                ) { [weak self] payload in
-                    Task { @MainActor in
-                        await self?.handleMessageUpdate(payload)
-                    }
-                }
-                
-                await channel.subscribe()
-            } catch {
-                print("Failed to subscribe to messages: \(error)")
-            }
-        }
+        // TODO: Implement real-time subscription when Supabase Realtime API is properly configured
+        // For now, we'll poll for new messages or rely on manual refresh
+        print("Real-time subscription for session \(sessionId) - to be implemented")
     }
     
-    private func handleMessageUpdate(_ payload: AnyAction) async {
+    private func handleMessageUpdate(_ payload: [String: Any]) async {
         // Handle real-time message updates
-        switch payload.eventType {
-        case .insert:
-            if let newMessage = try? JSONDecoder().decode(ChatMessage.self, from: payload.record) {
+        guard let eventType = payload["eventType"] as? String else { return }
+        
+        switch eventType {
+        case "INSERT":
+            if let newData = payload["new"] as? [String: Any],
+               let jsonData = try? JSONSerialization.data(withJSONObject: newData),
+               let newMessage = try? JSONDecoder().decode(ChatMessage.self, from: jsonData) {
                 if !messages.contains(where: { $0.id == newMessage.id }) {
                     messages.append(newMessage)
                 }
             }
-        case .update:
-            if let updatedMessage = try? JSONDecoder().decode(ChatMessage.self, from: payload.record) {
+        case "UPDATE":
+            if let newData = payload["new"] as? [String: Any],
+               let jsonData = try? JSONSerialization.data(withJSONObject: newData),
+               let updatedMessage = try? JSONDecoder().decode(ChatMessage.self, from: jsonData) {
                 if let index = messages.firstIndex(where: { $0.id == updatedMessage.id }) {
                     messages[index] = updatedMessage
                 }
             }
-        case .delete:
-            if let deletedId = payload.old?["id"] as? String,
+        case "DELETE":
+            if let oldData = payload["old"] as? [String: Any],
+               let deletedId = oldData["id"] as? String,
                let uuid = UUID(uuidString: deletedId) {
                 messages.removeAll { $0.id == uuid }
             }
@@ -215,13 +293,10 @@ class ChatService: ObservableObject {
     
     func deleteSession(_ session: ChatSession) async {
         do {
-            // Soft delete in Supabase
-            var deletedSession = session
-            deletedSession.isActive = false
-            
+            // Hard delete in Supabase
             try await supabase
                 .from("chat_sessions")
-                .update(deletedSession)
+                .delete()
                 .eq("id", value: session.id)
                 .execute()
             
