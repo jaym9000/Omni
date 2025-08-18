@@ -2,40 +2,95 @@ import SwiftUI
 
 struct RecentChatsView: View {
     @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var authManager: AuthenticationManager
+    @EnvironmentObject var chatService: ChatService
     @State private var chatSessions: [ChatSession] = []
     @State private var selectedSession: ChatSession?
+    @State private var showCalendarView = false
+    @State private var isLoading = true
+    @State private var selectedDate = Date()
     
     var body: some View {
         NavigationStack {
             Group {
-                if chatSessions.isEmpty {
+                if isLoading {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if chatSessions.isEmpty {
                     // Empty state
-                    VStack(spacing: 16) {
-                        Image(systemName: "message.circle")
+                    VStack(spacing: 24) {
+                        Image(systemName: "bubble.left.and.bubble.right")
                             .font(.system(size: 60))
-                            .foregroundColor(.omniTextTertiary.opacity(0.5))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [Color.omniPrimary.opacity(0.6), Color.omniSecondary.opacity(0.4)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
                         
-                        Text("No conversations yet")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(.omniTextSecondary)
+                        VStack(spacing: 8) {
+                            Text("No chat history yet")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundColor(.omniTextPrimary)
+                            
+                            Text("Start a conversation with Omni")
+                                .font(.system(size: 15))
+                                .foregroundColor(.omniTextSecondary)
+                            
+                            Text("Your chats will appear here")
+                                .font(.system(size: 13))
+                                .foregroundColor(.omniTextTertiary)
+                        }
                         
-                        Text("Start a new chat with Omni")
-                            .font(.system(size: 14))
-                            .foregroundColor(.omniTextTertiary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    List(chatSessions) { session in
-                        ChatSessionRow(session: session) {
-                            selectedSession = session
+                        Button(action: { dismiss() }) {
+                            Text("Start Your First Chat")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 24)
+                                .padding(.vertical, 12)
+                                .background(
+                                    LinearGradient(
+                                        colors: [Color.omniPrimary, Color.omniSecondary],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .cornerRadius(25)
                         }
                     }
-                    .listStyle(PlainListStyle())
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding()
+                } else {
+                    List {
+                        ForEach(groupedSessions(), id: \.key) { group in
+                            Section(header: Text(group.key)
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.omniTextSecondary)) {
+                                ForEach(group.sessions) { session in
+                                    ChatSessionRow(session: session) {
+                                        selectedSession = session
+                                    }
+                                }
+                                .onDelete { indexSet in
+                                    deleteSession(from: group.sessions, at: indexSet)
+                                }
+                            }
+                        }
+                    }
+                    .listStyle(InsetGroupedListStyle())
                 }
             }
             .navigationTitle("Chat History")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: { showCalendarView = true }) {
+                        Image(systemName: "calendar")
+                            .foregroundColor(.omniPrimary)
+                    }
+                }
+                
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
                         dismiss()
@@ -44,9 +99,14 @@ struct RecentChatsView: View {
                 }
             }
             .fullScreenCover(item: $selectedSession) { session in
-                ChatView()
-                    // Pass session to continue conversation
+                ChatView(existingSessionId: session.id)
+                    .environmentObject(authManager)
+                    .environmentObject(chatService)
             }
+            // Calendar view will be added after adding file to Xcode project
+            // .sheet(isPresented: $showCalendarView) {
+            //     ChatHistoryCalendarView(selectedDate: $selectedDate, chatSessions: chatSessions)
+            // }
         }
         .onAppear {
             loadChatSessions()
@@ -54,13 +114,68 @@ struct RecentChatsView: View {
     }
     
     private func loadChatSessions() {
-        // Load chat sessions from storage
-        // For demo, create sample sessions
-        chatSessions = [
-            ChatSession(userId: UUID(), title: "Feeling anxious today"),
-            ChatSession(userId: UUID(), title: "Morning check-in"),
-            ChatSession(userId: UUID(), title: "Dealing with stress")
-        ]
+        Task {
+            isLoading = true
+            guard let userId = authManager.currentUser?.id else {
+                isLoading = false
+                return
+            }
+            
+            await chatService.loadUserSessions(userId: userId)
+            
+            await MainActor.run {
+                chatSessions = chatService.chatSessions
+                isLoading = false
+            }
+        }
+    }
+    
+    private func groupedSessions() -> [(key: String, sessions: [ChatSession])] {
+        let calendar = Calendar.current
+        let now = Date()
+        
+        var groups: [(String, [ChatSession])] = []
+        
+        // Today
+        let todaySessions = chatSessions.filter { calendar.isDateInToday($0.updatedAt) }
+        if !todaySessions.isEmpty {
+            groups.append(("Today", todaySessions))
+        }
+        
+        // Yesterday
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: now)!
+        let yesterdaySessions = chatSessions.filter { calendar.isDate($0.updatedAt, inSameDayAs: yesterday) }
+        if !yesterdaySessions.isEmpty {
+            groups.append(("Yesterday", yesterdaySessions))
+        }
+        
+        // This Week
+        let weekAgo = calendar.date(byAdding: .weekOfYear, value: -1, to: now)!
+        let thisWeekSessions = chatSessions.filter {
+            $0.updatedAt > weekAgo &&
+            !calendar.isDateInToday($0.updatedAt) &&
+            !calendar.isDate($0.updatedAt, inSameDayAs: yesterday)
+        }
+        if !thisWeekSessions.isEmpty {
+            groups.append(("This Week", thisWeekSessions))
+        }
+        
+        // Older
+        let olderSessions = chatSessions.filter { $0.updatedAt <= weekAgo }
+        if !olderSessions.isEmpty {
+            groups.append(("Older", olderSessions))
+        }
+        
+        return groups
+    }
+    
+    private func deleteSession(from sessions: [ChatSession], at offsets: IndexSet) {
+        Task {
+            for index in offsets {
+                await chatService.deleteSession(sessions[index])
+            }
+            loadChatSessions()
+        }
     }
 }
 

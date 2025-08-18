@@ -65,6 +65,10 @@ struct LoginView: View {
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(focusedField == .email ? Color.omniPrimary : Color.clear, lineWidth: 2)
                         )
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            focusedField = .email
+                        }
                     }
                     
                     // Password field
@@ -99,6 +103,10 @@ struct LoginView: View {
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(focusedField == .password ? Color.omniPrimary : Color.clear, lineWidth: 2)
                         )
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            focusedField = .password
+                        }
                     }
                     
                     // Forgot password

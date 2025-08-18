@@ -1,4 +1,5 @@
 import SwiftUI
+import AuthenticationServices
 
 struct WelcomeView: View {
     @Binding var showLogin: Bool
@@ -6,6 +7,8 @@ struct WelcomeView: View {
     @EnvironmentObject var authManager: AuthenticationManager
     @State private var isAnimating = false
     @State private var showGuestPreview = false
+    @State private var showErrorAlert = false
+    @State private var errorMessage = ""
     
     var body: some View {
         ZStack {
@@ -98,20 +101,29 @@ struct WelcomeView: View {
                         .shadow(color: Color.omniPrimary.opacity(0.3), radius: 8, x: 0, y: 4)
                     }
                     
-                    // Apple Sign In - Promoted for faster onboarding
-                    Button(action: { Task { try await authManager.signInWithApple() } }) {
-                        HStack {
-                            Image(systemName: "apple.logo")
-                                .font(.system(size: 20))
-                            Text("Continue with Apple")
-                                .font(.system(size: 16, weight: .medium))
+                    // Apple Sign In - Using native button
+                    SignInWithAppleButton(
+                        onRequest: { request in
+                            request.requestedScopes = [.fullName, .email]
+                        },
+                        onCompletion: { result in
+                            Task {
+                                do {
+                                    try await authManager.handleAppleSignInResult(result)
+                                    print("✅ Apple Sign-In completed successfully")
+                                } catch {
+                                    print("❌ Apple Sign-In failed in WelcomeView: \(error)")
+                                    await MainActor.run {
+                                        errorMessage = "Apple Sign-In failed. Please try again."
+                                        showErrorAlert = true
+                                    }
+                                }
+                            }
                         }
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(Color.black)
-                        .cornerRadius(28)
-                    }
+                    )
+                    .signInWithAppleButtonStyle(.black)
+                    .frame(height: 56)
+                    .cornerRadius(28)
                     
                     // Email sign up
                     Button(action: { showSignUp = true }) {
@@ -149,6 +161,11 @@ struct WelcomeView: View {
         .fullScreenCover(isPresented: $showGuestPreview) {
             GuestModeView(showSignUp: $showSignUp)
         }
+        .alert("Authentication Error", isPresented: $showErrorAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(errorMessage)
+        }
     }
 }
 
@@ -174,47 +191,84 @@ struct TrustBadge: View {
     }
 }
 
-// MARK: - Simple Guest Mode View
+// MARK: - Enhanced Guest Mode View
 struct GuestModeView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var authManager: AuthenticationManager
     @Binding var showSignUp: Bool
+    @State private var isStartingGuestSession = false
+    @State private var showErrorAlert = false
+    @State private var errorMessage = ""
     
     var body: some View {
         NavigationStack {
-            VStack {
+            VStack(spacing: 30) {
                 Spacer()
                 
+                // Header
                 VStack(spacing: 20) {
-                    Image(systemName: "brain.head.profile")
+                    Image(systemName: "sparkles")
                         .font(.system(size: 80))
-                        .foregroundColor(.omniPrimary)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [Color.omniPrimary, Color.omniSecondary],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
                     
-                    Text("Welcome to Guest Mode!")
-                        .font(.system(size: 24, weight: .bold))
+                    Text("Try Omni Free!")
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
                         .foregroundColor(.omniTextPrimary)
                     
-                    Text("You can try Omni's core features without creating an account. Create one later to save your progress and sync across devices.")
+                    Text("Experience AI-powered mental health support with no commitment required.")
                         .font(.system(size: 16))
                         .foregroundColor(.omniTextSecondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 32)
                 }
                 
+                // Benefits
+                VStack(spacing: 16) {
+                    GuestBenefit(icon: "bubble.left.and.bubble.right", title: "3 Free AI Conversations", description: "Try our therapeutic AI companion")
+                    GuestBenefit(icon: "heart.circle", title: "Evidence-Based Support", description: "Get personalized mental health guidance")
+                    GuestBenefit(icon: "lock.shield", title: "100% Private & Secure", description: "Your conversations are confidential")
+                }
+                .padding(.horizontal, 24)
+                
                 Spacer()
                 
+                // Action buttons
                 VStack(spacing: 16) {
-                    Button("Continue as Guest") {
-                        // This would set a guest mode flag and dismiss
-                        dismiss()
+                    Button(action: startGuestSession) {
+                        HStack {
+                            if isStartingGuestSession {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .scaleEffect(0.8)
+                            } else {
+                                Image(systemName: "play.circle.fill")
+                                    .font(.system(size: 18))
+                                Text("Start Free Trial")
+                                    .font(.system(size: 18, weight: .semibold))
+                            }
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(
+                            LinearGradient(
+                                colors: [Color.omniPrimary, Color.omniSecondary],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .cornerRadius(28)
+                        .shadow(color: Color.omniPrimary.opacity(0.3), radius: 8, x: 0, y: 4)
                     }
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .background(Color.omniPrimary)
-                    .cornerRadius(28)
+                    .disabled(isStartingGuestSession)
                     
-                    Button("Create Account Instead") {
+                    Button("Create Full Account") {
                         showSignUp = true
                         dismiss()
                     }
@@ -240,7 +294,63 @@ struct GuestModeView: View {
                     .foregroundColor(.omniTextSecondary)
                 }
             }
+            .alert("Error", isPresented: $showErrorAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(errorMessage)
+            }
         }
+    }
+    
+    private func startGuestSession() {
+        isStartingGuestSession = true
+        
+        Task {
+            do {
+                try await authManager.startGuestSession()
+                await MainActor.run {
+                    dismiss()
+                }
+            } catch {
+                print("Error starting guest session: \(error)")
+                await MainActor.run {
+                    isStartingGuestSession = false
+                    errorMessage = "Unable to start guest session. Please check your internet connection and try again."
+                    showErrorAlert = true
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Guest Benefit Component
+struct GuestBenefit: View {
+    let icon: String
+    let title: String
+    let description: String
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            Image(systemName: icon)
+                .font(.system(size: 24))
+                .foregroundColor(.omniPrimary)
+                .frame(width: 40, height: 40)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.omniTextPrimary)
+                
+                Text(description)
+                    .font(.system(size: 14))
+                    .foregroundColor(.omniTextSecondary)
+            }
+            
+            Spacer()
+        }
+        .padding()
+        .background(Color.omniSecondaryBackground)
+        .cornerRadius(16)
     }
 }
 

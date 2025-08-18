@@ -74,6 +74,10 @@ struct SignUpView: View {
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(focusedField == .name ? Color.omniPrimary : Color.clear, lineWidth: 2)
                         )
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            focusedField = .name
+                        }
                     }
                     
                     // Email field
@@ -99,6 +103,10 @@ struct SignUpView: View {
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(focusedField == .email ? Color.omniPrimary : Color.clear, lineWidth: 2)
                         )
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            focusedField = .email
+                        }
                     }
                     
                     // Password field
@@ -133,6 +141,10 @@ struct SignUpView: View {
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(focusedField == .password ? Color.omniPrimary : Color.clear, lineWidth: 2)
                         )
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            focusedField = .password
+                        }
                     }
                     
                     // Confirm Password field
@@ -167,6 +179,10 @@ struct SignUpView: View {
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(focusedField == .confirmPassword ? Color.omniPrimary : Color.clear, lineWidth: 2)
                         )
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            focusedField = .confirmPassword
+                        }
                     }
                     
                     // Terms and conditions
@@ -277,7 +293,12 @@ struct SignUpView: View {
             do {
                 try await authManager.signUp(email: email, password: password, displayName: displayName)
             } catch {
-                errorMessage = error.localizedDescription
+                // Provide more user-friendly error messages
+                if let authError = error as? AuthError {
+                    errorMessage = authError.errorDescription ?? "Sign up failed"
+                } else {
+                    errorMessage = "Unable to create account. Please check your internet connection and try again."
+                }
                 showError = true
             }
         }

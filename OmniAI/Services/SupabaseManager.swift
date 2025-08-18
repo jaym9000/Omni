@@ -7,12 +7,20 @@ class SupabaseManager: ObservableObject {
     let client: SupabaseClient
     
     private init() {
+        // Read configuration from Info.plist
+        guard let supabaseURL = Bundle.main.object(forInfoDictionaryKey: "SupabaseURL") as? String,
+              let url = URL(string: supabaseURL),
+              let supabaseKey = Bundle.main.object(forInfoDictionaryKey: "SupabaseAnonKey") as? String else {
+            fatalError("Supabase configuration missing from Info.plist. Please add SupabaseURL and SupabaseAnonKey keys.")
+        }
+        
         self.client = SupabaseClient(
-            supabaseURL: URL(string: "https://rchropdkyqpfyjwgdudv.supabase.co")!,
-            supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJjaHJvcGRreXFwZnlqd2dkdWR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwNDQxNjcsImV4cCI6MjA3MDYyMDE2N30.ZfHFGnqY9XaPqV9oMnxScE4Wuj7dWBLe-NHHQ8GAzaw",
+            supabaseURL: url,
+            supabaseKey: supabaseKey,
             options: SupabaseClientOptions(
                 db: .init(schema: "public"),
                 auth: .init(
+                    redirectToURL: URL(string: "com.jns.Omni://auth"),
                     flowType: .pkce,
                     autoRefreshToken: true
                 ),

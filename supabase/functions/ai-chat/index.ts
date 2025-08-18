@@ -49,6 +49,7 @@ interface ChatRequest {
     role: 'user' | 'assistant'
     content: string
   }>
+  isGuest?: boolean
 }
 
 interface CrisisResponse {
@@ -129,6 +130,65 @@ function getMoodContext(mood?: string): string {
     : ''
 }
 
+// Check guest message count and enforce limits
+async function checkGuestLimits(supabase: any, userId: string): Promise<{ allowed: boolean, count: number, remaining: number }> {
+  const maxGuestMessages = 5 // Changed from 3 conversations to 5 messages
+  
+  try {
+    // Get the public.users record to check guest conversation count
+    const { data: userRecord, error: userError } = await supabase
+      .from('users')
+      .select('id, is_guest, guest_conversation_count')
+      .eq('auth_user_id', userId)
+      .single()
+    
+    if (userError || !userRecord) {
+      console.error('No user record found for auth user:', userId, userError)
+      return { allowed: true, count: 0, remaining: maxGuestConversations }
+    }
+    
+    // If not a guest, no limits apply
+    if (!userRecord.is_guest) {
+      return { allowed: true, count: 0, remaining: 999 }
+    }
+    
+    // Count today's messages from the user (not AI responses)
+    // This gives guests 5 prompts per day
+    const today = new Date().toISOString().split('T')[0]
+    
+    const { data: todayMessages, error: messageError } = await supabase
+      .from('chat_messages')
+      .select('id', { count: 'exact' })
+      .eq('user_id', userRecord.id)
+      .eq('is_user', true) // Only count user messages, not AI responses
+      .gte('created_at', `${today}T00:00:00.000Z`)
+    
+    if (messageError) {
+      console.error('Error checking guest messages:', messageError)
+      // Fall back to stored count
+      const currentCount = userRecord.guest_conversation_count || 0
+      const remaining = Math.max(0, maxGuestMessages - currentCount)
+      return {
+        allowed: currentCount < maxGuestMessages,
+        count: currentCount,
+        remaining: remaining
+      }
+    }
+    
+    const currentCount = todayMessages?.length || 0
+    const remaining = Math.max(0, maxGuestMessages - currentCount)
+    
+    return {
+      allowed: currentCount < maxGuestMessages,
+      count: currentCount,
+      remaining: remaining
+    }
+  } catch (error) {
+    console.error('Error in checkGuestLimits:', error)
+    return { allowed: true, count: 0, remaining: maxGuestMessages }
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -167,13 +227,38 @@ serve(async (req) => {
     }
 
     // Parse request body
-    const { message, sessionId, mood, conversationHistory = [] }: ChatRequest = await req.json()
+    const { message, sessionId, mood, conversationHistory = [], isGuest = false }: ChatRequest = await req.json()
 
     if (!message || !sessionId) {
       return new Response(
         JSON.stringify({ error: 'Missing required fields' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
+    }
+
+    // Check if user is anonymous (guest user)
+    const isAnonymousUser = !user.email || user.is_anonymous || isGuest
+
+    // For guest users, check conversation limits
+    if (isAnonymousUser) {
+      const guestLimits = await checkGuestLimits(supabase, user.id)
+      
+      if (!guestLimits.allowed) {
+        return new Response(
+          JSON.stringify({
+            error: 'Guest message limit reached',
+            guestLimitReached: true,
+            messagesUsed: guestLimits.count,
+            maxMessages: 5,
+            message: 'You've used all 5 free messages today! Sign up to continue chatting with Omni and unlock unlimited conversations.',
+            upgradeRequired: true
+          }),
+          { 
+            status: 403, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
     }
 
     // Check for crisis situation
@@ -296,12 +381,25 @@ You don't have to go through this alone. Professional help is available, and thi
         }
       ])
 
+    // Get updated guest limits after this conversation
+    let guestInfo = null
+    if (isAnonymousUser) {
+      const updatedLimits = await checkGuestLimits(supabase, user.id)
+      guestInfo = {
+        isGuest: true,
+        conversationsUsed: updatedLimits.count + 1, // +1 because we just added this conversation
+        conversationsRemaining: Math.max(0, updatedLimits.remaining - 1),
+        maxConversations: 3
+      }
+    }
+
     // Return AI response with any low-level crisis resources if needed
     return new Response(
       JSON.stringify({
         content: aiMessage,
         crisisDetected: crisisCheck.detected && crisisCheck.level < 7,
-        crisisResources: crisisCheck.detected ? crisisCheck.resources : null
+        crisisResources: crisisCheck.detected ? crisisCheck.resources : null,
+        guestInfo: guestInfo
       }),
       { 
         status: 200, 

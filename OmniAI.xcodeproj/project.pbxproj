@@ -75,6 +75,7 @@
 		746C0A1676285E6A9BF92223 /* OmniAI/Views/Authentication/LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Authentication/LoginView.swift; sourceTree = "<group>"; };
 		7E1BED2D77686FBCDD21666A /* OmniAI/Views/Chat/ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Chat/ChatView.swift; sourceTree = "<group>"; };
 		834A7D4AD0D5712C865894D6 /* OmniAI/Models/MoodEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Models/MoodEntry.swift; sourceTree = "<group>"; };
+		887D3BB62E51FBAE006D6D68 /* OmniAI.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = OmniAI.entitlements; sourceTree = "<group>"; };
 		8E4A151F1F1D424D3D28F2AA /* OmniAI/Services/AuthenticationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Services/AuthenticationManager.swift; sourceTree = "<group>"; };
 		97BFC0C6E3C3284C125F935D /* OmniAI/Views/Authentication/WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Authentication/WelcomeView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6789012345678 /* OmniAI/Services/JournalManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Services/JournalManager.swift; sourceTree = "<group>"; };
@@ -129,6 +130,7 @@
 		1D1A1A282C8F123400123456 /* OmniAI */ = {
 			isa = PBXGroup;
 			children = (
+				887D3BB62E51FBAE006D6D68 /* OmniAI.entitlements */,
 				1D1A1A402C8F123600123456 /* App */,
 				1D1A1A372C8F123600123456 /* Models */,
 				1D1A1A382C8F123600123456 /* Views */,
@@ -204,6 +206,9 @@
 				A1B2C3D4E5F6789012345678 /* OmniAI/Services/JournalManager.swift */,
 				B2C3D4E5F6789012345678A1 /* OmniAI/Views/Journal/JournalCalendarView.swift */,
 				C3D4E5F6789012345678AB2 /* OmniAI/Views/Journal/ThemedJournalView.swift */,
+				S1A2B3C4D5E6F7890123456A /* OmniAI/Services/SupabaseManager.swift */,
+				S2A2B3C4D5E6F7890123456B /* OmniAI/Services/ChatService.swift */,
+				S3A2B3C4D5E6F7890123456C /* OmniAI/Services/OfflineManager.swift */,
 			);
 			name = "Recovered References";
 			sourceTree = "<group>";
@@ -447,6 +452,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = OmniAI/OmniAI.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 22;
 				DEVELOPMENT_TEAM = 92493ZAN98;
@@ -485,6 +491,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = OmniAI/OmniAI.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 22;
 				DEVELOPMENT_TEAM = 92493ZAN98;

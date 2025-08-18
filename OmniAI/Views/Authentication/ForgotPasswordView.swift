@@ -54,6 +54,11 @@ struct ForgotPasswordView: View {
                     .padding()
                     .background(Color.omniSecondaryBackground)
                     .cornerRadius(12)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        // Focus the text field when tapping anywhere on the container
+                        UIApplication.shared.sendAction(#selector(UIResponder.becomeFirstResponder), to: nil, from: nil, for: nil)
+                    }
                 }
                 .padding(.horizontal, 24)
                 

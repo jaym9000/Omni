@@ -3,21 +3,21 @@ import SwiftUI
 struct ChatView: View {
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var authManager: AuthenticationManager
-    // TODO: Re-enable when services are added to Xcode project
-    // @EnvironmentObject var chatService: ChatService
-    // @EnvironmentObject var offlineManager: OfflineManager
-    @State private var messages: [ChatMessage] = []
+    @EnvironmentObject var chatService: ChatService
+    @EnvironmentObject var offlineManager: OfflineManager
     @State private var inputText = ""
-    @State private var isTyping = false
+    @State private var currentSessionId: UUID?
     @FocusState private var isInputFocused: Bool
     @State private var sendButtonScale: CGFloat = 1.0
     @State private var inputFieldScale: CGFloat = 1.0
     @State private var micButtonScale: CGFloat = 1.0
     @State private var micButtonGlow: Bool = false
     let initialPrompt: String?
+    let existingSessionId: UUID? // For continuing existing conversations
     
-    init(initialPrompt: String? = nil) {
+    init(initialPrompt: String? = nil, existingSessionId: UUID? = nil) {
         self.initialPrompt = initialPrompt
+        self.existingSessionId = existingSessionId
     }
     
     @State private var selectedInputMode: InputMode = .chat
@@ -30,11 +30,19 @@ struct ChatView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                // Guest conversation counter (only show for guest users)
+                if let user = authManager.currentUser, user.isGuest {
+                    GuestConversationCounter(
+                        conversationsUsed: user.guestConversationCount,
+                        maxConversations: user.maxGuestConversations
+                    )
+                }
+                
                 // Input mode selector
                 InputModeSelector(selectedMode: $selectedInputMode)
                 
                 // Messages
-                MessagesView(messages: messages, isTyping: isTyping)
+                MessagesView(messages: chatService.messages, isTyping: chatService.isTyping)
                 
                 // Input bar
                 if selectedInputMode == .chat {
@@ -65,62 +73,88 @@ struct ChatView: View {
     }
     
     private func setupChat() {
-        // Add welcome message - use mood-specific prompt if available
-        let welcomeContent: String
-        if let prompt = initialPrompt, !prompt.isEmpty {
-            // Use the mood-specific prompt as the AI's first message
-            welcomeContent = prompt
-        } else {
-            // Generic welcome for regular chat
-            welcomeContent = "Hi there! 👋 How are you feeling today? You can chat with me by typing below."
+        Task {
+            guard let userId = authManager.currentUser?.id else { return }
+            
+            // First load user's existing sessions for history
+            await chatService.loadUserSessions(userId: userId)
+            
+            var sessionToUse: ChatSession?
+            
+            // Check if we're continuing an existing session or creating a new one
+            if let existingId = existingSessionId {
+                // Continue existing session from chat history
+                if let existingSession = chatService.chatSessions.first(where: { $0.id == existingId }) {
+                    sessionToUse = existingSession
+                    currentSessionId = existingSession.id
+                    await chatService.selectSession(existingSession)
+                }
+            } else {
+                // Always create a new session when opening from home
+                do {
+                    let title = initialPrompt?.prefix(50).trimmingCharacters(in: .whitespacesAndNewlines) ?? "New Chat"
+                    let session = try await chatService.createNewSession(
+                        userId: userId,
+                        title: title
+                    )
+                    sessionToUse = session
+                    currentSessionId = session.id
+                } catch {
+                    print("Failed to create chat session: \(error)")
+                    return
+                }
+            }
+            
+            // Only add welcome message if this is a new session with no messages
+            if chatService.messages.isEmpty, let session = sessionToUse, existingSessionId == nil {
+                let welcomeContent: String
+                if let prompt = initialPrompt, !prompt.isEmpty {
+                    // If there's an initial prompt (from mood selection), use it as the first message
+                    welcomeContent = "I see you're feeling \(prompt). I'm here to listen and support you. What's on your mind?"
+                } else {
+                    welcomeContent = "Hi there! 👋 How are you feeling today? I'm here to listen and support you."
+                }
+                
+                let welcomeMessage = ChatMessage(
+                    content: welcomeContent,
+                    isUser: false,
+                    sessionId: session.id
+                )
+                
+                await MainActor.run {
+                    chatService.messages.append(welcomeMessage)
+                }
+                
+                // Save welcome message to database
+                do {
+                    try await SupabaseManager.shared.client
+                        .from("chat_messages")
+                        .insert(welcomeMessage)
+                        .execute()
+                } catch {
+                    print("Failed to save welcome message: \(error)")
+                }
+            }
         }
-        
-        let welcomeMessage = ChatMessage(
-            content: welcomeContent,
-            isUser: false,
-            sessionId: UUID() // Temporary session ID
-        )
-        messages.append(welcomeMessage)
     }
     
     private func sendMessage() {
-        let message = ChatMessage(content: inputText, isUser: true, sessionId: UUID())
-        messages.append(message)
+        guard let sessionId = currentSessionId else { return }
         
         let userInput = inputText
         inputText = ""
         isInputFocused = false
         
-        generateResponse(for: userInput)
-    }
-    
-    private func generateResponse(for input: String) {
-        isTyping = true
-        
-        // Simulate AI response
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            isTyping = false
-            
-            let response = generateAIResponse(for: input)
-            let responseMessage = ChatMessage(content: response, isUser: false, sessionId: UUID())
-            messages.append(responseMessage)
-        }
-    }
-    
-    private func generateAIResponse(for input: String) -> String {
-        // Simplified response generation for demo
-        let lowercased = input.lowercased()
-        
-        if lowercased.contains("anxious") || lowercased.contains("anxiety") {
-            return "I hear that you're feeling anxious. That can be really challenging. Would you like to try a breathing exercise together, or would you prefer to talk about what's making you feel this way?"
-        } else if lowercased.contains("sad") || lowercased.contains("depressed") {
-            return "I'm sorry you're feeling sad. It's okay to feel this way, and I'm here to listen. Would you like to share what's been weighing on your mind?"
-        } else if lowercased.contains("happy") || lowercased.contains("good") {
-            return "That's wonderful to hear! Celebrating positive moments is just as important as working through challenges. What's bringing you joy today?"
-        } else if lowercased.contains("overwhelmed") || lowercased.contains("stressed") {
-            return "Feeling overwhelmed can be exhausting. Let's break things down together. What's the biggest thing on your mind right now?"
-        } else {
-            return "Thank you for sharing that with me. I'm here to listen and support you. How are you feeling about what you just shared?"
+        Task {
+            do {
+                try await chatService.sendMessage(content: userInput, sessionId: sessionId)
+            } catch {
+                print("Failed to send message: \(error)")
+                // Show error to user
+                await MainActor.run {
+                    // You could show an alert here
+                }
+            }
         }
     }
     
@@ -277,11 +311,28 @@ struct MessagesView: View {
                 }
                 .padding()
             }
+            .onAppear {
+                // Scroll to bottom when view appears
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    withAnimation {
+                        if let lastMessage = messages.last {
+                            scrollProxy.scrollTo(lastMessage.id, anchor: .bottom)
+                        }
+                    }
+                }
+            }
             .onChange(of: messages.count) { _ in
-                withAnimation {
+                // Scroll to bottom when messages change
+                withAnimation(.easeInOut(duration: 0.3)) {
                     if let lastMessage = messages.last {
                         scrollProxy.scrollTo(lastMessage.id, anchor: .bottom)
-                    } else if isTyping {
+                    }
+                }
+            }
+            .onChange(of: isTyping) { newValue in
+                // Scroll to typing indicator when it appears
+                if newValue {
+                    withAnimation(.easeInOut(duration: 0.3)) {
                         scrollProxy.scrollTo("typing", anchor: .bottom)
                     }
                 }
@@ -315,6 +366,20 @@ struct ChatInputView: View {
                 .focused($isInputFocused)
                 .lineLimit(1...5)
                 .scaleEffect(inputFieldScale)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    isInputFocused = true
+                }
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button("Done") {
+                            isInputFocused = false
+                        }
+                        .foregroundColor(.omniPrimary)
+                        .fontWeight(.medium)
+                    }
+                }
             
             Button(action: sendMessage) {
                 Image(systemName: "arrow.up")
@@ -388,6 +453,88 @@ struct VoiceInputView: View {
         }
         .padding(.vertical, 32)
         .background(Color.omniBackground)
+    }
+}
+
+// MARK: - Guest Conversation Counter
+
+struct GuestConversationCounter: View {
+    let conversationsUsed: Int
+    let maxConversations: Int
+    
+    private var conversationsRemaining: Int {
+        max(0, maxConversations - conversationsUsed)
+    }
+    
+    private var isLowOnConversations: Bool {
+        conversationsRemaining <= 1
+    }
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            // Icon
+            Image(systemName: isLowOnConversations ? "exclamationmark.triangle.fill" : "message.circle.fill")
+                .font(.system(size: 16))
+                .foregroundColor(isLowOnConversations ? .orange : .omniPrimary)
+            
+            // Counter text
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Guest Trial")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.omniTextSecondary)
+                
+                if conversationsRemaining > 0 {
+                    Text("\(conversationsRemaining) of \(maxConversations) conversations remaining")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(isLowOnConversations ? .orange : .omniTextPrimary)
+                } else {
+                    Text("Trial limit reached")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.red)
+                }
+            }
+            
+            Spacer()
+            
+            // Upgrade button for low conversations
+            if conversationsRemaining <= 1 {
+                Button("Upgrade") {
+                    // This would trigger signup modal
+                    NotificationCenter.default.post(
+                        name: NSNotification.Name("ShowGuestUpgradeModal"),
+                        object: nil,
+                        userInfo: [
+                            "conversationsUsed": conversationsUsed,
+                            "conversationsRemaining": conversationsRemaining
+                        ]
+                    )
+                }
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(.white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(
+                    LinearGradient(
+                        colors: [Color.omniPrimary, Color.omniSecondary],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .cornerRadius(12)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(isLowOnConversations ? Color.orange.opacity(0.1) : Color.omniSecondaryBackground)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(isLowOnConversations ? Color.orange.opacity(0.3) : Color.clear, lineWidth: 1)
+                )
+        )
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
     }
 }
 

@@ -162,28 +162,21 @@ struct ProfileView: View {
                             
                             Divider().padding(.leading, 50)
                             
-                            HStack {
-                                Image(systemName: "faceid")
-                                    .font(.system(size: 16))
-                                    .foregroundColor(.green)
-                                    .frame(width: 24)
-                                
-                                Text("App Lock (Face ID / Touch ID)")
-                                    .font(.system(size: 16))
-                                    .foregroundColor(.omniTextPrimary)
-                                
-                                Spacer()
-                                
-                                Toggle("", isOn: $biometricAuthEnabled)
-                                    .onChange(of: biometricAuthEnabled) { enabled in
-                                        Task {
-                                            await authManager.toggleBiometricAuth(enabled)
-                                        }
-                                    }
-                                    .labelsHidden()
-                                    .scaleEffect(0.8)
-                            }
-                            .padding()
+                            ProfileSettingRow(
+                                icon: "faceid",
+                                iconColor: .green,
+                                title: "App Lock (Face ID / Touch ID)",
+                                trailing: AnyView(
+                                    Text("Coming Soon")
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundColor(.omniTextTertiary)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 2)
+                                        .background(Color.omniTextTertiary.opacity(0.1))
+                                        .cornerRadius(8)
+                                ),
+                                action: {}
+                            )
                             
                             Divider().padding(.leading, 50)
                             
@@ -381,6 +374,7 @@ struct ProfileSettingRow: View {
                 }
             }
             .padding()
+            .contentShape(Rectangle()) // Make entire row tappable
         }
         .buttonStyle(PlainButtonStyle())
     }

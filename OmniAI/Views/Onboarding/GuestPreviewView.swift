@@ -462,7 +462,7 @@ struct PreviewChatBubble: View {
                     .padding()
                     .background(Color.omniPrimary)
                     .cornerRadius(16, corners: [.topLeft, .topRight, .bottomLeft])
-                    .frame(maxWidth: .infinity * 0.8, alignment: .trailing)
+                    .frame(maxWidth: 280, alignment: .trailing)
             } else {
                 Text(message.content)
                     .font(.system(size: 16))
@@ -470,7 +470,7 @@ struct PreviewChatBubble: View {
                     .padding()
                     .background(Color.omniSecondaryBackground)
                     .cornerRadius(16, corners: [.topLeft, .topRight, .bottomRight])
-                    .frame(maxWidth: .infinity * 0.8, alignment: .leading)
+                    .frame(maxWidth: 280, alignment: .leading)
                 
                 Spacer()
             }

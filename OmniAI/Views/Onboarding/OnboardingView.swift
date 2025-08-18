@@ -2,7 +2,6 @@ import SwiftUI
 
 struct OnboardingView: View {
     @EnvironmentObject var authManager: AuthenticationManager
-    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var currentPage = 0
     @State private var companionName = "Omni"
     @State private var selectedGoals: Set<String> = []
@@ -141,22 +140,19 @@ struct OnboardingView: View {
     
     private func completeOnboarding() {
         // Save onboarding data
-        if var user = authManager.currentUser {
-            user.companionName = companionName
-            user.companionPersonality = selectedPersonality
-            authManager.currentUser = user
+        Task {
+            // Update companion settings
+            await authManager.updateCompanionSettings(
+                name: companionName, 
+                personality: selectedPersonality
+            )
             
-            // Save to UserDefaults
-            if let encoded = try? JSONEncoder().encode(user) {
-                UserDefaults.standard.set(encoded, forKey: "currentUser")
-            }
+            // Mark onboarding as completed in the database
+            await authManager.markOnboardingCompleted()
+            
+            // Save selected goals locally
+            UserDefaults.standard.set(Array(selectedGoals), forKey: "userGoals")
         }
-        
-        // Save selected goals
-        UserDefaults.standard.set(Array(selectedGoals), forKey: "userGoals")
-        
-        // Mark onboarding as completed
-        hasCompletedOnboarding = true
     }
 }
 

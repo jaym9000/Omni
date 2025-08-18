@@ -2,7 +2,6 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var authManager: AuthenticationManager
-    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var showSplash = true
     @State private var showLogin = false
     @State private var showSignUp = false
@@ -14,9 +13,9 @@ struct ContentView: View {
                     .transition(.opacity)
             } else {
                 if authManager.isAuthenticated {
-                    if !authManager.isEmailVerified && !authManager.isAppleUser {
+                    if !authManager.isEmailVerified && !authManager.isAppleUser && !(authManager.currentUser?.isGuest ?? false) {
                         EmailVerificationView()
-                    } else if !hasCompletedOnboarding {
+                    } else if !(authManager.currentUser?.hasCompletedOnboarding ?? false) {
                         OnboardingView()
                     } else {
                         MainTabView()

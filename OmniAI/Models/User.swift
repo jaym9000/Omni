@@ -4,14 +4,16 @@ enum AuthProvider: String, Codable {
     case email
     case apple
     case google
+    case anonymous
 }
 
 struct User: Codable, Identifiable {
     let id: UUID
-    let email: String
+    var authUserId: UUID? // References auth.users(id) for RLS
+    var email: String
     var displayName: String
     var emailVerified: Bool
-    let authProvider: AuthProvider
+    var authProvider: AuthProvider
     var avatarURL: String?
     
     // Use separate properties for Supabase timestamp handling
@@ -26,6 +28,12 @@ struct User: Codable, Identifiable {
     var notificationsEnabled: Bool = true
     var dailyReminderTime: Date?
     var biometricAuthEnabled: Bool = false
+    var hasCompletedOnboarding: Bool = false
+    
+    // Guest user properties
+    var isGuest: Bool = false
+    var guestConversationCount: Int = 0
+    var maxGuestConversations: Int = 3
     
     // Computed properties for date handling
     var createdAt: Date {
@@ -53,6 +61,7 @@ struct User: Codable, Identifiable {
     // Custom CodingKeys for Supabase snake_case naming
     enum CodingKeys: String, CodingKey {
         case id
+        case authUserId = "auth_user_id"
         case email
         case displayName = "display_name"
         case emailVerified = "email_verified"
@@ -65,11 +74,16 @@ struct User: Codable, Identifiable {
         case notificationsEnabled = "notifications_enabled"
         case dailyReminderTime = "daily_reminder_time"
         case biometricAuthEnabled = "biometric_auth_enabled"
+        case hasCompletedOnboarding = "has_completed_onboarding"
+        case isGuest = "is_guest"
+        case guestConversationCount = "guest_conversation_count"
+        case maxGuestConversations = "max_guest_conversations"
     }
     
     // Custom initializer for Supabase compatibility
-    init(id: UUID, email: String, displayName: String, emailVerified: Bool = false, authProvider: AuthProvider = .email) {
+    init(id: UUID, authUserId: UUID? = nil, email: String, displayName: String, emailVerified: Bool = false, authProvider: AuthProvider = .email) {
         self.id = id
+        self.authUserId = authUserId
         self.email = email
         self.displayName = displayName
         self.emailVerified = emailVerified
@@ -78,5 +92,20 @@ struct User: Codable, Identifiable {
         let now = ISO8601DateFormatter().string(from: Date())
         self._createdAt = now
         self._updatedAt = now
+    }
+    
+    // Guest user initializer
+    static func createGuestUser(id: UUID, authUserId: UUID) -> User {
+        var guestUser = User(
+            id: id,
+            authUserId: authUserId,
+            email: "guest@anonymous.local",
+            displayName: "Guest User",
+            emailVerified: false,
+            authProvider: .anonymous
+        )
+        guestUser.isGuest = true
+        guestUser.guestConversationCount = 0
+        return guestUser
     }
 }

@@ -275,6 +275,8 @@ struct AnxietyCard: View {
     let action: () -> Void
     @State private var breathingScale: CGFloat = 1.0
     @State private var glowOpacity: Double = 0.3
+    @State private var isAnimating = false
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         VStack(spacing: 12) {
@@ -301,9 +303,9 @@ struct AnxietyCard: View {
                         .scaleEffect(breathingScale)
                     
                     Image(systemName: "leaf.fill")
+                        .renderingMode(.template)
                         .font(.system(size: 18))
-                        .foregroundColor(.moodCalm)
-                        .scaleEffect(breathingScale)
+                        .foregroundColor(colorScheme == .dark ? .moodCalm : Color(red: 0.3, green: 0.5, blue: 0.3))
                 }
                 
                 VStack(spacing: 2) {
@@ -382,6 +384,9 @@ struct AnxietyCard: View {
     }
     
     private func startBreathingAnimation() {
+        guard !isAnimating else { return } // Prevent multiple animations
+        isAnimating = true
+        
         withAnimation(
             .easeInOut(duration: 3.5)
             .repeatForever(autoreverses: true)

@@ -15,6 +15,15 @@ class ChatService: ObservableObject {
     
     private let supabase = SupabaseManager.shared.client
     private var messagesSubscription: Task<Void, Never>?
+    private weak var authManager: AuthenticationManager?
+    
+    func setAuthManager(_ manager: AuthenticationManager) {
+        self.authManager = manager
+    }
+    
+    private func getAuthManager() async -> AuthenticationManager? {
+        return authManager
+    }
     
     deinit {
         messagesSubscription?.cancel()
@@ -23,6 +32,7 @@ class ChatService: ObservableObject {
     // MARK: - Session Management
     
     func createNewSession(userId: UUID, title: String = "New Chat") async throws -> ChatSession {
+        // Always create a new session
         let session = ChatSession(userId: userId, title: title)
         
         do {
@@ -95,6 +105,42 @@ class ChatService: ObservableObject {
     func sendMessage(content: String, sessionId: UUID) async throws {
         guard let currentSession = currentSession else { return }
         
+        // Check if guest user has reached message limit BEFORE creating message
+        if let authManager = await getAuthManager(),
+           let user = authManager.currentUser,
+           user.isGuest {
+            // Check guest message count for today
+            let maxMessages = 5 // 5 free messages per day
+            
+            // Count today's messages from this guest user
+            let today = Calendar.current.startOfDay(for: Date())
+            let todayMessages = messages.filter { message in
+                message.isUser && // Only count user messages
+                message.timestamp >= today
+            }.count
+            
+            if todayMessages >= maxMessages {
+                // Create limit reached message
+                let limitMessage = ChatMessage(
+                    content: "🔒 You've reached your daily limit of 5 free messages! Sign up to continue chatting with Omni and unlock unlimited conversations.",
+                    isUser: false,
+                    sessionId: sessionId
+                )
+                
+                await MainActor.run {
+                    messages.append(limitMessage)
+                    
+                    // Post notification to show signup modal
+                    NotificationCenter.default.post(
+                        name: NSNotification.Name("ShowGuestUpgradeModal"),
+                        object: nil,
+                        userInfo: ["messagesUsed": todayMessages, "maxMessages": maxMessages]
+                    )
+                }
+                return
+            }
+        }
+        
         // Create user message
         let userMessage = ChatMessage(content: content, isUser: true, sessionId: sessionId)
         
@@ -106,7 +152,9 @@ class ChatService: ObservableObject {
                 .execute()
             
             // Add to local messages
-            messages.append(userMessage)
+            await MainActor.run {
+                messages.append(userMessage)
+            }
             
             // Update session timestamp
             var updatedSession = currentSession
@@ -123,18 +171,34 @@ class ChatService: ObservableObject {
             
         } catch {
             // Fallback to local message for development
-            messages.append(userMessage)
+            await MainActor.run {
+                messages.append(userMessage)
+            }
             await generateAIResponse(for: sessionId, userMessage: content)
         }
     }
     
     private func generateAIResponse(for sessionId: UUID, userMessage: String) async {
-        isTyping = true
-        defer { isTyping = false }
+        await MainActor.run {
+            isTyping = true
+        }
+        defer { 
+            Task { @MainActor in
+                isTyping = false
+            }
+        }
+        
+        var fallbackResponseSent = false
         
         do {
             // Get current user session for authentication
+            print("🔐 Getting user session for authentication...")
             let session = try await supabase.auth.session
+            print("✅ Got user session:")
+            print("   - User ID: \(session.user.id)")
+            print("   - Is Anonymous: \(session.user.isAnonymous)")
+            print("   - Email: \(session.user.email ?? "none")")
+            print("   - Access token prefix: \(session.accessToken.prefix(20))...")
             
             // Prepare conversation history (last 10 messages for context)
             let recentMessages = messages.suffix(10).map { message in
@@ -145,14 +209,21 @@ class ChatService: ObservableObject {
             }
             
             // Call Supabase Edge Function for AI response
+            let isGuestUser = session.user.isAnonymous || session.user.email == nil || session.user.email?.isEmpty == true
             let requestBody: [String: Any] = [
                 "message": userMessage,
                 "sessionId": sessionId.uuidString,
-                "conversationHistory": recentMessages
+                "conversationHistory": recentMessages,
+                "isGuest": isGuestUser
             ]
             
             // Convert to JSON Data
             let jsonData = try JSONSerialization.data(withJSONObject: requestBody)
+            print("📝 Request body prepared:")
+            print("   - Message: \(userMessage.prefix(30))...")
+            print("   - Is Guest: \(isGuestUser)")
+            print("   - Session ID: \(sessionId.uuidString)")
+            print("   - Conversation History: \(recentMessages.count) messages")
             
             // Create URL request manually for Edge Function
             let url = URL(string: "https://rchropdkyqpfyjwgdudv.supabase.co/functions/v1/ai-chat")!
@@ -160,17 +231,24 @@ class ChatService: ObservableObject {
             request.httpMethod = "POST"
             request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("omni-ai-ios/1.1", forHTTPHeaderField: "x-client-info")
             request.httpBody = jsonData
+            request.timeoutInterval = 30.0 // 30 second timeout
+            
+            print("🚀 Calling Edge Function at: \(url.absoluteString)")
             
             // Make the request
             let (data, response) = try await URLSession.shared.data(for: request)
             
             // Check response status
             if let httpResponse = response as? HTTPURLResponse {
-                print("Edge Function Response Status: \(httpResponse.statusCode)")
+                print("📡 Edge Function Response Status: \(httpResponse.statusCode)")
                 
                 if httpResponse.statusCode == 200 {
                     // Parse AI response
+                    let responseString = String(data: data, encoding: .utf8) ?? "Unable to decode response"
+                    print("📦 Raw response data: \(responseString.prefix(200))...")
+                    
                     if let aiResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                        let content = aiResponse["content"] as? String {
                         
@@ -178,11 +256,18 @@ class ChatService: ObservableObject {
                         let crisisDetected = aiResponse["crisisDetected"] as? Bool ?? false
                         let requiresEscalation = aiResponse["requiresEscalation"] as? Bool ?? false
                         
+                        // Handle guest info if present
+                        if let guestInfo = aiResponse["guestInfo"] as? [String: Any] {
+                            await handleGuestInfo(guestInfo)
+                        }
+                        
                         // Create AI message
                         let aiMessage = ChatMessage(content: content, isUser: false, sessionId: sessionId)
                         
                         // Add to local messages (Edge Function already stored in DB)
-                        messages.append(aiMessage)
+                        await MainActor.run {
+                            messages.append(aiMessage)
+                        }
                         
                         // Handle crisis situation if detected
                         if crisisDetected || requiresEscalation {
@@ -191,30 +276,62 @@ class ChatService: ObservableObject {
                         
                         print("✅ OpenAI Response Received: \(content.prefix(50))...")
                         return
+                    } else {
+                        print("❌ Failed to parse JSON response: \(responseString)")
                     }
+                } else if httpResponse.statusCode == 403 {
+                    // Handle guest limit reached
+                    let errorString = String(data: data, encoding: .utf8) ?? "Unknown error"
+                    if let errorResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                       let guestLimitReached = errorResponse["guestLimitReached"] as? Bool,
+                       guestLimitReached {
+                        await handleGuestLimitReached(errorResponse)
+                        return
+                    }
+                    print("❌ Edge Function Error (\(httpResponse.statusCode)): \(errorString)")
+                } else {
+                    let errorString = String(data: data, encoding: .utf8) ?? "Unknown error"
+                    print("❌ Edge Function Error (\(httpResponse.statusCode)): \(errorString)")
+                    print("   - Request URL: \(url.absoluteString)")
+                    print("   - Headers: \(request.allHTTPHeaderFields ?? [:])")
+                    print("   - User ID: \(session.user.id)")
+                    print("   - Is Anonymous: \(session.user.isAnonymous)")
                 }
             }
             
-            // Fallback if response parsing fails
-            print("⚠️ Edge Function response parsing failed, using fallback")
-            await handleFallbackResponse(for: sessionId, userMessage: userMessage)
+            // Fallback if response parsing fails - only if not already sent
+            if !fallbackResponseSent {
+                print("⚠️ Edge Function response parsing failed, using fallback")
+                fallbackResponseSent = true
+                await handleFallbackResponse(for: sessionId, userMessage: userMessage)
+            }
             
         } catch {
-            print("❌ AI Chat Error: \(error)")
-            // Fallback to supportive response if Edge Function fails
-            await handleFallbackResponse(for: sessionId, userMessage: userMessage)
+            print("❌ AI Chat Error: \(error.localizedDescription)")
+            print("   - Error Type: \(type(of: error))")
+            if let urlError = error as? URLError {
+                print("   - URL Error Code: \(urlError.code)")
+                print("   - URL Error Description: \(urlError.localizedDescription)")
+            }
+            print("   - Falling back to local response")
+            
+            // Fallback to supportive response if Edge Function fails - only if not already sent
+            if !fallbackResponseSent {
+                fallbackResponseSent = true
+                await handleFallbackResponse(for: sessionId, userMessage: userMessage)
+            }
         }
     }
     
     private func handleFallbackResponse(for sessionId: UUID, userMessage: String) async {
-        // Enhanced therapeutic responses until Edge Function is deployed
+        // Enhanced therapeutic responses with connection issue indication
         let therapeuticResponses = [
-            "I hear you and I'm here to support you. It sounds like you're going through something challenging right now. Would you like to talk more about what's on your mind? Remember, your feelings are valid and it's okay to take things one step at a time.",
-            "Thank you for sharing that with me. Your feelings are completely valid, and it takes courage to express them. I'm here to listen without judgment. What do you think might help you feel more supported right now?",
-            "I understand that you're experiencing something difficult. It's important to acknowledge these feelings rather than push them away. You're not alone in this journey. What has helped you cope with challenging emotions before?",
-            "I appreciate you opening up about this. Your mental health and emotional well-being matter deeply. Sometimes just expressing what we're feeling can provide some relief. How are you taking care of yourself today?",
-            "What you're sharing sounds really tough, and I want you to know that your feelings make complete sense. It's okay to feel whatever you're feeling. Would it help to explore what's behind these emotions, or would you prefer to focus on some grounding techniques?",
-            "I can hear that this is weighing on you. Thank you for trusting me with what you're experiencing. Remember that healing isn't linear, and it's okay to have difficult moments. What would feel most supportive for you right now?"
+            "⚠️ I'm having trouble connecting to my AI service right now, but I'm still here to support you. Your feelings are completely valid, and it takes courage to express them. What's on your mind today?",
+            "⚠️ There's a temporary connection issue, but I want you to know I'm listening. It sounds like you're going through something challenging. Would you like to talk more about what you're experiencing?",
+            "⚠️ I'm experiencing some technical difficulties, but your mental health matters. What you're sharing sounds important. Can you tell me more about how you're feeling right now?",
+            "⚠️ My connection is unstable at the moment, but I'm here for you. Remember, your feelings are valid and it's okay to take things one step at a time. What would help you feel supported right now?",
+            "⚠️ I'm having connectivity issues but want to acknowledge what you've shared. Your emotional well-being is important. How are you taking care of yourself today?",
+            "⚠️ There's a temporary technical issue on my end, but I hear you. What you're experiencing sounds difficult. What has helped you cope with challenging emotions before?"
         ]
         
         let fallbackResponse = therapeuticResponses.randomElement() ?? therapeuticResponses[0]
@@ -229,10 +346,14 @@ class ChatService: ObservableObject {
                 .execute()
             
             // Add to local messages
-            messages.append(aiMessage)
+            await MainActor.run {
+                messages.append(aiMessage)
+            }
         } catch {
             // Local-only fallback
-            messages.append(aiMessage)
+            await MainActor.run {
+                messages.append(aiMessage)
+            }
         }
     }
     
@@ -244,6 +365,45 @@ class ChatService: ObservableObject {
                 // For now, we'll just log it
                 print("CRISIS INTERVENTION TRIGGERED - User needs immediate support")
             }
+        }
+    }
+    
+    private func handleGuestInfo(_ guestInfo: [String: Any]) async {
+        guard let conversationsUsed = guestInfo["conversationsUsed"] as? Int,
+              let conversationsRemaining = guestInfo["conversationsRemaining"] as? Int else { return }
+        
+        await MainActor.run {
+            // Update local user object with conversation count
+            // This could trigger UI updates showing remaining conversations
+            print("👤 Guest conversations: \(conversationsUsed) used, \(conversationsRemaining) remaining")
+            
+            // You could post a notification to update UI
+            NotificationCenter.default.post(
+                name: NSNotification.Name("GuestConversationCountUpdated"),
+                object: nil,
+                userInfo: guestInfo
+            )
+        }
+    }
+    
+    private func handleGuestLimitReached(_ errorResponse: [String: Any]) async {
+        let upgradeMessage = errorResponse["message"] as? String ?? "You've reached your conversation limit! Sign up to continue."
+        
+        let limitMessage = ChatMessage(
+            content: "🔒 " + upgradeMessage + "\n\nSign up now to get unlimited conversations with Omni and unlock all premium features!",
+            isUser: false,
+            sessionId: currentSession?.id ?? UUID()
+        )
+        
+        await MainActor.run {
+            messages.append(limitMessage)
+            
+            // Post notification to show signup modal
+            NotificationCenter.default.post(
+                name: NSNotification.Name("ShowGuestUpgradeModal"),
+                object: nil,
+                userInfo: errorResponse
+            )
         }
     }
     
