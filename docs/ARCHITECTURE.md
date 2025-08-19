@@ -131,10 +131,10 @@
 
 ### Real-time Chat Architecture
 ```swift
-// Supabase real-time subscription
-supabase.realtime.channel("chat_messages")
-  .on(.insert) { message in
-    // Update UI with new message
+// Firebase real-time listener
+db.collection("chat_messages")
+  .addSnapshotListener { snapshot, error in
+    // Update UI with new messages
   }
 ```
 
