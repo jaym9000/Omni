@@ -5,7 +5,7 @@ struct ChatSession: Codable, Identifiable {
     let userId: UUID
     var title: String
     
-    // Supabase timestamp handling
+    // Timestamp properties
     private var _createdAt: String
     private var _updatedAt: String
     
@@ -59,7 +59,7 @@ struct ChatMessage: Codable, Identifiable {
     let content: String
     let isUser: Bool
     
-    // Supabase timestamp handling
+    // Timestamp properties
     private var _createdAt: String
     
     var timestamp: Date {

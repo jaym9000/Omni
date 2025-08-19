@@ -25,10 +25,6 @@
 		71693C6C3FCF9F3B5851BD00 /* OmniAI/Views/Chat/ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1BED2D77686FBCDD21666A /* OmniAI/Views/Chat/ChatView.swift */; };
 		725B74232F5466B125B57B45 /* OmniAI/Views/MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5877BF404BEC1B4093897348 /* OmniAI/Views/MainTabView.swift */; };
 		78C913AF179B43C2BE6F551A /* OmniAI/Views/Components/PremiumFeatureGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AEC93CFD61F4C1A0FE6C524 /* OmniAI/Views/Components/PremiumFeatureGate.swift */; };
-		887D3BB32E4D5122006D6D68 /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = 887D3BB22E4D5122006D6D68 /* Auth */; };
-		887D3BB52E4D5122006D6D68 /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = 887D3BB42E4D5122006D6D68 /* PostgREST */; };
-		887D3BB72E4D5122006D6D68 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 887D3BB62E4D5122006D6D68 /* Supabase */; };
-		887D3BB92E4D5122006D6D68 /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = 887D3BB82E4D5122006D6D68 /* Realtime */; };
 		898AA9D983214C54B23A6E8E /* OmniAI/Views/Profile/CompanionEditSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA11311476D4E7F8169B70E /* OmniAI/Views/Profile/CompanionEditSheet.swift */; };
 		9839C6D93EAF249AE8FC494B /* OmniAI/Services/AuthenticationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E4A151F1F1D424D3D28F2AA /* OmniAI/Services/AuthenticationManager.swift */; };
 		98AEDB5FF8E0430BAAA7B54E /* OmniAI/Views/Profile/HelpSupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EA158E8C1ED4D909446DF22 /* OmniAI/Views/Profile/HelpSupportView.swift */; };
@@ -48,7 +44,6 @@
 		F2B3C4D5E6F7890123456AB1 /* OmniAI/Views/Journal/JournalCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6789012345678A1 /* OmniAI/Views/Journal/JournalCalendarView.swift */; };
 		F3C4D5E6F7890123456ABC2 /* OmniAI/Views/Journal/ThemedJournalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F6789012345678AB2 /* OmniAI/Views/Journal/ThemedJournalView.swift */; };
 		LS1A2B3C4D5E6F78901234AB /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = LS1A2B3C4D5E6F7890123456 /* LaunchScreen.storyboard */; };
-		S1A2B3C4D5E6F7890123456B /* OmniAI/Services/SupabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = S1A2B3C4D5E6F7890123456A /* OmniAI/Services/SupabaseManager.swift */; };
 		S2A2B3C4D5E6F7890123456C /* OmniAI/Services/ChatService.swift in Sources */ = {isa = PBXBuildFile; fileRef = S2A2B3C4D5E6F7890123456B /* OmniAI/Services/ChatService.swift */; };
 		S3A2B3C4D5E6F7890123456D /* OmniAI/Services/OfflineManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = S3A2B3C4D5E6F7890123456C /* OmniAI/Services/OfflineManager.swift */; };
 /* End PBXBuildFile section */
@@ -94,7 +89,6 @@
 		F73589E241BE45EB82914253 /* OmniAI/Views/Profile/CrisisResourcesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Profile/CrisisResourcesView.swift; sourceTree = "<group>"; };
 		F7812EB4E60482D7435A843C /* OmniAI/Models/JournalEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Models/JournalEntry.swift; sourceTree = "<group>"; };
 		LS1A2B3C4D5E6F7890123456 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
-		S1A2B3C4D5E6F7890123456A /* OmniAI/Services/SupabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Services/SupabaseManager.swift; sourceTree = "<group>"; };
 		S2A2B3C4D5E6F7890123456B /* OmniAI/Services/ChatService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Services/ChatService.swift; sourceTree = "<group>"; };
 		S3A2B3C4D5E6F7890123456C /* OmniAI/Services/OfflineManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Services/OfflineManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -104,10 +98,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				887D3BB52E4D5122006D6D68 /* PostgREST in Frameworks */,
-				887D3BB32E4D5122006D6D68 /* Auth in Frameworks */,
-				887D3BB72E4D5122006D6D68 /* Supabase in Frameworks */,
-				887D3BB92E4D5122006D6D68 /* Realtime in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -212,7 +202,6 @@
 				A1B2C3D4E5F6789012345678 /* OmniAI/Services/JournalManager.swift */,
 				B2C3D4E5F6789012345678A1 /* OmniAI/Views/Journal/JournalCalendarView.swift */,
 				C3D4E5F6789012345678AB2 /* OmniAI/Views/Journal/ThemedJournalView.swift */,
-				S1A2B3C4D5E6F7890123456A /* OmniAI/Services/SupabaseManager.swift */,
 				S2A2B3C4D5E6F7890123456B /* OmniAI/Services/ChatService.swift */,
 				S3A2B3C4D5E6F7890123456C /* OmniAI/Services/OfflineManager.swift */,
 			);
@@ -323,7 +312,6 @@
 				40FC4E8535CD878D8398CF58 /* OmniAI/Services/PremiumManager.swift in Sources */,
 				644A3D49ABA4E39CD4129FD1 /* OmniAI/Services/ThemeManager.swift in Sources */,
 				F1A2B3C4D5E6F7890123456A /* OmniAI/Services/JournalManager.swift in Sources */,
-				S1A2B3C4D5E6F7890123456B /* OmniAI/Services/SupabaseManager.swift in Sources */,
 				S2A2B3C4D5E6F7890123456C /* OmniAI/Services/ChatService.swift in Sources */,
 				S3A2B3C4D5E6F7890123456D /* OmniAI/Services/OfflineManager.swift in Sources */,
 				F2B3C4D5E6F7890123456AB1 /* OmniAI/Views/Journal/JournalCalendarView.swift in Sources */,
@@ -555,38 +543,8 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		887D3BB12E4D5121006D6D68 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/supabase-community/supabase-swift.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.5.1;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		887D3BB22E4D5122006D6D68 /* Auth */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 887D3BB12E4D5121006D6D68 /* XCRemoteSwiftPackageReference "supabase-swift" */;
-			productName = Auth;
-		};
-		887D3BB42E4D5122006D6D68 /* PostgREST */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 887D3BB12E4D5121006D6D68 /* XCRemoteSwiftPackageReference "supabase-swift" */;
-			productName = PostgREST;
-		};
-		887D3BB62E4D5122006D6D68 /* Supabase */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 887D3BB12E4D5121006D6D68 /* XCRemoteSwiftPackageReference "supabase-swift" */;
-			productName = Supabase;
-		};
-		887D3BB82E4D5122006D6D68 /* Realtime */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 887D3BB12E4D5121006D6D68 /* XCRemoteSwiftPackageReference "supabase-swift" */;
-			productName = Realtime;
-		};
 /* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 1D1A1A1E2C8F123400123456 /* Project object */;

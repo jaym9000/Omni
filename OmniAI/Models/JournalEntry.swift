@@ -18,7 +18,7 @@ struct JournalEntry: Codable, Identifiable {
     var isFavorite: Bool = false
     var prompt: String?
     
-    // Supabase timestamp handling
+    // Timestamp properties
     private var _createdAt: String
     private var _updatedAt: String
     

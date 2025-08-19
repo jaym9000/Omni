@@ -23,7 +23,7 @@ This document outlines the backend architecture for OmniAI, a mental health ther
 ```yaml
 Runtime: Node.js 20+ with TypeScript
 Framework: Express.js / Fastify
-Database: PostgreSQL 15+ (HIPAA-compliant)
+Database: Firestore (NoSQL, HIPAA-compliant)
 Cache: Redis for session management
 AI: OpenAI GPT-4 API
 Monitoring: Sentry for error tracking
@@ -382,7 +382,7 @@ primary_region = "iad"
 #### Environment Variables
 ```bash
 # Database
-DATABASE_URL=postgres://user:pass@host:5432/omniai
+FIREBASE_PROJECT_ID=omniai-app
 REDIS_URL=redis://host:6379
 
 # OpenAI
@@ -504,7 +504,7 @@ extension AuthenticationManager {
 ## Implementation Phases
 
 ### Phase 1: Foundation (Week 1-2)
-- Set up Fly.io app and PostgreSQL
+- Set up Firebase project and Firestore
 - Implement basic authentication
 - Create journal sync endpoints
 - Set up HIPAA audit logging

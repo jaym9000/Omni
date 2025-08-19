@@ -160,67 +160,49 @@ class OfflineManager: ObservableObject {
     }
     
     private func processPendingOperation(_ operation: PendingOperation) async throws {
-        let supabase = supabaseManager.client
+        // TODO: Implement Firebase sync when Firebase is integrated
+        // For now, operations are stored locally and will be synced when backend is ready
         
         switch operation.type {
         case .createUser:
             let user = try JSONDecoder().decode(User.self, from: operation.data)
-            try await supabase
-                .from("users")
-                .insert(user)
-                .execute()
+            // TODO: Save to Firebase Firestore
+            print("Pending sync: Create user \(user.id)")
             
         case .updateUser:
             let user = try JSONDecoder().decode(User.self, from: operation.data)
-            try await supabase
-                .from("users")
-                .update(user)
-                .eq("id", value: user.id)
-                .execute()
+            // TODO: Update in Firebase Firestore
+            print("Pending sync: Update user \(user.id)")
             
         case .createChatSession:
             let session = try JSONDecoder().decode(ChatSession.self, from: operation.data)
-            try await supabase
-                .from("chat_sessions")
-                .insert(session)
-                .execute()
+            // TODO: Save to Firebase Firestore
+            print("Pending sync: Create chat session \(session.id)")
             
         case .createChatMessage:
             let message = try JSONDecoder().decode(ChatMessage.self, from: operation.data)
-            try await supabase
-                .from("chat_messages")
-                .insert(message)
-                .execute()
+            // TODO: Save to Firebase Firestore
+            print("Pending sync: Create message \(message.id)")
             
         case .updateChatSession:
             let session = try JSONDecoder().decode(ChatSession.self, from: operation.data)
-            try await supabase
-                .from("chat_sessions")
-                .update(session)
-                .eq("id", value: session.id)
-                .execute()
+            // TODO: Update in Firebase Firestore
+            print("Pending sync: Update chat session \(session.id)")
             
         case .createMoodEntry:
             let mood = try JSONDecoder().decode(MoodEntry.self, from: operation.data)
-            try await supabase
-                .from("mood_entries")
-                .insert(mood)
-                .execute()
+            // TODO: Save to Firebase Firestore
+            print("Pending sync: Create mood entry \(mood.id)")
             
         case .createJournalEntry:
             let journal = try JSONDecoder().decode(JournalEntry.self, from: operation.data)
-            try await supabase
-                .from("journal_entries")
-                .insert(journal)
-                .execute()
+            // TODO: Save to Firebase Firestore
+            print("Pending sync: Create journal entry \(journal.id)")
             
         case .updateJournalEntry:
             let journal = try JSONDecoder().decode(JournalEntry.self, from: operation.data)
-            try await supabase
-                .from("journal_entries")
-                .update(journal)
-                .eq("id", value: journal.id)
-                .execute()
+            // TODO: Update in Firebase Firestore
+            print("Pending sync: Update journal entry \(journal.id)")
         }
     }
     

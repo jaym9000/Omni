@@ -88,7 +88,7 @@
 
 **Current Issues Identified:**
 - Apple Sign-In using mock authentication
-- No proper Supabase OAuth integration
+- No proper Firebase OAuth integration
 - Session management inconsistent
 - No guest mode with limits
 
@@ -97,7 +97,7 @@
 1. **Replace Mock Apple Sign-In**
    ```swift
    // Fix AuthenticationManager.swift Line 217-243
-   // Replace simulation with real Supabase Apple OAuth
+   // Replace simulation with real Firebase Apple OAuth
    ```
 
 2. **Implement Guest Mode**
@@ -105,7 +105,7 @@
    - Limit guest users to 3 conversations max
    - Prompt signup after limit reached
 
-3. **Fix Supabase Session Management**
+3. **Fix Firebase Session Management**
    - Proper JWT token handling
    - Session persistence across app launches
    - Automatic token refresh
@@ -121,7 +121,7 @@
 
 1. **Choose Billing Provider**
    - **Option A:** RevenueCat (recommended for iOS apps)
-   - **Option B:** Supabase native billing
+   - **Option B:** Firebase Extensions for billing
    - **Option C:** Stripe + custom integration
 
 2. **Subscription Features**
@@ -195,7 +195,7 @@
 **Files to Modify:**
 1. `AuthenticationManager.swift` - Fix Apple OAuth
 2. `User.swift` - Add subscription fields
-3. `SupabaseManager.swift` - Proper session handling
+3. `FirebaseManager.swift` - Proper session handling
 
 **New User Model Fields:**
 ```swift
@@ -311,7 +311,7 @@ struct User {
 - [ ] Fix Apple Sign-In OAuth integration
 - [ ] Implement guest mode with conversation limits
 - [ ] Add subscription status to user model
-- [ ] Set up proper Supabase session management
+- [ ] Set up proper Firebase session management
 
 ### Week 2: Subscription Infrastructure
 - [ ] Choose and integrate billing provider (RevenueCat recommended)

@@ -82,7 +82,7 @@ Omni/
 - Apple Sign In integration
 - Password reset functionality
 
-**Apple OAuth JWT Maintenance**: The Apple OAuth client secret (JWT) expires every 6 months. Next renewal required: **February 17, 2026**. Use the `generate_apple_secret.js` script to regenerate the JWT and update it in your Supabase dashboard.
+**Apple OAuth JWT Maintenance**: The Apple OAuth client secret (JWT) expires every 6 months. Next renewal required: **February 17, 2026**. Use the `generate_apple_secret.js` script to regenerate the JWT and update it in your Firebase console.
 
 ### Home Screen
 - Mood tracking with 5 emotion options

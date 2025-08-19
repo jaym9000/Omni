@@ -5,7 +5,7 @@
 
 ## 📱 **Core Architecture**
 
-### Backend: **Supabase**
+### Backend: **Firebase** (Migration in Progress)
 - **Why**: HIPAA-compliant with BAA, cost-effective and scalable
 - **Cost**: Free tier → $25/month (covers ~50k users)
 - **Features**: Real-time DB, Auth, Storage, Edge Functions
@@ -36,15 +36,15 @@
 ## 🏗️ **Implementation Phases**
 
 ### Phase 1: Backend Migration (Week 1-2)
-1. **Supabase Setup**
+1. **Firebase Setup**
    - Create project, configure authentication
    - Migrate data models (User, ChatMessage, MoodEntry, JournalEntry)
-   - Set up Row Level Security (RLS) policies
-   - Configure real-time subscriptions
+   - Set up Firestore security rules
+   - Configure real-time listeners
 
 2. **iOS Integration**
-   - Install Supabase Swift SDK
-   - Update AuthenticationManager for Supabase Auth
+   - Install Firebase iOS SDK
+   - Update AuthenticationManager for Firebase Auth
    - Implement real-time chat sync
    - Add offline-first data persistence
 

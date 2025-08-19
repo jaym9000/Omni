@@ -16,7 +16,7 @@ struct User: Codable, Identifiable {
     var authProvider: AuthProvider
     var avatarURL: String?
     
-    // Use separate properties for Supabase timestamp handling
+    // Timestamp properties for tracking changes
     private var _createdAt: String
     private var _updatedAt: String
     
@@ -58,7 +58,7 @@ struct User: Codable, Identifiable {
         }
     }
     
-    // Custom CodingKeys for Supabase snake_case naming
+    // Custom CodingKeys for snake_case naming convention
     enum CodingKeys: String, CodingKey {
         case id
         case authUserId = "auth_user_id"
@@ -80,7 +80,7 @@ struct User: Codable, Identifiable {
         case maxGuestConversations = "max_guest_conversations"
     }
     
-    // Custom initializer for Supabase compatibility
+    // Custom initializer for database compatibility
     init(id: UUID, authUserId: UUID? = nil, email: String, displayName: String, emailVerified: Bool = false, authProvider: AuthProvider = .email) {
         self.id = id
         self.authUserId = authUserId

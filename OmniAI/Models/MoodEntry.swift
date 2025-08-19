@@ -45,7 +45,7 @@ struct MoodEntry: Codable, Identifiable {
     let mood: MoodType
     var note: String?
     
-    // Supabase timestamp handling
+    // Timestamp properties
     private var _timestamp: String
     
     var timestamp: Date {
