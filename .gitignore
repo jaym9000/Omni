@@ -94,14 +94,10 @@ GoogleService-Info.plist
 firebase-debug.log
 .firebase/
 
-# Supabase
-supabase/config.toml
-supabase/.temp/
-supabase/.branches/
 .env
 .env.local
 
-# Node modules (for Supabase functions)
+# Node modules
 node_modules/
 npm-debug.log*
 yarn-debug.log*

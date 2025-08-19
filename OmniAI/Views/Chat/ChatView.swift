@@ -165,15 +165,8 @@ struct ChatView: View {
                     chatService.messages.append(welcomeMessage)
                 }
                 
-                // Save welcome message to database
-                do {
-                    try await SupabaseManager.shared.client
-                        .from("chat_messages")
-                        .insert(welcomeMessage)
-                        .execute()
-                } catch {
-                    print("Failed to save welcome message: \(error)")
-                }
+                // TODO: Save welcome message to Firebase
+                // For now, it's already added to local messages
             }
         }
     }

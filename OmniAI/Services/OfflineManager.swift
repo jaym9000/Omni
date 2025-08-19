@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import Network
 
 @MainActor
 class OfflineManager: ObservableObject {
@@ -8,15 +9,24 @@ class OfflineManager: ObservableObject {
     @Published var lastSyncTime: Date?
     
     private let userDefaults = UserDefaults.standard
-    private let supabaseManager = SupabaseManager.shared
+    private let monitor = NWPathMonitor()
+    private let queue = DispatchQueue(label: "NetworkMonitor")
     
     // MARK: - Connection Monitoring
     
     func startMonitoring() {
-        // Monitor network connectivity
-        Task {
-            await checkConnectionStatus()
+        // Monitor network connectivity using Network framework
+        monitor.pathUpdateHandler = { [weak self] path in
+            Task { @MainActor in
+                self?.isOnline = path.status == .satisfied
+                
+                if self?.isOnline == true && self?.hasPendingSync == true {
+                    await self?.syncPendingData()
+                }
+            }
         }
+        
+        monitor.start(queue: queue)
         
         // Set up periodic sync check
         Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { _ in
@@ -27,8 +37,8 @@ class OfflineManager: ObservableObject {
     }
     
     func checkConnectionStatus() async {
-        await supabaseManager.checkConnection()
-        isOnline = supabaseManager.isConnected
+        // Check network status
+        // isOnline is already updated by the monitor
         
         if isOnline && hasPendingSync {
             await syncPendingData()
