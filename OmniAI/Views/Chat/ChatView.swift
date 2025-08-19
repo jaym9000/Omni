@@ -12,6 +12,7 @@ struct ChatView: View {
     @State private var inputFieldScale: CGFloat = 1.0
     @State private var micButtonScale: CGFloat = 1.0
     @State private var micButtonGlow: Bool = false
+    @State private var dragAmount = CGSize.zero
     let initialPrompt: String?
     let existingSessionId: UUID? // For continuing existing conversations
     
@@ -67,6 +68,25 @@ struct ChatView: View {
                 }
             }
         }
+        .offset(y: dragAmount.height)
+        .opacity(2 - Double(abs(dragAmount.height / 500)))
+        .gesture(
+            DragGesture()
+                .onChanged { value in
+                    if value.translation.height > 0 {
+                        dragAmount = value.translation
+                    }
+                }
+                .onEnded { value in
+                    if value.translation.height > 100 {
+                        dismiss()
+                    } else {
+                        withAnimation(.spring()) {
+                            dragAmount = .zero
+                        }
+                    }
+                }
+        )
         .onAppear {
             setupChat()
         }
@@ -74,7 +94,15 @@ struct ChatView: View {
     
     private func setupChat() {
         Task {
-            guard let userId = authManager.currentUser?.id else { return }
+            guard let userId = authManager.currentUser?.id else { 
+                print("❌ No current user found in authManager")
+                return 
+            }
+            
+            print("🔍 Setting up chat for user:")
+            print("   - User ID (public.users.id): \(userId)")
+            print("   - Auth User ID: \(authManager.currentUser?.authUserId?.uuidString ?? "nil")")
+            print("   - Email: \(authManager.currentUser?.email ?? "unknown")")
             
             // First load user's existing sessions for history
             await chatService.loadUserSessions(userId: userId)
@@ -83,11 +111,23 @@ struct ChatView: View {
             
             // Check if we're continuing an existing session or creating a new one
             if let existingId = existingSessionId {
+                print("📂 Continuing existing session: \(existingId)")
                 // Continue existing session from chat history
+                // First, try to find in already loaded sessions
                 if let existingSession = chatService.chatSessions.first(where: { $0.id == existingId }) {
+                    print("✅ Found session in loaded sessions")
                     sessionToUse = existingSession
                     currentSessionId = existingSession.id
                     await chatService.selectSession(existingSession)
+                } else {
+                    // If not found, try to load it from database
+                    print("⚠️ Session not in loaded list, loading from database...")
+                    await chatService.loadUserSessions(userId: userId)
+                    if let existingSession = chatService.chatSessions.first(where: { $0.id == existingId }) {
+                        sessionToUse = existingSession
+                        currentSessionId = existingSession.id
+                        await chatService.selectSession(existingSession)
+                    }
                 }
             } else {
                 // Always create a new session when opening from home
@@ -105,8 +145,8 @@ struct ChatView: View {
                 }
             }
             
-            // Only add welcome message if this is a new session with no messages
-            if chatService.messages.isEmpty, let session = sessionToUse, existingSessionId == nil {
+            // Only add welcome message if this is a brand new session (not from history) with no messages
+            if chatService.messages.isEmpty && existingSessionId == nil, let session = sessionToUse {
                 let welcomeContent: String
                 if let prompt = initialPrompt, !prompt.isEmpty {
                     // If there's an initial prompt (from mood selection), use it as the first message

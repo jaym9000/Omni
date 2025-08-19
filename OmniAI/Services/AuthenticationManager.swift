@@ -105,15 +105,19 @@ class AuthenticationManager: ObservableObject {
                 
                 // Fetch user profile from Supabase
                 do {
+                    // First try by auth_user_id (correct way)
                     let userProfile: User = try await supabase
                         .from("users")
                         .select()
-                        .eq("id", value: session.user.id)
+                        .eq("auth_user_id", value: session.user.id)
                         .single()
                         .execute()
                         .value
                     
                     print("✅ User found in public.users table")
+                    print("   - Public User ID: \(userProfile.id)")
+                    print("   - Auth User ID: \(userProfile.authUserId?.uuidString ?? "nil")")
+                    
                     await MainActor.run {
                         self.currentUser = userProfile
                         self.isAuthenticated = true
@@ -126,10 +130,39 @@ class AuthenticationManager: ObservableObject {
                         }
                     }
                 } catch {
-                    print("⚠️ User exists in auth but not in public.users table. Attempting to create user record...")
+                    print("⚠️ User not found by auth_user_id, checking legacy format where id = auth_user_id...")
                     
-                    // Try to create missing user record based on auth data
-                    await createMissingUserRecord(from: session)
+                    // Try legacy format where id = auth_user_id (for old users)
+                    do {
+                        let legacyUserProfile: User = try await supabase
+                            .from("users")
+                            .select()
+                            .eq("id", value: session.user.id)
+                            .single()
+                            .execute()
+                            .value
+                        
+                        print("⚠️ Found legacy user where id = auth_user_id")
+                        print("   - Will use this user but data structure is legacy")
+                        
+                        await MainActor.run {
+                            self.currentUser = legacyUserProfile
+                            self.isAuthenticated = true
+                            self.isEmailVerified = legacyUserProfile.emailVerified
+                            self.isAppleUser = legacyUserProfile.authProvider == .apple
+                            
+                            // Update UserDefaults with fresh data
+                            if let encoded = try? JSONEncoder().encode(legacyUserProfile) {
+                                UserDefaults.standard.set(encoded, forKey: "currentUser")
+                            }
+                        }
+                        return
+                    } catch {
+                        print("⚠️ User exists in auth but not in public.users table. Attempting to create user record...")
+                        
+                        // Try to create missing user record based on auth data
+                        await createMissingUserRecord(from: session)
+                    }
                 }
                 
             } catch {
@@ -204,10 +237,10 @@ class AuthenticationManager: ObservableObject {
             let userProfile: User
             
             if session.user.isAnonymous {
-                // Create guest user record
+                // Create guest user record with new UUID for public.users table
                 userProfile = User.createGuestUser(
-                    id: userUUID,
-                    authUserId: userUUID
+                    id: UUID(), // New UUID for public.users.id
+                    authUserId: userUUID // auth.users.id
                 )
                 print("👤 Creating guest user record")
             } else {
@@ -217,8 +250,8 @@ class AuthenticationManager: ObservableObject {
                                  email.components(separatedBy: "@").first ?? "User"
                 
                 userProfile = User(
-                    id: userUUID,
-                    authUserId: userUUID,
+                    id: UUID(), // New UUID for public.users.id
+                    authUserId: userUUID, // auth.users.id
                     email: email,
                     displayName: displayName,
                     emailVerified: session.user.emailConfirmedAt != nil,

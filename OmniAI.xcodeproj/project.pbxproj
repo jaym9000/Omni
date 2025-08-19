@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		0AD1848AC6E72DCE1B7B7149 /* OmniAI/Views/Authentication/ForgotPasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBAD53DF4014B81E01F78A20 /* OmniAI/Views/Authentication/ForgotPasswordView.swift */; };
+		CH1A2B3C4D5E6F78901234AB /* OmniAI/Views/Home/ChatHistoryCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CH1A2B3C4D5E6F7890123456 /* OmniAI/Views/Home/ChatHistoryCalendarView.swift */; };
+		LS1A2B3C4D5E6F78901234AB /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = LS1A2B3C4D5E6F7890123456 /* LaunchScreen.storyboard */; };
 		14CE8E952BFF498596A26FAE /* OmniAI/Views/Profile/CrisisResourcesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F73589E241BE45EB82914253 /* OmniAI/Views/Profile/CrisisResourcesView.swift */; };
 		1D1A1A2A2C8F123400123456 /* OmniAIApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1A1A292C8F123400123456 /* OmniAIApp.swift */; };
 		1D1A1A2C2C8F123400123456 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1A1A2B2C8F123400123456 /* ContentView.swift */; };
@@ -93,6 +95,8 @@
 		S1A2B3C4D5E6F7890123456A /* OmniAI/Services/SupabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Services/SupabaseManager.swift; sourceTree = "<group>"; };
 		S2A2B3C4D5E6F7890123456B /* OmniAI/Services/ChatService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Services/ChatService.swift; sourceTree = "<group>"; };
 		S3A2B3C4D5E6F7890123456C /* OmniAI/Services/OfflineManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Services/OfflineManager.swift; sourceTree = "<group>"; };
+		CH1A2B3C4D5E6F7890123456 /* OmniAI/Views/Home/ChatHistoryCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Home/ChatHistoryCalendarView.swift; sourceTree = "<group>"; };
+		LS1A2B3C4D5E6F7890123456 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -137,6 +141,7 @@
 				1D1A1A3A2C8F123600123456 /* Services */,
 				1D1A1A2D2C8F123500123456 /* Assets.xcassets */,
 				1D1A1A2F2C8F123500123456 /* Info.plist */,
+				LS1A2B3C4D5E6F7890123456 /* LaunchScreen.storyboard */,
 			);
 			path = OmniAI;
 			sourceTree = "<group>";
@@ -183,6 +188,7 @@
 				3D7E6D6F346CFE34DC304303 /* OmniAI/Views/Home/RecentChatsView.swift */,
 				2F691E7CCE8CE383D06DB414 /* OmniAI/Views/Home/HomeView.swift */,
 				DD511E3928CE6D15E6615DFB /* OmniAI/Views/Home/AnxietySessionView.swift */,
+				CH1A2B3C4D5E6F7890123456 /* OmniAI/Views/Home/ChatHistoryCalendarView.swift */,
 				7E1BED2D77686FBCDD21666A /* OmniAI/Views/Chat/ChatView.swift */,
 				C77B97B1DC9465688BF64806 /* OmniAI/Views/Components/MoodBottomSheet.swift */,
 				5E571A3BD9E4792D38534009 /* OmniAI/Views/Components/SplashView.swift */,
@@ -275,6 +281,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1D1A1A2E2C8F123500123456 /* Assets.xcassets in Resources */,
+				LS1A2B3C4D5E6F78901234AB /* LaunchScreen.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -322,6 +329,7 @@
 				S3A2B3C4D5E6F7890123456D /* OmniAI/Services/OfflineManager.swift in Sources */,
 				F2B3C4D5E6F7890123456AB1 /* OmniAI/Views/Journal/JournalCalendarView.swift in Sources */,
 				F3C4D5E6F7890123456ABC2 /* OmniAI/Views/Journal/ThemedJournalView.swift in Sources */,
+				CH1A2B3C4D5E6F78901234AB /* OmniAI/Views/Home/ChatHistoryCalendarView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

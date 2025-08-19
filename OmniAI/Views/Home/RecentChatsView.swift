@@ -43,7 +43,16 @@ struct RecentChatsView: View {
                                 .foregroundColor(.omniTextTertiary)
                         }
                         
-                        Button(action: { dismiss() }) {
+                        Button(action: { 
+                            dismiss()
+                            // Post notification to open chat
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                NotificationCenter.default.post(
+                                    name: NSNotification.Name("OpenChatFromHistory"),
+                                    object: nil
+                                )
+                            }
+                        }) {
                             Text("Start Your First Chat")
                                 .font(.system(size: 16, weight: .semibold))
                                 .foregroundColor(.white)
@@ -103,30 +112,38 @@ struct RecentChatsView: View {
                     .environmentObject(authManager)
                     .environmentObject(chatService)
             }
-            // Calendar view will be added after adding file to Xcode project
-            // .sheet(isPresented: $showCalendarView) {
-            //     ChatHistoryCalendarView(selectedDate: $selectedDate, chatSessions: chatSessions)
-            // }
+            .sheet(isPresented: $showCalendarView) {
+                ChatHistoryCalendarView(selectedDate: $selectedDate, chatSessions: chatSessions)
+            }
         }
         .onAppear {
             loadChatSessions()
+        }
+        .refreshable {
+            await loadChatSessionsAsync()
         }
     }
     
     private func loadChatSessions() {
         Task {
-            isLoading = true
-            guard let userId = authManager.currentUser?.id else {
-                isLoading = false
-                return
-            }
-            
-            await chatService.loadUserSessions(userId: userId)
-            
-            await MainActor.run {
-                chatSessions = chatService.chatSessions
-                isLoading = false
-            }
+            await loadChatSessionsAsync()
+        }
+    }
+    
+    private func loadChatSessionsAsync() async {
+        isLoading = true
+        guard let userId = authManager.currentUser?.id else {
+            isLoading = false
+            return
+        }
+        
+        print("🔄 Refreshing chat sessions for user: \(userId)")
+        await chatService.loadUserSessions(userId: userId)
+        
+        await MainActor.run {
+            chatSessions = chatService.chatSessions
+            isLoading = false
+            print("📱 UI Updated with \(chatSessions.count) sessions")
         }
     }
     

@@ -19,5 +19,9 @@
 	<string>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJjaHJvcGRreXFwZnlqd2dkdWR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwNDQxNjcsImV4cCI6MjA3MDYyMDE2N30.ZfHFGnqY9XaPqV9oMnxScE4Wuj7dWBLe-NHHQ8GAzaw</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Omni uses Face ID to securely authenticate you without needing to enter your password each time.</string>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>EdgeFunctionURL</key>
+	<string>https://rchropdkyqpfyjwgdudv.supabase.co/functions/v1/ai-chat</string>
 </dict>
 </plist>

@@ -132,7 +132,7 @@ function getMoodContext(mood?: string): string {
 
 // Check guest message count and enforce limits
 async function checkGuestLimits(supabase: any, userId: string): Promise<{ allowed: boolean, count: number, remaining: number }> {
-  const maxGuestMessages = 5 // Changed from 3 conversations to 5 messages
+  const maxGuestMessages = 5 // 5 messages per day for guest users
   
   try {
     // Get the public.users record to check guest conversation count
@@ -144,7 +144,7 @@ async function checkGuestLimits(supabase: any, userId: string): Promise<{ allowe
     
     if (userError || !userRecord) {
       console.error('No user record found for auth user:', userId, userError)
-      return { allowed: true, count: 0, remaining: maxGuestConversations }
+      return { allowed: true, count: 0, remaining: maxGuestMessages }
     }
     
     // If not a guest, no limits apply
@@ -333,7 +333,7 @@ You don't have to go through this alone. Professional help is available, and thi
         model: 'gpt-4-turbo-preview',
         messages,
         temperature: 0.7,
-        max_tokens: 500,
+        max_tokens: 300,
         presence_penalty: 0.1,
         frequency_penalty: 0.1
       })
@@ -361,25 +361,40 @@ You don't have to go through this alone. Professional help is available, and thi
     const aiData = await openAIResponse.json()
     const aiMessage = aiData.choices[0].message.content
 
+    // Get the public user ID from the users table
+    const { data: publicUser, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .or(`auth_user_id.eq.${user.id},id.eq.${user.id}`) // Handle both new and legacy users
+      .single()
+    
+    const publicUserId = publicUser?.id || user.id // Fallback to auth ID if not found
+    
     // Store conversation in database for continuity
     await supabase
       .from('chat_messages')
       .insert([
         {
           session_id: sessionId,
-          user_id: user.id,
+          user_id: publicUserId, // Use public user ID
           content: message,
           is_user: true,
           created_at: new Date().toISOString()
         },
         {
           session_id: sessionId,
-          user_id: user.id,
+          user_id: publicUserId, // Use public user ID
           content: aiMessage,
           is_user: false,
           created_at: new Date().toISOString()
         }
       ])
+    
+    // Update session timestamp to reflect new activity
+    await supabase
+      .from('chat_sessions')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('id', sessionId)
 
     // Get updated guest limits after this conversation
     let guestInfo = null
@@ -387,9 +402,9 @@ You don't have to go through this alone. Professional help is available, and thi
       const updatedLimits = await checkGuestLimits(supabase, user.id)
       guestInfo = {
         isGuest: true,
-        conversationsUsed: updatedLimits.count + 1, // +1 because we just added this conversation
-        conversationsRemaining: Math.max(0, updatedLimits.remaining - 1),
-        maxConversations: 3
+        messagesUsed: updatedLimits.count + 1, // +1 because we just sent this message
+        messagesRemaining: Math.max(0, updatedLimits.remaining - 1),
+        maxMessages: 5
       }
     }
 

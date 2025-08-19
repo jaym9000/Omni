@@ -32,24 +32,41 @@ class ChatService: ObservableObject {
     // MARK: - Session Management
     
     func createNewSession(userId: UUID, title: String = "New Chat") async throws -> ChatSession {
+        print("📝 Creating new chat session for user ID: \(userId)")
+        
         // Always create a new session
         let session = ChatSession(userId: userId, title: title)
+        print("   - Session ID: \(session.id)")
+        print("   - Title: \(title)")
         
         do {
             // Insert session into Supabase
+            print("💾 Saving session to Supabase...")
             try await supabase
                 .from("chat_sessions")
                 .insert(session)
                 .execute()
+            print("✅ Session saved successfully")
             
-            // Add to local sessions
+            // Add to local sessions immediately
             chatSessions.insert(session, at: 0)
             currentSession = session
             messages = []
             
+            // Force UI update
+            await MainActor.run {
+                self.objectWillChange.send()
+            }
+            
+            print("📋 Current sessions count: \(chatSessions.count)")
+            
             return session
         } catch {
+            print("❌ Failed to save session to Supabase: \(error)")
+            print("   Error details: \(error.localizedDescription)")
+            
             // Fallback to local session for development
+            print("⚠️ Using local session fallback")
             chatSessions.insert(session, at: 0)
             currentSession = session
             messages = []
@@ -58,6 +75,7 @@ class ChatService: ObservableObject {
     }
     
     func loadUserSessions(userId: UUID) async {
+        print("📚 Loading chat sessions for user ID: \(userId)")
         isLoading = true
         defer { isLoading = false }
         
@@ -70,8 +88,12 @@ class ChatService: ObservableObject {
                 .execute()
                 .value
             
+            print("✅ Loaded \(sessions.count) chat sessions")
             chatSessions = sessions
         } catch {
+            print("❌ Failed to load chat sessions: \(error)")
+            print("   Error details: \(error.localizedDescription)")
+            
             // Fallback to mock sessions for development
             chatSessions = []
         }
@@ -86,6 +108,7 @@ class ChatService: ObservableObject {
     // MARK: - Message Management
     
     func loadMessages(for sessionId: UUID) async {
+        print("📖 Loading messages for session: \(sessionId)")
         do {
             let sessionMessages: [ChatMessage] = try await supabase
                 .from("chat_messages")
@@ -95,15 +118,17 @@ class ChatService: ObservableObject {
                 .execute()
                 .value
             
+            print("✅ Loaded \(sessionMessages.count) messages")
             messages = sessionMessages
         } catch {
+            print("❌ Failed to load messages: \(error)")
             // Fallback to empty messages for development
             messages = []
         }
     }
     
     func sendMessage(content: String, sessionId: UUID) async throws {
-        guard let currentSession = currentSession else { return }
+        guard var currentSession = currentSession else { return }
         
         // Check if guest user has reached message limit BEFORE creating message
         if let authManager = await getAuthManager(),
@@ -156,15 +181,25 @@ class ChatService: ObservableObject {
                 messages.append(userMessage)
             }
             
-            // Update session timestamp
-            var updatedSession = currentSession
-            updatedSession.updatedAt = Date()
+            // Update session timestamp and title if first message
+            currentSession.updatedAt = Date()
+            
+            // Update title with first user message if it's still "New Chat"
+            if currentSession.title == "New Chat" && messages.count <= 2 {
+                currentSession.title = String(content.prefix(50))
+            }
             
             try await supabase
                 .from("chat_sessions")
-                .update(updatedSession)
+                .update(currentSession)
                 .eq("id", value: sessionId)
                 .execute()
+            
+            // Update local session
+            if let index = chatSessions.firstIndex(where: { $0.id == sessionId }) {
+                chatSessions[index] = currentSession
+            }
+            self.currentSession = currentSession
             
             // Generate AI response
             await generateAIResponse(for: sessionId, userMessage: content)
@@ -226,14 +261,19 @@ class ChatService: ObservableObject {
             print("   - Conversation History: \(recentMessages.count) messages")
             
             // Create URL request manually for Edge Function
-            let url = URL(string: "https://rchropdkyqpfyjwgdudv.supabase.co/functions/v1/ai-chat")!
+            guard let edgeFunctionURL = Bundle.main.object(forInfoDictionaryKey: "EdgeFunctionURL") as? String,
+                  let url = URL(string: edgeFunctionURL) else {
+                print("❌ Edge Function URL not configured in Info.plist")
+                await handleFallbackResponse(for: sessionId, userMessage: userMessage)
+                return
+            }
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.setValue("omni-ai-ios/1.1", forHTTPHeaderField: "x-client-info")
             request.httpBody = jsonData
-            request.timeoutInterval = 30.0 // 30 second timeout
+            request.timeoutInterval = 20.0 // 20 second timeout for faster response
             
             print("🚀 Calling Edge Function at: \(url.absoluteString)")
             
@@ -369,17 +409,17 @@ class ChatService: ObservableObject {
     }
     
     private func handleGuestInfo(_ guestInfo: [String: Any]) async {
-        guard let conversationsUsed = guestInfo["conversationsUsed"] as? Int,
-              let conversationsRemaining = guestInfo["conversationsRemaining"] as? Int else { return }
+        guard let messagesUsed = guestInfo["messagesUsed"] as? Int,
+              let messagesRemaining = guestInfo["messagesRemaining"] as? Int else { return }
         
         await MainActor.run {
-            // Update local user object with conversation count
-            // This could trigger UI updates showing remaining conversations
-            print("👤 Guest conversations: \(conversationsUsed) used, \(conversationsRemaining) remaining")
+            // Update local user object with message count
+            // This could trigger UI updates showing remaining messages
+            print("👤 Guest messages: \(messagesUsed) used, \(messagesRemaining) remaining")
             
             // You could post a notification to update UI
             NotificationCenter.default.post(
-                name: NSNotification.Name("GuestConversationCountUpdated"),
+                name: NSNotification.Name("GuestMessageCountUpdated"),
                 object: nil,
                 userInfo: guestInfo
             )

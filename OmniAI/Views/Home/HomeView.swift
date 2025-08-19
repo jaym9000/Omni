@@ -178,6 +178,10 @@ struct HomeView: View {
         .sheet(isPresented: $showRecentChats) {
             RecentChatsView()
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OpenChatFromHistory"))) { _ in
+            chatInitialPrompt = ""
+            showChat = true
+        }
         .sheet(isPresented: $showJournal) {
             JournalEntryView(mood: journalMood)
         }
