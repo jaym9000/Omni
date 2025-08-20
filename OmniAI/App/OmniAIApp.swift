@@ -1,7 +1,26 @@
 import SwiftUI
+import FirebaseCore
+
+// AppDelegate for Firebase initialization
+class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication,
+                    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+        // Configure Firebase
+        FirebaseApp.configure()
+        print("🔥 Firebase configured successfully")
+        return true
+    }
+    
+    // Handle URL callbacks for OAuth (Apple Sign In)
+    func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
+        return true
+    }
+}
 
 @main
 struct OmniAIApp: App {
+    // Connect AppDelegate for Firebase
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @StateObject private var authManager = AuthenticationManager()
     @StateObject private var themeManager = ThemeManager()
     @StateObject private var premiumManager = PremiumManager()

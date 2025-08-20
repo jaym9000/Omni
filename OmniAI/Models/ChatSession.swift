@@ -4,32 +4,12 @@ struct ChatSession: Codable, Identifiable {
     let id: UUID
     let userId: UUID
     var title: String
+    var messageCount: Int = 0
+    var lastMessage: String?
     
-    // Timestamp properties
-    private var _createdAt: String
-    private var _updatedAt: String
-    
-    var createdAt: Date {
-        get { 
-            let formatter = ISO8601DateFormatter()
-            return formatter.date(from: _createdAt) ?? Date()
-        }
-        set { 
-            let formatter = ISO8601DateFormatter()
-            _createdAt = formatter.string(from: newValue)
-        }
-    }
-    
-    var updatedAt: Date {
-        get { 
-            let formatter = ISO8601DateFormatter()
-            return formatter.date(from: _updatedAt) ?? Date()
-        }
-        set { 
-            let formatter = ISO8601DateFormatter()
-            _updatedAt = formatter.string(from: newValue)
-        }
-    }
+    // Direct Date properties for Firestore
+    var createdAt: Date
+    var updatedAt: Date
     
     // Messages will be loaded separately for performance
     var messages: [ChatMessage] = []
@@ -38,18 +18,20 @@ struct ChatSession: Codable, Identifiable {
         case id
         case userId = "user_id"
         case title
-        case _createdAt = "created_at"
-        case _updatedAt = "updated_at"
+        case messageCount = "message_count"
+        case lastMessage = "last_message"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
     }
     
-    init(userId: UUID, title: String = "New Chat") {
-        self.id = UUID()
+    init(id: UUID = UUID(), userId: UUID, title: String = "New Chat", createdAt: Date = Date(), updatedAt: Date = Date(), messageCount: Int = 0, lastMessage: String? = nil) {
+        self.id = id
         self.userId = userId
         self.title = title
-        
-        let now = ISO8601DateFormatter().string(from: Date())
-        self._createdAt = now
-        self._updatedAt = now
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+        self.messageCount = messageCount
+        self.lastMessage = lastMessage
     }
 }
 
@@ -58,34 +40,26 @@ struct ChatMessage: Codable, Identifiable {
     let sessionId: UUID
     let content: String
     let isUser: Bool
+    var mood: String?
     
-    // Timestamp properties
-    private var _createdAt: String
-    
-    var timestamp: Date {
-        get { 
-            let formatter = ISO8601DateFormatter()
-            return formatter.date(from: _createdAt) ?? Date()
-        }
-        set { 
-            let formatter = ISO8601DateFormatter()
-            _createdAt = formatter.string(from: newValue)
-        }
-    }
+    // Direct Date property for Firestore
+    var timestamp: Date
     
     enum CodingKeys: String, CodingKey {
         case id
         case sessionId = "session_id"
         case content
         case isUser = "is_user"
-        case _createdAt = "created_at"
+        case mood
+        case timestamp = "created_at"
     }
     
-    init(content: String, isUser: Bool, sessionId: UUID) {
+    init(content: String, isUser: Bool, sessionId: UUID, timestamp: Date = Date(), mood: String? = nil) {
         self.id = UUID()
         self.sessionId = sessionId
         self.content = content
         self.isUser = isUser
-        self._createdAt = ISO8601DateFormatter().string(from: Date())
+        self.timestamp = timestamp
+        self.mood = mood
     }
 }

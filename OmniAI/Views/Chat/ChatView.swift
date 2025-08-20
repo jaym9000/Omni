@@ -101,7 +101,7 @@ struct ChatView: View {
             
             print("🔍 Setting up chat for user:")
             print("   - User ID (public.users.id): \(userId)")
-            print("   - Auth User ID: \(authManager.currentUser?.authUserId?.uuidString ?? "nil")")
+            print("   - Auth User ID: \(authManager.currentUser?.authUserId ?? "nil")")
             print("   - Email: \(authManager.currentUser?.email ?? "unknown")")
             
             // First load user's existing sessions for history

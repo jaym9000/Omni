@@ -9,14 +9,18 @@ enum AuthProvider: String, Codable {
 
 struct User: Codable, Identifiable {
     let id: UUID
-    var authUserId: UUID? // References auth.users(id) for RLS
+    var authUserId: String? // Firebase Auth UID
     var email: String
     var displayName: String
     var emailVerified: Bool
     var authProvider: AuthProvider
     var avatarURL: String?
+    var avatarImageName: String? // For local avatar selection
+    var isPremium: Bool = false
+    var biometricEnabled: Bool = false
+    var dailyReminder: Bool = true
     
-    // Timestamp properties for tracking changes
+    // Timestamp properties for tracking changes  
     private var _createdAt: String
     private var _updatedAt: String
     
@@ -67,11 +71,15 @@ struct User: Codable, Identifiable {
         case emailVerified = "email_verified"
         case authProvider = "auth_provider"
         case avatarURL = "avatar_url"
+        case avatarImageName = "avatar_image_name"
+        case isPremium = "is_premium"
+        case biometricEnabled = "biometric_enabled"
+        case notificationsEnabled = "notifications_enabled"
+        case dailyReminder = "daily_reminder"
         case _createdAt = "created_at"
         case _updatedAt = "updated_at"
         case companionName = "companion_name"
         case companionPersonality = "companion_personality"
-        case notificationsEnabled = "notifications_enabled"
         case dailyReminderTime = "daily_reminder_time"
         case biometricAuthEnabled = "biometric_auth_enabled"
         case hasCompletedOnboarding = "has_completed_onboarding"
@@ -81,7 +89,7 @@ struct User: Codable, Identifiable {
     }
     
     // Custom initializer for database compatibility
-    init(id: UUID, authUserId: UUID? = nil, email: String, displayName: String, emailVerified: Bool = false, authProvider: AuthProvider = .email) {
+    init(id: UUID, authUserId: String? = nil, email: String, displayName: String, emailVerified: Bool = false, authProvider: AuthProvider = .email) {
         self.id = id
         self.authUserId = authUserId
         self.email = email
@@ -95,7 +103,7 @@ struct User: Codable, Identifiable {
     }
     
     // Guest user initializer
-    static func createGuestUser(id: UUID, authUserId: UUID) -> User {
+    static func createGuestUser(id: UUID, authUserId: String?) -> User {
         var guestUser = User(
             id: id,
             authUserId: authUserId,

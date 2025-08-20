@@ -1,5 +1,7 @@
 import Foundation
 import SwiftUI
+import FirebaseFirestore
+import FirebaseAuth
 
 @MainActor
 class ChatService: ObservableObject {
@@ -9,6 +11,9 @@ class ChatService: ObservableObject {
     @Published var isLoading = false
     @Published var isTyping = false
     
+    private let firebaseManager = FirebaseManager.shared
+    private var messagesListener: ListenerRegistration?
+    private var sessionsListener: ListenerRegistration?
     private var messagesSubscription: Task<Void, Never>?
     private weak var authManager: AuthenticationManager?
     
@@ -34,8 +39,16 @@ class ChatService: ObservableObject {
         print("   - Session ID: \(session.id)")
         print("   - Title: \(title)")
         
-        // TODO: Save to Firebase Firestore
-        // For now, just add to local sessions
+        // Save to Firebase Firestore
+        do {
+            try await firebaseManager.saveChatSession(session)
+            print("✅ Session saved to Firestore")
+        } catch {
+            print("⚠️ Failed to save session to Firestore: \(error)")
+            // Continue anyway for offline support
+        }
+        
+        // Add to local sessions
         chatSessions.insert(session, at: 0)
         currentSession = session
         messages = []
@@ -55,9 +68,15 @@ class ChatService: ObservableObject {
         isLoading = true
         defer { isLoading = false }
         
-        // TODO: Load from Firebase Firestore
-        // For now, use empty sessions
-        chatSessions = []
+        // Load from Firebase Firestore
+        do {
+            let sessions = try await firebaseManager.fetchChatSessions(userId: userId.uuidString)
+            chatSessions = sessions
+            print("✅ Loaded \(sessions.count) sessions from Firestore")
+        } catch {
+            print("⚠️ Failed to load sessions from Firestore: \(error)")
+            chatSessions = []
+        }
     }
     
     func selectSession(_ session: ChatSession) async {
@@ -70,9 +89,52 @@ class ChatService: ObservableObject {
     func loadMessages(for sessionId: UUID) async {
         print("📖 Loading messages for session: \(sessionId)")
         
-        // TODO: Load from Firebase Firestore
-        // For now, use empty messages
-        messages = []
+        // Load from Firebase Firestore
+        do {
+            let loadedMessages = try await firebaseManager.fetchMessages(sessionId: sessionId.uuidString)
+            
+            // Convert Firebase messages to app messages
+            messages = loadedMessages.map { firebaseMsg in
+                ChatMessage(
+                    content: firebaseMsg.content,
+                    isUser: firebaseMsg.role == .user,
+                    sessionId: sessionId,
+                    timestamp: firebaseMsg.timestamp,
+                    mood: firebaseMsg.mood
+                )
+            }
+            
+            print("✅ Loaded \(messages.count) messages from Firestore")
+            
+            // Setup real-time listener for new messages
+            setupMessageListener(for: sessionId)
+        } catch {
+            print("⚠️ Failed to load messages from Firestore: \(error)")
+            messages = []
+        }
+    }
+    
+    private func setupMessageListener(for sessionId: UUID) {
+        // Cancel previous listener
+        messagesListener?.remove()
+        
+        // Setup new listener
+        messagesListener = firebaseManager.listenToMessages(sessionId: sessionId.uuidString) { [weak self] firebaseMessages in
+            guard let self = self else { return }
+            
+            Task { @MainActor in
+                // Convert and update messages  
+                self.messages = firebaseMessages.map { firebaseMsg in
+                    ChatMessage(
+                        content: firebaseMsg.content,
+                        isUser: firebaseMsg.role == .user,
+                        sessionId: sessionId,
+                        timestamp: firebaseMsg.timestamp,
+                        mood: firebaseMsg.mood
+                    )
+                }
+            }
+        }
     }
     
     func sendMessage(content: String, sessionId: UUID) async throws {
@@ -117,10 +179,26 @@ class ChatService: ObservableObject {
         // Create user message
         let userMessage = ChatMessage(content: content, isUser: true, sessionId: sessionId)
         
-        // TODO: Save to Firebase Firestore
-        // For now, just add to local messages
+        // Add to local messages immediately for responsive UI
         await MainActor.run {
             messages.append(userMessage)
+        }
+        
+        // Save to Firebase Firestore
+        let firebaseMessage = FirebaseMessage(
+            id: userMessage.id,
+            content: content,
+            role: .user,
+            timestamp: Date(),
+            mood: nil
+        )
+        
+        do {
+            try await firebaseManager.saveChatMessage(firebaseMessage, sessionId: sessionId.uuidString)
+            print("✅ User message saved to Firestore")
+        } catch {
+            print("⚠️ Failed to save user message to Firestore: \(error)")
+            // Continue anyway for offline support
         }
         
         // Update session timestamp and title if first message
@@ -131,7 +209,12 @@ class ChatService: ObservableObject {
             currentSession.title = String(content.prefix(50))
         }
         
-        // TODO: Update session in Firebase
+        // Update session in Firebase
+        do {
+            try await firebaseManager.saveChatSession(currentSession)
+        } catch {
+            print("⚠️ Failed to update session in Firestore: \(error)")
+        }
         
         // Update local session
         if let index = chatSessions.firstIndex(where: { $0.id == sessionId }) {
@@ -173,8 +256,23 @@ class ChatService: ObservableObject {
         
         let aiMessage = ChatMessage(content: fallbackResponse, isUser: false, sessionId: sessionId)
         
-        // TODO: Save to Firebase Firestore
-        // For now, just add to local messages
+        // Save AI response to Firestore
+        let firebaseAiMessage = FirebaseMessage(
+            id: aiMessage.id,
+            content: fallbackResponse,
+            role: .assistant,
+            timestamp: Date(),
+            mood: nil
+        )
+        
+        do {
+            try await firebaseManager.saveChatMessage(firebaseAiMessage, sessionId: sessionId.uuidString)
+            print("✅ AI response saved to Firestore")
+        } catch {
+            print("⚠️ Failed to save AI response to Firestore: \(error)")
+        }
+        
+        // Add to local messages
         await MainActor.run {
             messages.append(aiMessage)
         }

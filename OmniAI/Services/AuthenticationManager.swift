@@ -2,6 +2,8 @@ import Foundation
 import SwiftUI
 import AuthenticationServices
 import CryptoKit
+import FirebaseAuth
+import FirebaseFirestore
 
 enum AuthError: Error, LocalizedError {
     case signUpFailed
@@ -48,6 +50,10 @@ class AuthenticationManager: ObservableObject {
     @Published var isAuthenticated = false
     @Published var currentUser: User?
     @Published var isEmailVerified = true
+    
+    // Firebase reference
+    private let firebaseManager = FirebaseManager.shared
+    private var authStateListener: AuthStateDidChangeListenerHandle?
     @Published var isAppleUser = false
     @Published var isLoading = false
     
@@ -59,16 +65,60 @@ class AuthenticationManager: ObservableObject {
     }
     
     func checkAuthenticationStatus(allowDelay: Bool = false) {
-        // Check if user is logged in from UserDefaults/Keychain for immediate UI update
+        // Setup Firebase auth state listener
+        authStateListener = firebaseManager.auth.addStateDidChangeListener { [weak self] auth, firebaseUser in
+            guard let self = self else { return }
+            
+            Task {
+                if let firebaseUser = firebaseUser {
+                    // User is signed in
+                    print("🔥 Firebase user detected: \(firebaseUser.uid)")
+                    
+                    // Try to fetch user from Firestore
+                    if let userProfile = try? await self.firebaseManager.fetchUser(userId: firebaseUser.uid) {
+                        await MainActor.run {
+                            self.currentUser = userProfile
+                            self.isAuthenticated = true
+                            self.isEmailVerified = firebaseUser.isEmailVerified
+                            self.isAppleUser = userProfile.authProvider == .apple
+                            
+                            // Save to UserDefaults
+                            if let encoded = try? JSONEncoder().encode(userProfile) {
+                                UserDefaults.standard.set(encoded, forKey: "currentUser")
+                            }
+                        }
+                    } else if firebaseUser.isAnonymous {
+                        // Handle anonymous user
+                        let guestUser = User.createGuestUser(
+                            id: UUID(),
+                            authUserId: firebaseUser.uid
+                        )
+                        
+                        await MainActor.run {
+                            self.currentUser = guestUser
+                            self.isAuthenticated = true
+                            self.isEmailVerified = true
+                        }
+                    }
+                } else {
+                    // No user is signed in
+                    await MainActor.run {
+                        self.currentUser = nil
+                        self.isAuthenticated = false
+                        self.isEmailVerified = true
+                        self.isAppleUser = false
+                    }
+                }
+            }
+        }
+        
+        // Also check UserDefaults for immediate UI update
         if let userData = UserDefaults.standard.data(forKey: "currentUser"),
            let user = try? JSONDecoder().decode(User.self, from: userData) {
             self.currentUser = user
             self.isAuthenticated = true
             self.isEmailVerified = user.emailVerified
             self.isAppleUser = user.authProvider == .apple
-        } else {
-            self.isAuthenticated = false
-            self.currentUser = nil
         }
     }
     
@@ -83,26 +133,60 @@ class AuthenticationManager: ObservableObject {
         // Validate email format
         try validateEmail(email)
         
-        // TODO: Implement Firebase Authentication
-        // For now, create a temporary user for UI preservation
-        let userProfile = User(
-            id: UUID(),
-            authUserId: UUID(),
-            email: email,
-            displayName: email.components(separatedBy: "@").first ?? "User",
-            emailVerified: false,
-            authProvider: .email
-        )
-        
-        await MainActor.run {
-            self.currentUser = userProfile
-            self.isAuthenticated = true
-            self.isEmailVerified = userProfile.emailVerified
+        do {
+            // Sign in with Firebase Auth
+            let authResult = try await firebaseManager.auth.signIn(withEmail: email, password: password)
+            let firebaseUser = authResult.user
             
-            // Save to UserDefaults as backup
-            if let encoded = try? JSONEncoder().encode(userProfile) {
-                UserDefaults.standard.set(encoded, forKey: "currentUser")
+            // Check if user exists in Firestore
+            var userProfile = try await firebaseManager.fetchUser(userId: firebaseUser.uid)
+            
+            // If user doesn't exist in Firestore, create one
+            if userProfile == nil {
+                userProfile = User(
+                    id: UUID(),
+                    authUserId: firebaseUser.uid,
+                    email: email,
+                    displayName: firebaseUser.displayName ?? email.components(separatedBy: "@").first ?? "User",
+                    emailVerified: firebaseUser.isEmailVerified,
+                    authProvider: .email
+                )
+                
+                // Save to Firestore
+                try await firebaseManager.saveUser(userProfile!)
             }
+            
+            // Create constant for concurrent access
+            let finalUserProfile = userProfile
+            
+            await MainActor.run {
+                self.currentUser = finalUserProfile
+                self.isAuthenticated = true
+                self.isEmailVerified = firebaseUser.isEmailVerified
+                
+                // Save to UserDefaults as backup
+                if let encoded = try? JSONEncoder().encode(finalUserProfile) {
+                    UserDefaults.standard.set(encoded, forKey: "currentUser")
+                }
+            }
+        } catch {
+            // Convert Firebase errors to our custom errors
+            if let nsError = error as NSError? {
+                let code = AuthErrorCode(rawValue: nsError.code)
+                switch code {
+                case .invalidEmail:
+                    throw AuthError.invalidEmail
+                case .wrongPassword, .invalidCredential:
+                    throw AuthError.invalidCredentials
+                case .userNotFound:
+                    throw AuthError.userNotFound
+                case .tooManyRequests:
+                    throw AuthError.rateLimitExceeded(retryAfter: Date().addingTimeInterval(60))
+                default:
+                    throw AuthError.signInFailed
+                }
+            }
+            throw AuthError.signInFailed
         }
     }
     
@@ -120,26 +204,60 @@ class AuthenticationManager: ObservableObject {
         // Validate password strength
         try validatePassword(password)
         
-        // TODO: Implement Firebase Authentication
-        // For now, create a temporary user for UI preservation
-        let userProfile = User(
-            id: UUID(),
-            authUserId: UUID(),
-            email: email,
-            displayName: displayName,
-            emailVerified: false,
-            authProvider: .email
-        )
-        
-        await MainActor.run {
-            self.currentUser = userProfile
-            self.isAuthenticated = true
-            self.isEmailVerified = userProfile.emailVerified
+        do {
+            // Create user with Firebase Auth
+            let authResult = try await firebaseManager.auth.createUser(withEmail: email, password: password)
+            let firebaseUser = authResult.user
             
-            // Save to UserDefaults as backup
-            if let encoded = try? JSONEncoder().encode(userProfile) {
-                UserDefaults.standard.set(encoded, forKey: "currentUser")
+            // Update display name
+            let changeRequest = firebaseUser.createProfileChangeRequest()
+            changeRequest.displayName = displayName
+            try await changeRequest.commitChanges()
+            
+            // Send verification email
+            try await firebaseUser.sendEmailVerification()
+            
+            // Create user profile
+            let userProfile = User(
+                id: UUID(),
+                authUserId: firebaseUser.uid,
+                email: email,
+                displayName: displayName,
+                emailVerified: false,
+                authProvider: .email
+            )
+            
+            // Save to Firestore
+            try await firebaseManager.saveUser(userProfile)
+            
+            await MainActor.run {
+                self.currentUser = userProfile
+                self.isAuthenticated = true
+                self.isEmailVerified = false
+                
+                // Save to UserDefaults as backup
+                if let encoded = try? JSONEncoder().encode(userProfile) {
+                    UserDefaults.standard.set(encoded, forKey: "currentUser")
+                }
             }
+        } catch {
+            // Convert Firebase errors to our custom errors
+            if let nsError = error as NSError? {
+                let code = AuthErrorCode(rawValue: nsError.code)
+                switch code {
+                case .invalidEmail:
+                    throw AuthError.invalidEmail
+                case .emailAlreadyInUse:
+                    throw AuthError.emailAlreadyInUse
+                case .weakPassword:
+                    throw AuthError.weakPassword
+                case .tooManyRequests:
+                    throw AuthError.rateLimitExceeded(retryAfter: Date().addingTimeInterval(60))
+                default:
+                    throw AuthError.signUpFailed
+                }
+            }
+            throw AuthError.signUpFailed
         }
     }
     
@@ -155,35 +273,72 @@ class AuthenticationManager: ObservableObject {
             // Get Apple ID credential using native Sign in with Apple
             let appleIDCredential = try await signInWithAppleNative()
             
+            // Extract identity token and authorization code
+            guard let identityTokenData = appleIDCredential.identityToken,
+                  let identityToken = String(data: identityTokenData, encoding: .utf8) else {
+                print("❌ Unable to fetch identity token")
+                throw AuthError.signInFailed
+            }
+            
+            // Generate nonce for security
+            let nonce = randomNonceString()
+            currentNonce = nonce
+            
+            // Create OAuth credential for Firebase
+            let credential = OAuthProvider.appleCredential(
+                withIDToken: identityToken,
+                rawNonce: nonce,
+                fullName: appleIDCredential.fullName
+            )
+            
+            // Sign in with Firebase using Apple credential
+            let authResult = try await firebaseManager.auth.signIn(with: credential)
+            let firebaseUser = authResult.user
+            
+            print("✅ Firebase Apple Sign-In successful: \(firebaseUser.uid)")
+            
             // Extract user information
-            let email = appleIDCredential.email ?? "apple.user@privaterelay.appleid.com"
+            let email = appleIDCredential.email ?? firebaseUser.email ?? "apple.user@privaterelay.appleid.com"
             let fullName = appleIDCredential.fullName
             let displayName = [fullName?.givenName, fullName?.familyName]
                 .compactMap { $0 }
                 .joined(separator: " ")
-                .isEmpty ? "Apple User" : [fullName?.givenName, fullName?.familyName]
+                .isEmpty ? firebaseUser.displayName ?? "Apple User" : [fullName?.givenName, fullName?.familyName]
                 .compactMap { $0 }
                 .joined(separator: " ")
             
-            // TODO: Implement Firebase Authentication with Apple
-            // For now, create a temporary user for UI preservation
-            let userProfile = User(
-                id: UUID(),
-                authUserId: UUID(),
-                email: email,
-                displayName: displayName,
-                emailVerified: true,
-                authProvider: .apple
-            )
+            // Check if user exists in Firestore
+            var userProfile = try? await firebaseManager.fetchUser(userId: firebaseUser.uid)
+            
+            // If user doesn't exist in Firestore, create one
+            if userProfile == nil {
+                userProfile = User(
+                    id: UUID(),
+                    authUserId: firebaseUser.uid,
+                    email: email,
+                    displayName: displayName,
+                    emailVerified: true, // Apple emails are pre-verified
+                    authProvider: .apple
+                )
+                
+                // Save to Firestore
+                try await firebaseManager.saveUser(userProfile!)
+                print("✅ New Apple user saved to Firestore")
+            } else {
+                print("✅ Existing Apple user found in Firestore")
+            }
+            
+            // Create constant for concurrent access
+            let finalUserProfile = userProfile
             
             await MainActor.run {
-                self.currentUser = userProfile
+                self.currentUser = finalUserProfile
                 self.isAuthenticated = true
                 self.isEmailVerified = true
                 self.isAppleUser = true
                 
                 // Save to UserDefaults as backup
-                if let encoded = try? JSONEncoder().encode(userProfile) {
+                if let encoded = try? JSONEncoder().encode(finalUserProfile) {
                     UserDefaults.standard.set(encoded, forKey: "currentUser")
                 }
             }
@@ -213,35 +368,71 @@ class AuthenticationManager: ObservableObject {
                 throw AuthError.signInFailed
             }
             
+            // Extract identity token
+            guard let identityTokenData = appleIDCredential.identityToken,
+                  let identityToken = String(data: identityTokenData, encoding: .utf8) else {
+                print("❌ Unable to fetch identity token")
+                throw AuthError.signInFailed
+            }
+            
+            // Use existing nonce if available, or generate new one
+            let nonce = currentNonce ?? randomNonceString()
+            
+            // Create OAuth credential for Firebase
+            let credential = OAuthProvider.appleCredential(
+                withIDToken: identityToken,
+                rawNonce: nonce,
+                fullName: appleIDCredential.fullName
+            )
+            
+            // Sign in with Firebase using Apple credential
+            let authResult = try await firebaseManager.auth.signIn(with: credential)
+            let firebaseUser = authResult.user
+            
+            print("✅ Firebase Apple Sign-In successful: \(firebaseUser.uid)")
+            
             // Extract user information
-            let email = appleIDCredential.email ?? "apple.user@privaterelay.appleid.com"
+            let email = appleIDCredential.email ?? firebaseUser.email ?? "apple.user@privaterelay.appleid.com"
             let fullName = appleIDCredential.fullName
             let displayName = [fullName?.givenName, fullName?.familyName]
                 .compactMap { $0 }
                 .joined(separator: " ")
-                .isEmpty ? "Apple User" : [fullName?.givenName, fullName?.familyName]
+                .isEmpty ? firebaseUser.displayName ?? "Apple User" : [fullName?.givenName, fullName?.familyName]
                 .compactMap { $0 }
                 .joined(separator: " ")
             
-            // TODO: Implement Firebase Authentication with Apple
-            // For now, create a temporary user for UI preservation
-            let userProfile = User(
-                id: UUID(),
-                authUserId: UUID(),
-                email: email,
-                displayName: displayName,
-                emailVerified: true,
-                authProvider: .apple
-            )
+            // Check if user exists in Firestore
+            var userProfile = try? await firebaseManager.fetchUser(userId: firebaseUser.uid)
+            
+            // If user doesn't exist in Firestore, create one
+            if userProfile == nil {
+                userProfile = User(
+                    id: UUID(),
+                    authUserId: firebaseUser.uid,
+                    email: email,
+                    displayName: displayName,
+                    emailVerified: true, // Apple emails are pre-verified
+                    authProvider: .apple
+                )
+                
+                // Save to Firestore
+                try await firebaseManager.saveUser(userProfile!)
+                print("✅ New Apple user saved to Firestore")
+            } else {
+                print("✅ Existing Apple user found in Firestore")
+            }
+            
+            // Create constant for concurrent access
+            let finalUserProfile = userProfile
             
             await MainActor.run {
-                self.currentUser = userProfile
+                self.currentUser = finalUserProfile
                 self.isAuthenticated = true
                 self.isEmailVerified = true
                 self.isAppleUser = true
                 
                 // Save to UserDefaults as backup
-                if let encoded = try? JSONEncoder().encode(userProfile) {
+                if let encoded = try? JSONEncoder().encode(finalUserProfile) {
                     UserDefaults.standard.set(encoded, forKey: "currentUser")
                 }
             }
@@ -265,23 +456,38 @@ class AuthenticationManager: ObservableObject {
             }
         }
         
-        // TODO: Implement Firebase Anonymous Authentication
-        // For now, create a local guest user for UI preservation
-        let guestUser = User.createGuestUser(
-            id: UUID(),
-            authUserId: UUID()
-        )
-        
-        await MainActor.run {
-            self.currentUser = guestUser
-            self.isAuthenticated = true
-            self.isEmailVerified = true  // Guest users don't need email verification
-            self.isAppleUser = false
+        do {
+            // Sign in anonymously with Firebase
+            let authResult = try await firebaseManager.auth.signInAnonymously()
+            let firebaseUser = authResult.user
             
-            // Save to UserDefaults
-            if let encoded = try? JSONEncoder().encode(guestUser) {
-                UserDefaults.standard.set(encoded, forKey: "currentUser")
+            print("✅ Firebase anonymous sign-in successful: \(firebaseUser.uid)")
+            
+            // Create guest user profile
+            let guestUser = User.createGuestUser(
+                id: UUID(),
+                authUserId: firebaseUser.uid
+            )
+            
+            // Save to Firestore for consistency
+            try await firebaseManager.saveUser(guestUser)
+            
+            await MainActor.run {
+                self.currentUser = guestUser
+                self.isAuthenticated = true
+                self.isEmailVerified = true  // Guest users don't need email verification
+                self.isAppleUser = false
+                
+                // Save to UserDefaults
+                if let encoded = try? JSONEncoder().encode(guestUser) {
+                    UserDefaults.standard.set(encoded, forKey: "currentUser")
+                }
             }
+            
+            print("✅ Guest session created successfully")
+        } catch {
+            print("❌ Failed to create guest session: \(error)")
+            throw AuthError.signInFailed
         }
     }
     
@@ -297,38 +503,93 @@ class AuthenticationManager: ObservableObject {
             }
         }
         
-        // TODO: Implement Firebase conversion of anonymous to permanent account
-        // For now, update the local user
-        var updatedUser = currentUser
-        updatedUser.email = email
-        updatedUser.displayName = displayName
-        updatedUser.authProvider = .email
-        updatedUser.isGuest = false
-        updatedUser.emailVerified = false
-        updatedUser.updatedAt = Date()
-        
-        await MainActor.run {
-            self.currentUser = updatedUser
-            self.isEmailVerified = false
-            
-            // Update UserDefaults
-            if let encoded = try? JSONEncoder().encode(updatedUser) {
-                UserDefaults.standard.set(encoded, forKey: "currentUser")
+        do {
+            // Get the current anonymous Firebase user
+            guard let firebaseUser = firebaseManager.auth.currentUser, firebaseUser.isAnonymous else {
+                throw AuthError.userNotFound
             }
+            
+            // Create email credential
+            let credential = EmailAuthProvider.credential(withEmail: email, password: password)
+            
+            // Link the anonymous account with the email credential
+            let authResult = try await firebaseUser.link(with: credential)
+            let linkedUser = authResult.user
+            
+            // Update display name
+            let changeRequest = linkedUser.createProfileChangeRequest()
+            changeRequest.displayName = displayName
+            try await changeRequest.commitChanges()
+            
+            // Send verification email
+            try await linkedUser.sendEmailVerification()
+            
+            print("✅ Guest account converted to email account: \(linkedUser.uid)")
+            
+            // Update the user profile
+            var updatedUser = currentUser
+            updatedUser.email = email
+            updatedUser.displayName = displayName
+            updatedUser.authProvider = .email
+            updatedUser.isGuest = false
+            updatedUser.emailVerified = false
+            updatedUser.updatedAt = Date()
+            
+            // Update in Firestore
+            try await firebaseManager.saveUser(updatedUser)
+            
+            // Create constant for concurrent access
+            let finalUser = updatedUser
+            
+            await MainActor.run {
+                self.currentUser = finalUser
+                self.isEmailVerified = false
+                
+                // Update UserDefaults
+                if let encoded = try? JSONEncoder().encode(finalUser) {
+                    UserDefaults.standard.set(encoded, forKey: "currentUser")
+                }
+            }
+            
+            print("✅ Guest successfully converted to permanent account")
+        } catch {
+            print("❌ Failed to convert guest account: \(error)")
+            if let nsError = error as NSError? {
+                let code = AuthErrorCode(rawValue: nsError.code)
+                switch code {
+                case .emailAlreadyInUse:
+                    throw AuthError.emailAlreadyInUse
+                case .weakPassword:
+                    throw AuthError.weakPassword
+                case .invalidEmail:
+                    throw AuthError.invalidEmail
+                default:
+                    throw AuthError.signUpFailed
+                }
+            }
+            throw AuthError.signUpFailed
         }
     }
     
     func signOut() {
-        Task { @MainActor in
-            currentUser = nil
-            isAuthenticated = false
-            isEmailVerified = true
-            isAppleUser = false
+        do {
+            // Sign out from Firebase
+            try firebaseManager.auth.signOut()
+            
+            Task { @MainActor in
+                currentUser = nil
+                isAuthenticated = false
+                isEmailVerified = true
+                isAppleUser = false
+            }
+            
+            UserDefaults.standard.removeObject(forKey: "currentUser")
+            UserDefaults.standard.removeObject(forKey: "hasCompletedOnboarding")
+            
+            print("✅ Successfully signed out")
+        } catch {
+            print("❌ Error signing out: \(error)")
         }
-        UserDefaults.standard.removeObject(forKey: "currentUser")
-        UserDefaults.standard.removeObject(forKey: "hasCompletedOnboarding")
-        
-        // TODO: Implement Firebase sign out
     }
     
     func sendVerificationEmail() async throws {
@@ -552,8 +813,13 @@ class AuthenticationManager: ObservableObject {
     private func signInWithAppleNative() async throws -> ASAuthorizationAppleIDCredential {
         return try await withCheckedThrowingContinuation { continuation in
             Task { @MainActor in
+                // Generate and save nonce for this request
+                let nonce = randomNonceString()
+                currentNonce = nonce
+                
                 let request = ASAuthorizationAppleIDProvider().createRequest()
                 request.requestedScopes = [.fullName, .email]
+                request.nonce = sha256(nonce)
                 
                 let authorizationController = ASAuthorizationController(authorizationRequests: [request])
                 
