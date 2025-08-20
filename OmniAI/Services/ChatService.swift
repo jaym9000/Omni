@@ -259,8 +259,8 @@ class ChatService: ObservableObject {
             throw NSError(domain: "ChatService", code: 401, userInfo: [NSLocalizedDescriptionKey: "User not authenticated"])
         }
         
-        // Prepare the request - Firebase Functions v2 URL pattern
-        let url = URL(string: "https://us-central1-omni-ai-8d5d2.cloudfunctions.net/aiChat")!
+        // Prepare the request - Firebase Functions v2 Cloud Run URL
+        let url = URL(string: "https://aichat-265kkl2lea-uc.a.run.app")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("Bearer \(idToken)", forHTTPHeaderField: "Authorization")

@@ -35,13 +35,23 @@ export const aiChat = functions.https.onRequest(
           // Verify authentication
           const authHeader = request.headers.authorization;
           if (!authHeader?.startsWith("Bearer ")) {
-            response.status(401).json({error: "Unauthorized"});
+            console.log("No Bearer token in Authorization header");
+            response.status(401).json({error: "Unauthorized - No Bearer token"});
             return;
           }
 
           const idToken = authHeader.split("Bearer ")[1];
-          const decodedToken = await admin.auth().verifyIdToken(idToken);
-          const userId = decodedToken.uid;
+          let decodedToken;
+          let userId;
+          try {
+            decodedToken = await admin.auth().verifyIdToken(idToken);
+            userId = decodedToken.uid;
+            console.log("Successfully verified Firebase ID token for user:", userId);
+          } catch (error) {
+            console.error("Failed to verify Firebase ID token:", error);
+            response.status(401).json({error: "Invalid Firebase ID token"});
+            return;
+          }
 
           // Get request data
           const {message, sessionId, mood} = request.body;

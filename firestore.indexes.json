@@ -15,12 +15,16 @@
       ]
     },
     {
-      "collectionGroup": "messages",
+      "collectionGroup": "chat_sessions",
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "timestamp",
+          "fieldPath": "authUserId",
           "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "updatedAt",
+          "order": "DESCENDING"
         }
       ]
     },
