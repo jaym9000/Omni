@@ -104,8 +104,9 @@ struct ChatView: View {
             print("   - Auth User ID: \(authManager.currentUser?.authUserId ?? "nil")")
             print("   - Email: \(authManager.currentUser?.email ?? "unknown")")
             
-            // First load user's existing sessions for history
-            await chatService.loadUserSessions(userId: userId)
+            // First load user's existing sessions for history using authUserId
+            let authUserId = authManager.currentUser?.authUserId ?? ""
+            await chatService.loadUserSessions(userId: userId, authUserId: authUserId)
             
             var sessionToUse: ChatSession?
             
@@ -122,7 +123,7 @@ struct ChatView: View {
                 } else {
                     // If not found, try to load it from database
                     print("⚠️ Session not in loaded list, loading from database...")
-                    await chatService.loadUserSessions(userId: userId)
+                    await chatService.loadUserSessions(userId: userId, authUserId: authUserId)
                     if let existingSession = chatService.chatSessions.first(where: { $0.id == existingId }) {
                         sessionToUse = existingSession
                         currentSessionId = existingSession.id
@@ -135,6 +136,7 @@ struct ChatView: View {
                     let title = initialPrompt?.prefix(50).trimmingCharacters(in: .whitespacesAndNewlines) ?? "New Chat"
                     let session = try await chatService.createNewSession(
                         userId: userId,
+                        authUserId: authUserId,
                         title: title
                     )
                     sessionToUse = session

@@ -31,7 +31,7 @@ class ChatService: ObservableObject {
     
     // MARK: - Session Management
     
-    func createNewSession(userId: UUID, title: String = "New Chat") async throws -> ChatSession {
+    func createNewSession(userId: UUID, authUserId: String? = nil, title: String = "New Chat") async throws -> ChatSession {
         print("📝 Creating new chat session for user ID: \(userId)")
         
         // Create a new session
@@ -39,10 +39,13 @@ class ChatService: ObservableObject {
         print("   - Session ID: \(session.id)")
         print("   - Title: \(title)")
         
-        // Save to Firebase Firestore
+        // Get auth user ID if not provided
+        let finalAuthUserId = authUserId ?? firebaseManager.auth.currentUser?.uid ?? ""
+        
+        // Save to Firebase Firestore with authUserId
         do {
-            try await firebaseManager.saveChatSession(session)
-            print("✅ Session saved to Firestore")
+            try await firebaseManager.saveChatSession(session, authUserId: finalAuthUserId)
+            print("✅ Session saved to Firestore with authUserId: \(finalAuthUserId)")
         } catch {
             print("⚠️ Failed to save session to Firestore: \(error)")
             // Continue anyway for offline support
@@ -63,16 +66,19 @@ class ChatService: ObservableObject {
         return session
     }
     
-    func loadUserSessions(userId: UUID) async {
+    func loadUserSessions(userId: UUID, authUserId: String? = nil) async {
         print("📚 Loading chat sessions for user ID: \(userId)")
         isLoading = true
         defer { isLoading = false }
         
-        // Load from Firebase Firestore
+        // Get auth user ID if not provided
+        let finalAuthUserId = authUserId ?? firebaseManager.auth.currentUser?.uid ?? userId.uuidString
+        
+        // Load from Firebase Firestore using authUserId
         do {
-            let sessions = try await firebaseManager.fetchChatSessions(userId: userId.uuidString)
+            let sessions = try await firebaseManager.fetchChatSessions(authUserId: finalAuthUserId)
             chatSessions = sessions
-            print("✅ Loaded \(sessions.count) sessions from Firestore")
+            print("✅ Loaded \(sessions.count) sessions from Firestore for authUserId: \(finalAuthUserId)")
         } catch {
             print("⚠️ Failed to load sessions from Firestore: \(error)")
             chatSessions = []
@@ -209,9 +215,10 @@ class ChatService: ObservableObject {
             currentSession.title = String(content.prefix(50))
         }
         
-        // Update session in Firebase
+        // Update session in Firebase with authUserId
+        let authUserId = firebaseManager.auth.currentUser?.uid ?? ""
         do {
-            try await firebaseManager.saveChatSession(currentSession)
+            try await firebaseManager.saveChatSession(currentSession, authUserId: authUserId)
         } catch {
             print("⚠️ Failed to update session in Firestore: \(error)")
         }
@@ -236,9 +243,100 @@ class ChatService: ObservableObject {
             }
         }
         
-        // TODO: Implement Firebase Functions for AI chat
-        // For now, use a fallback response
-        await handleFallbackResponse(for: sessionId, userMessage: userMessage)
+        // Try to call Firebase AI Chat Function
+        do {
+            try await callAIChatFunction(for: sessionId, userMessage: userMessage)
+        } catch {
+            print("❌ Failed to call AI Chat Function: \(error)")
+            // Fall back to local response if Firebase function fails
+            await handleFallbackResponse(for: sessionId, userMessage: userMessage)
+        }
+    }
+    
+    private func callAIChatFunction(for sessionId: UUID, userMessage: String) async throws {
+        // Get the current user's ID token for authentication
+        guard let idToken = try? await firebaseManager.auth.currentUser?.getIDToken() else {
+            throw NSError(domain: "ChatService", code: 401, userInfo: [NSLocalizedDescriptionKey: "User not authenticated"])
+        }
+        
+        // Prepare the request - Firebase Functions v2 URL pattern
+        let url = URL(string: "https://us-central1-omni-ai-8d5d2.cloudfunctions.net/aiChat")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(idToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        // Prepare request body
+        var requestBody: [String: Any] = [
+            "message": userMessage,
+            "sessionId": sessionId.uuidString
+        ]
+        // Add mood if available (optional parameter)
+        // requestBody["mood"] = moodValue
+        
+        request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
+        
+        // Make the request
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw NSError(domain: "ChatService", code: 500, userInfo: [NSLocalizedDescriptionKey: "Invalid response"])
+        }
+        
+        if httpResponse.statusCode == 429 {
+            // Handle guest limit
+            if let responseData = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let errorMessage = responseData["message"] as? String {
+                await handleGuestLimitReached(["message": errorMessage])
+                return
+            }
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            throw NSError(domain: "ChatService", code: httpResponse.statusCode, 
+                         userInfo: [NSLocalizedDescriptionKey: "AI Chat Function returned error: \(httpResponse.statusCode)"])
+        }
+        
+        // Parse response
+        guard let responseData = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let aiResponse = responseData["response"] as? String else {
+            throw NSError(domain: "ChatService", code: 500, userInfo: [NSLocalizedDescriptionKey: "Invalid response format"])
+        }
+        
+        // Check for crisis intervention
+        let requiresCrisisIntervention = responseData["requiresCrisisIntervention"] as? Bool ?? false
+        if requiresCrisisIntervention {
+            await handleCrisisResponse(requiresEscalation: true)
+        }
+        
+        // Handle guest info if present
+        if let guestInfo = responseData["guestInfo"] as? [String: Any] {
+            await handleGuestInfo(guestInfo)
+        }
+        
+        // Create and save the AI message
+        let aiMessage = ChatMessage(content: aiResponse, isUser: false, sessionId: sessionId)
+        
+        // Save AI response to Firestore
+        let firebaseAiMessage = FirebaseMessage(
+            id: aiMessage.id,
+            content: aiResponse,
+            role: .assistant,
+            timestamp: Date(),
+            mood: nil
+        )
+        
+        do {
+            try await firebaseManager.saveChatMessage(firebaseAiMessage, sessionId: sessionId.uuidString)
+            print("✅ AI response saved to Firestore")
+        } catch {
+            print("⚠️ Failed to save AI response to Firestore: \(error)")
+        }
+        
+        // Add to local messages
+        await MainActor.run {
+            messages.append(aiMessage)
+        }
     }
     
     private func handleFallbackResponse(for sessionId: UUID, userMessage: String) async {

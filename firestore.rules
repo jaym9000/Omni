@@ -20,14 +20,23 @@ service cloud.firestore {
     
     // Chat sessions - users can only access their own sessions
     match /chat_sessions/{sessionId} {
+      // Allow read if authenticated and either authUserId or userId matches
       allow read: if isAuthenticated() && 
-        (resource.data.userId == request.auth.uid || 
+        (resource.data.authUserId == request.auth.uid || 
          resource.data.userId == request.auth.uid);
+      
+      // Allow write/update if authUserId matches
       allow write: if isAuthenticated() && 
-        request.resource.data.userId == request.auth.uid;
+        (request.resource.data.authUserId == request.auth.uid ||
+         request.resource.data.userId == request.auth.uid);
+      
+      // Allow create if authenticated
       allow create: if isAuthenticated();
+      
+      // Allow delete if owner
       allow delete: if isAuthenticated() && 
-        resource.data.userId == request.auth.uid;
+        (resource.data.authUserId == request.auth.uid ||
+         resource.data.userId == request.auth.uid);
       
       // Messages within chat sessions
       match /messages/{messageId} {

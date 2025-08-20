@@ -2,99 +2,111 @@ import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import {OpenAI} from "openai";
 import * as cors from "cors";
+import {defineSecret} from "firebase-functions/params";
 
 // Initialize Firebase Admin
 admin.initializeApp();
 
 // Initialize CORS
-const corsHandler = cors({origin: true});
+const corsHandler = cors.default({origin: true});
 
-// Initialize OpenAI (API key should be set in Firebase Functions config)
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || functions.config().openai?.api_key,
-});
+// Define secret for OpenAI API key
+const openaiApiKey = defineSecret("OPENAI_API_KEY");
 
 // Firestore references
 const db = admin.firestore();
 
+// Simple test function
+export const testFunction = functions.https.onRequest((request, response) => {
+  response.json({message: "Hello from Firebase Functions!"});
+});
+
 // AI Chat Function
-export const aiChat = functions.https.onRequest((request, response) => {
-  corsHandler(request, response, async () => {
-    try {
-      // Verify authentication
-      const authHeader = request.headers.authorization;
-      if (!authHeader?.startsWith("Bearer ")) {
-        response.status(401).json({error: "Unauthorized"});
-        return;
-      }
+export const aiChat = functions.https.onRequest(
+    {secrets: [openaiApiKey]},
+    (request, response) => {
+      corsHandler(request, response, async () => {
+        // Initialize OpenAI with secret
+        const openai = new OpenAI({
+          apiKey: openaiApiKey.value(),
+        });
 
-      const idToken = authHeader.split("Bearer ")[1];
-      const decodedToken = await admin.auth().verifyIdToken(idToken);
-      const userId = decodedToken.uid;
+        try {
+          // Verify authentication
+          const authHeader = request.headers.authorization;
+          if (!authHeader?.startsWith("Bearer ")) {
+            response.status(401).json({error: "Unauthorized"});
+            return;
+          }
 
-      // Get request data
-      const {message, sessionId, mood} = request.body;
+          const idToken = authHeader.split("Bearer ")[1];
+          const decodedToken = await admin.auth().verifyIdToken(idToken);
+          const userId = decodedToken.uid;
 
-      if (!message || !sessionId) {
-        response.status(400).json({error: "Missing required fields"});
-        return;
-      }
+          // Get request data
+          const {message, sessionId, mood} = request.body;
 
-      // Check if user is guest and enforce limits
-      const userDoc = await db.collection("users").doc(userId).get();
-      const userData = userDoc.data();
-      const isGuest = userData?.isGuest || false;
+          if (!message || !sessionId) {
+            response.status(400).json({error: "Missing required fields"});
+            return;
+          }
 
-      if (isGuest) {
-        // Count today's messages for guest user
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+          // Check if user is guest and enforce limits
+          const userDoc = await db.collection("users").doc(userId).get();
+          const userData = userDoc.data();
+          const isGuest = userData?.isGuest || false;
 
-        const messagesRef = db.collection("chat_sessions")
-          .doc(sessionId)
-          .collection("messages");
+          if (isGuest) {
+            // Count today's messages for guest user
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
 
-        const todayMessages = await messagesRef
-          .where("userId", "==", userId)
-          .where("timestamp", ">=", today)
-          .where("role", "==", "user")
-          .get();
+            const messagesRef = db.collection("chat_sessions")
+                .doc(sessionId)
+                .collection("messages");
 
-        const messageCount = todayMessages.size;
-        const maxMessages = 5;
+            const todayMessages = await messagesRef
+                .where("userId", "==", userId)
+                .where("timestamp", ">=", today)
+                .where("role", "==", "user")
+                .get();
 
-        if (messageCount >= maxMessages) {
-          response.status(429).json({
-            error: "guest_limit_reached",
-            message: "Daily message limit reached for guest users",
-            messagesUsed: messageCount,
-            maxMessages: maxMessages,
+            const messageCount = todayMessages.size;
+            const maxMessages = 5;
+
+            if (messageCount >= maxMessages) {
+              response.status(429).json({
+                error: "guest_limit_reached",
+                message: "Daily message limit reached for guest users",
+                messagesUsed: messageCount,
+                maxMessages: maxMessages,
+              });
+              return;
+            }
+          }
+
+          // Prepare conversation history
+          const messagesSnapshot = await db.collection("chat_sessions")
+              .doc(sessionId)
+              .collection("messages")
+              .orderBy("timestamp", "desc")
+              .limit(10)
+              .get();
+
+          const conversationHistory: OpenAI.Chat.Completions.ChatCompletionMessageParam[] =
+          messagesSnapshot.docs.reverse().map((doc) => {
+            const data = doc.data();
+            return {
+              role: data.role === "user" ? "user" as const : "assistant" as const,
+              content: data.content,
+            };
           });
-          return;
-        }
-      }
 
-      // Prepare conversation history
-      const messagesSnapshot = await db.collection("chat_sessions")
-        .doc(sessionId)
-        .collection("messages")
-        .orderBy("timestamp", "desc")
-        .limit(10)
-        .get();
+          // Add current message to history
+          conversationHistory.push({role: "user" as const, content: message});
 
-      const conversationHistory = messagesSnapshot.docs.reverse().map((doc) => {
-        const data = doc.data();
-        return {
-          role: data.role === "user" ? "user" : "assistant",
-          content: data.content,
-        };
-      });
-
-      // Add current message to history
-      conversationHistory.push({role: "user", content: message});
-
-      // Generate AI response using OpenAI
-      const systemPrompt = `You are Omni, a compassionate and supportive AI mental health companion. 
+          // Generate AI response using OpenAI
+          const systemPrompt = `You are Omni, a compassionate and supportive AI mental health companion. 
 Your role is to provide empathetic, non-judgmental support for users dealing with anxiety, depression, 
 and other mental health challenges. 
 
@@ -109,80 +121,80 @@ Key guidelines:
 
 ${mood ? `The user's current mood is: ${mood}` : ""}`;
 
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          {role: "system", content: systemPrompt},
-          ...conversationHistory,
-        ],
-        temperature: 0.7,
-        max_tokens: 500,
+          const completion = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [
+              {role: "system" as const, content: systemPrompt},
+              ...conversationHistory,
+            ],
+            temperature: 0.7,
+            max_tokens: 500,
+          });
+
+          const aiResponse = completion.choices[0].message.content || "I'm here to support you.";
+
+          // Check for crisis keywords
+          const crisisKeywords = ["suicide", "kill myself", "end it all", "harm myself", "self-harm"];
+          const requiresCrisisIntervention = crisisKeywords.some((keyword) =>
+            message.toLowerCase().includes(keyword)
+          );
+
+          // Save user message to Firestore
+          await db.collection("chat_sessions")
+              .doc(sessionId)
+              .collection("messages")
+              .add({
+                content: message,
+                role: "user",
+                userId: userId,
+                timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                mood: mood || null,
+              });
+
+          // Save AI response to Firestore
+          await db.collection("chat_sessions")
+              .doc(sessionId)
+              .collection("messages")
+              .add({
+                content: aiResponse,
+                role: "assistant",
+                timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                requiresCrisisIntervention,
+              });
+
+          // Update session timestamp
+          await db.collection("chat_sessions").doc(sessionId).update({
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            lastMessage: aiResponse.substring(0, 100),
+          });
+
+          // Send response
+          response.json({
+            response: aiResponse,
+            requiresCrisisIntervention,
+            guestInfo: isGuest ? {
+              messagesUsed: (userData?.dailyMessageCount || 0) + 1,
+              messagesRemaining: Math.max(0, 5 - ((userData?.dailyMessageCount || 0) + 1)),
+            } : undefined,
+          });
+        } catch (error) {
+          console.error("Error in aiChat function:", error);
+          response.status(500).json({
+            error: "Internal server error",
+            message: "Failed to process chat message",
+          });
+        }
       });
-
-      const aiResponse = completion.choices[0].message.content || "I'm here to support you.";
-
-      // Check for crisis keywords
-      const crisisKeywords = ["suicide", "kill myself", "end it all", "harm myself", "self-harm"];
-      const requiresCrisisIntervention = crisisKeywords.some((keyword) =>
-        message.toLowerCase().includes(keyword)
-      );
-
-      // Save user message to Firestore
-      await db.collection("chat_sessions")
-        .doc(sessionId)
-        .collection("messages")
-        .add({
-          content: message,
-          role: "user",
-          userId: userId,
-          timestamp: admin.firestore.FieldValue.serverTimestamp(),
-          mood: mood || null,
-        });
-
-      // Save AI response to Firestore
-      await db.collection("chat_sessions")
-        .doc(sessionId)
-        .collection("messages")
-        .add({
-          content: aiResponse,
-          role: "assistant",
-          timestamp: admin.firestore.FieldValue.serverTimestamp(),
-          requiresCrisisIntervention,
-        });
-
-      // Update session timestamp
-      await db.collection("chat_sessions").doc(sessionId).update({
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        lastMessage: aiResponse.substring(0, 100),
-      });
-
-      // Send response
-      response.json({
-        response: aiResponse,
-        requiresCrisisIntervention,
-        guestInfo: isGuest ? {
-          messagesUsed: (userData?.dailyMessageCount || 0) + 1,
-          messagesRemaining: Math.max(0, 5 - ((userData?.dailyMessageCount || 0) + 1)),
-        } : undefined,
-      });
-    } catch (error) {
-      console.error("Error in aiChat function:", error);
-      response.status(500).json({
-        error: "Internal server error",
-        message: "Failed to process chat message",
-      });
-    }
-  });
-});
+    });
 
 // Create new chat session
-export const createChatSession = functions.https.onCall(async (data, context) => {
-  if (!context.auth) {
+export const createChatSession = functions.https.onCall(async (request) => {
+  if (!request.auth) {
     throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
   }
 
-  const userId = context.auth.uid;
-  const {title} = data;
+  const userId = request.auth.uid;
+  const {title} = request.data;
 
   const sessionData = {
     userId,
@@ -201,19 +213,19 @@ export const createChatSession = functions.https.onCall(async (data, context) =>
 });
 
 // Get user's chat sessions
-export const getUserSessions = functions.https.onCall(async (data, context) => {
-  if (!context.auth) {
+export const getUserSessions = functions.https.onCall(async (request) => {
+  if (!request.auth) {
     throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
   }
 
-  const userId = context.auth.uid;
+  const userId = request.auth.uid;
 
   const sessionsSnapshot = await db.collection("chat_sessions")
-    .where("userId", "==", userId)
-    .where("isActive", "==", true)
-    .orderBy("updatedAt", "desc")
-    .limit(20)
-    .get();
+      .where("userId", "==", userId)
+      .where("isActive", "==", true)
+      .orderBy("updatedAt", "desc")
+      .limit(20)
+      .get();
 
   const sessions = sessionsSnapshot.docs.map((doc) => ({
     id: doc.id,
@@ -224,13 +236,13 @@ export const getUserSessions = functions.https.onCall(async (data, context) => {
 });
 
 // Delete chat session
-export const deleteChatSession = functions.https.onCall(async (data, context) => {
-  if (!context.auth) {
+export const deleteChatSession = functions.https.onCall(async (request) => {
+  if (!request.auth) {
     throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
   }
 
-  const userId = context.auth.uid;
-  const {sessionId} = data;
+  const userId = request.auth.uid;
+  const {sessionId} = request.data;
 
   if (!sessionId) {
     throw new functions.https.HttpsError("invalid-argument", "Session ID is required");
@@ -252,23 +264,20 @@ export const deleteChatSession = functions.https.onCall(async (data, context) =>
 });
 
 // Reset daily message count for guest users (scheduled function)
-export const resetGuestMessageCounts = functions.pubsub
-  .schedule("every day 00:00")
-  .timeZone("America/New_York")
-  .onRun(async () => {
-    const guestUsers = await db.collection("users")
-      .where("isGuest", "==", true)
-      .get();
+export const resetGuestMessageCounts = functions.scheduler
+    .onSchedule("0 0 * * *", async () => {
+      const guestUsers = await db.collection("users")
+          .where("isGuest", "==", true)
+          .get();
 
-    const batch = db.batch();
-    guestUsers.docs.forEach((doc) => {
-      batch.update(doc.ref, {
-        dailyMessageCount: 0,
-        lastResetDate: admin.firestore.FieldValue.serverTimestamp(),
+      const batch = db.batch();
+      guestUsers.docs.forEach((doc) => {
+        batch.update(doc.ref, {
+          dailyMessageCount: 0,
+          lastResetDate: admin.firestore.FieldValue.serverTimestamp(),
+        });
       });
-    });
 
-    await batch.commit();
-    console.log(`Reset message counts for ${guestUsers.size} guest users`);
-    return null;
-  });
+      await batch.commit();
+      console.log(`Reset message counts for ${guestUsers.size} guest users`);
+    });

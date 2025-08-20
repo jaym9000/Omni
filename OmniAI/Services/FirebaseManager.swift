@@ -103,12 +103,13 @@ class FirebaseManager: ObservableObject {
     // MARK: - Chat Management
     
     /// Save chat session to Firestore
-    func saveChatSession(_ session: ChatSession) async throws {
+    func saveChatSession(_ session: ChatSession, authUserId: String) async throws {
         let sessionRef = firestore.collection(chatSessionsCollection).document(session.id.uuidString)
         
         let sessionData: [String: Any] = [
             "id": session.id.uuidString,
-            "userId": session.userId.uuidString,
+            "userId": session.userId.uuidString,  // Keep for backward compatibility
+            "authUserId": authUserId,  // Add Firebase Auth UID for security rules
             "title": session.title,
             "createdAt": session.createdAt,
             "updatedAt": session.updatedAt,
@@ -119,12 +120,21 @@ class FirebaseManager: ObservableObject {
         try await sessionRef.setData(sessionData, merge: true)
     }
     
-    /// Fetch chat sessions for a user
-    func fetchChatSessions(userId: String) async throws -> [ChatSession] {
-        let snapshot = try await firestore.collection(chatSessionsCollection)
-            .whereField("userId", isEqualTo: userId)
+    /// Fetch chat sessions for a user by Firebase Auth UID
+    func fetchChatSessions(authUserId: String) async throws -> [ChatSession] {
+        // Try to fetch by authUserId first (new sessions)
+        var snapshot = try await firestore.collection(chatSessionsCollection)
+            .whereField("authUserId", isEqualTo: authUserId)
             .order(by: "updatedAt", descending: true)
             .getDocuments()
+        
+        // If no results, try legacy userId field
+        if snapshot.documents.isEmpty {
+            snapshot = try await firestore.collection(chatSessionsCollection)
+                .whereField("userId", isEqualTo: authUserId)
+                .order(by: "updatedAt", descending: true)
+                .getDocuments()
+        }
         
         return snapshot.documents.compactMap { document in
             let data = document.data()
