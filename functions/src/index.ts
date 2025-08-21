@@ -152,19 +152,8 @@ ${mood ? `Current mood: ${mood}` : ""}`;
             message.toLowerCase().includes(keyword)
           );
 
-          // Save user message to Firestore
-          await db.collection("chat_sessions")
-              .doc(sessionId)
-              .collection("messages")
-              .add({
-                content: message,
-                role: "user",
-                userId: userId,
-                timestamp: admin.firestore.FieldValue.serverTimestamp(),
-                mood: mood || null,
-              });
-
-          // Save AI response to Firestore
+          // User message is already saved by the Swift app, no need to save again
+          // Only save the AI response to Firestore
           await db.collection("chat_sessions")
               .doc(sessionId)
               .collection("messages")

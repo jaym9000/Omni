@@ -4,6 +4,7 @@ struct ChatHistoryCalendarView: View {
     @Environment(\.dismiss) var dismiss
     @Binding var selectedDate: Date
     let chatSessions: [ChatSession]
+    var onDateSelected: ((Date) -> Void)?
     @State private var selectedMonth = Date()
     
     private let calendar = Calendar.current
@@ -51,7 +52,11 @@ struct ChatHistoryCalendarView: View {
                     chatSessions: chatSessions,
                     onDaySelected: { date in
                         selectedDate = date
-                        dismiss()
+                        if let onDateSelected = onDateSelected {
+                            onDateSelected(date)
+                        } else {
+                            dismiss()
+                        }
                     }
                 )
                 

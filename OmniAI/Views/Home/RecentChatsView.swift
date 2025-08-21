@@ -10,6 +10,21 @@ struct RecentChatsView: View {
     @State private var showCalendarView = false
     @State private var isLoading = true
     @State private var selectedDate = Date()
+    @State private var dateFilter: Date?
+    @State private var showAllChats = true
+    
+    private var filteredSessions: [ChatSession] {
+        if showAllChats || dateFilter == nil {
+            return chatSessions
+        } else if let filter = dateFilter {
+            let calendar = Calendar.current
+            return chatSessions.filter { session in
+                calendar.isDate(session.updatedAt, inSameDayAs: filter)
+            }
+        } else {
+            return chatSessions
+        }
+    }
     
     var body: some View {
         NavigationStack {
@@ -24,7 +39,7 @@ struct RecentChatsView: View {
                         }
                     }
                     .padding(.top)
-                } else if chatSessions.isEmpty {
+                } else if filteredSessions.isEmpty {
                     // Empty state
                     VStack(spacing: 24) {
                         Image(systemName: "bubble.left.and.bubble.right")
@@ -38,17 +53,27 @@ struct RecentChatsView: View {
                             )
                         
                         VStack(spacing: 8) {
-                            Text("No chat history yet")
+                            Text(dateFilter != nil ? "No chats on this date" : "No chat history yet")
                                 .font(.system(size: 20, weight: .semibold))
                                 .foregroundColor(.omniTextPrimary)
                             
-                            Text("Start a conversation with Omni")
+                            Text(dateFilter != nil ? "Try selecting a different date" : "Start a conversation with Omni")
                                 .font(.system(size: 15))
                                 .foregroundColor(.omniTextSecondary)
                             
-                            Text("Your chats will appear here")
-                                .font(.system(size: 13))
-                                .foregroundColor(.omniTextTertiary)
+                            if dateFilter != nil {
+                                Button("Show All Chats") {
+                                    dateFilter = nil
+                                    showAllChats = true
+                                }
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.omniPrimary)
+                                .padding(.top, 8)
+                            } else {
+                                Text("Your chats will appear here")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.omniTextTertiary)
+                            }
                         }
                         
                         Button(action: { 
@@ -98,13 +123,24 @@ struct RecentChatsView: View {
                     .listStyle(InsetGroupedListStyle())
                 }
             }
-            .navigationTitle("Chat History")
+            .navigationTitle(dateFilter != nil ? "Filtered Chats" : "Chat History")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: { showCalendarView = true }) {
-                        Image(systemName: "calendar")
+                    HStack(spacing: 12) {
+                        Button(action: { showCalendarView = true }) {
+                            Image(systemName: "calendar")
+                                .foregroundColor(.omniPrimary)
+                        }
+                        
+                        if dateFilter != nil {
+                            Button("All Chats") {
+                                dateFilter = nil
+                                showAllChats = true
+                            }
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundColor(.omniPrimary)
+                        }
                     }
                 }
                 
@@ -121,7 +157,15 @@ struct RecentChatsView: View {
                     .environmentObject(chatService)
             }
             .sheet(isPresented: $showCalendarView) {
-                ChatHistoryCalendarView(selectedDate: $selectedDate, chatSessions: chatSessions)
+                ChatHistoryCalendarView(
+                    selectedDate: $selectedDate,
+                    chatSessions: chatSessions,
+                    onDateSelected: { date in
+                        dateFilter = date
+                        showAllChats = false
+                        showCalendarView = false
+                    }
+                )
             }
         }
         .onAppear {
@@ -161,22 +205,30 @@ struct RecentChatsView: View {
         
         var groups: [(String, [ChatSession])] = []
         
+        // If filtering by date, show all sessions for that date in one group
+        if let filter = dateFilter, !showAllChats {
+            let formatter = DateFormatter()
+            formatter.dateStyle = .medium
+            groups.append((formatter.string(from: filter), filteredSessions))
+            return groups
+        }
+        
         // Today
-        let todaySessions = chatSessions.filter { calendar.isDateInToday($0.updatedAt) }
+        let todaySessions = filteredSessions.filter { calendar.isDateInToday($0.updatedAt) }
         if !todaySessions.isEmpty {
             groups.append(("Today", todaySessions))
         }
         
         // Yesterday
         let yesterday = calendar.date(byAdding: .day, value: -1, to: now)!
-        let yesterdaySessions = chatSessions.filter { calendar.isDate($0.updatedAt, inSameDayAs: yesterday) }
+        let yesterdaySessions = filteredSessions.filter { calendar.isDate($0.updatedAt, inSameDayAs: yesterday) }
         if !yesterdaySessions.isEmpty {
             groups.append(("Yesterday", yesterdaySessions))
         }
         
         // This Week
         let weekAgo = calendar.date(byAdding: .weekOfYear, value: -1, to: now)!
-        let thisWeekSessions = chatSessions.filter {
+        let thisWeekSessions = filteredSessions.filter {
             $0.updatedAt > weekAgo &&
             !calendar.isDateInToday($0.updatedAt) &&
             !calendar.isDate($0.updatedAt, inSameDayAs: yesterday)
@@ -186,7 +238,7 @@ struct RecentChatsView: View {
         }
         
         // Older
-        let olderSessions = chatSessions.filter { $0.updatedAt <= weekAgo }
+        let olderSessions = filteredSessions.filter { $0.updatedAt <= weekAgo }
         if !olderSessions.isEmpty {
             groups.append(("Older", olderSessions))
         }

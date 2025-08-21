@@ -97,17 +97,33 @@ class ChatService: ObservableObject {
     }
     
     func selectSession(_ session: ChatSession) async {
+        // Set the current session first
         currentSession = session
-        // Clear messages before loading new session to prevent duplicates
+        
+        // Clear messages and load new ones atomically to prevent race conditions
         await MainActor.run {
             messages.removeAll()
         }
+        
+        // Load messages and wait for completion
         await loadMessages(for: session.id)
+        
+        // Force UI update after messages are fully loaded
+        await MainActor.run {
+            self.objectWillChange.send()
+        }
     }
     
     func setCurrentSession(_ session: ChatSession) async {
         await MainActor.run {
             currentSession = session
+        }
+    }
+    
+    func clearForNewChat() async {
+        await MainActor.run {
+            currentSession = nil
+            messages.removeAll()
         }
     }
     
@@ -125,10 +141,15 @@ class ChatService: ObservableObject {
         do {
             let loadedMessages = try await firebaseManager.fetchMessages(sessionId: sessionId.uuidString)
             
-            // Convert Firebase messages to app messages and assign on MainActor
-            await MainActor.run {
-                messages = loadedMessages.map { firebaseMsg in
-                    ChatMessage(
+            // Create a Set to track message IDs and prevent duplicates
+            var messageIds = Set<UUID>()
+            var uniqueMessages: [ChatMessage] = []
+            
+            for firebaseMsg in loadedMessages {
+                // Only add if we haven't seen this ID before
+                if !messageIds.contains(firebaseMsg.id) {
+                    messageIds.insert(firebaseMsg.id)
+                    let chatMessage = ChatMessage(
                         id: firebaseMsg.id,  // Use the Firebase message ID to prevent duplicates
                         content: firebaseMsg.content,
                         isUser: firebaseMsg.role == .user,
@@ -136,16 +157,23 @@ class ChatService: ObservableObject {
                         timestamp: firebaseMsg.timestamp,
                         mood: firebaseMsg.mood
                     )
+                    uniqueMessages.append(chatMessage)
                 }
-                
-                print("✅ Loaded \(messages.count) messages from Firestore")
+            }
+            
+            // Convert Firebase messages to app messages and assign on MainActor
+            await MainActor.run {
+                messages = uniqueMessages
+                print("✅ Loaded \(messages.count) unique messages from Firestore")
             }
             
             // Don't setup real-time listener - it causes duplicates
             // setupMessageListener(for: sessionId)
         } catch {
             print("⚠️ Failed to load messages from Firestore: \(error)")
-            messages = []
+            await MainActor.run {
+                messages = []
+            }
         }
     }
     
@@ -199,7 +227,10 @@ class ChatService: ObservableObject {
                 )
                 
                 await MainActor.run {
-                    messages.append(limitMessage)
+                    // Only add if not already present (prevent duplicates)
+                    if !messages.contains(where: { $0.id == limitMessage.id }) {
+                        messages.append(limitMessage)
+                    }
                     
                     // Post notification to show signup modal
                     NotificationCenter.default.post(
@@ -215,9 +246,12 @@ class ChatService: ObservableObject {
         // Create user message
         let userMessage = ChatMessage(content: content, isUser: true, sessionId: sessionId)
         
-        // Add to local messages immediately for responsive UI
+        // Add to local messages immediately for responsive UI (check for duplicates)
         await MainActor.run {
-            messages.append(userMessage)
+            // Only add if not already present (prevent duplicates)
+            if !messages.contains(where: { $0.id == userMessage.id }) {
+                messages.append(userMessage)
+            }
         }
         
         // Save to Firebase Firestore
@@ -360,25 +394,14 @@ class ChatService: ObservableObject {
         // Create and save the AI message
         let aiMessage = ChatMessage(content: aiResponse, isUser: false, sessionId: sessionId)
         
-        // Save AI response to Firestore
-        let firebaseAiMessage = FirebaseMessage(
-            id: aiMessage.id,
-            content: aiResponse,
-            role: .assistant,
-            timestamp: Date(),
-            mood: nil
-        )
+        // AI response is already saved by the Firebase function, no need to save again
         
-        do {
-            try await firebaseManager.saveChatMessage(firebaseAiMessage, sessionId: sessionId.uuidString)
-            print("✅ AI response saved to Firestore")
-        } catch {
-            print("⚠️ Failed to save AI response to Firestore: \(error)")
-        }
-        
-        // Add to local messages
+        // Add to local messages (check for duplicates)
         await MainActor.run {
-            messages.append(aiMessage)
+            // Only add if not already present (prevent duplicates)
+            if !messages.contains(where: { $0.id == aiMessage.id }) {
+                messages.append(aiMessage)
+            }
         }
         
         // Update session's lastMessage with AI response
@@ -417,7 +440,7 @@ class ChatService: ObservableObject {
         
         let aiMessage = ChatMessage(content: fallbackResponse, isUser: false, sessionId: sessionId)
         
-        // Save AI response to Firestore
+        // For fallback responses, we DO need to save since Firebase function wasn't called
         let firebaseAiMessage = FirebaseMessage(
             id: aiMessage.id,
             content: fallbackResponse,
@@ -428,14 +451,17 @@ class ChatService: ObservableObject {
         
         do {
             try await firebaseManager.saveChatMessage(firebaseAiMessage, sessionId: sessionId.uuidString)
-            print("✅ AI response saved to Firestore")
+            print("✅ Fallback AI response saved to Firestore")
         } catch {
-            print("⚠️ Failed to save AI response to Firestore: \(error)")
+            print("⚠️ Failed to save fallback AI response to Firestore: \(error)")
         }
         
-        // Add to local messages
+        // Add to local messages (check for duplicates)
         await MainActor.run {
-            messages.append(aiMessage)
+            // Only add if not already present (prevent duplicates)
+            if !messages.contains(where: { $0.id == aiMessage.id }) {
+                messages.append(aiMessage)
+            }
         }
         
         // Update session's lastMessage with AI response
@@ -498,7 +524,10 @@ class ChatService: ObservableObject {
         )
         
         await MainActor.run {
-            messages.append(limitMessage)
+            // Only add if not already present (prevent duplicates)
+            if !messages.contains(where: { $0.id == limitMessage.id }) {
+                messages.append(limitMessage)
+            }
             
             // Post notification to show signup modal
             NotificationCenter.default.post(

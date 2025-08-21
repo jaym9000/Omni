@@ -14,6 +14,7 @@ struct ChatView: View {
     @State private var dragOffset = CGSize.zero
     @State private var sendButtonScale: CGFloat = 1.0
     @State private var micButtonScale: CGFloat = 1.0
+    @State private var isSettingUp = false
     
     let initialPrompt: String?
     let existingSessionId: UUID?
@@ -129,67 +130,85 @@ struct ChatView: View {
                     }
                 }
         )
-        .onAppear {
-            setupChat()
+        .task {
+            await setupChatSafely()
             // Auto-focus for better UX
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                isInputFocused = true
+            await MainActor.run {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    isInputFocused = true
+                }
             }
         }
     }
     
-    private func setupChat() {
-        Task {
-            guard let userId = authManager.currentUser?.id else { return }
-            
-            let authUserId = authManager.currentUser?.authUserId ?? ""
-            
-            // Always clear messages when setting up chat to prevent duplicates
-            await MainActor.run {
-                chatService.messages.removeAll()
+    private func setupChatSafely() async {
+        // Prevent concurrent setup calls
+        guard !isSettingUp else { return }
+        
+        await MainActor.run {
+            isSettingUp = true
+        }
+        
+        defer {
+            Task { @MainActor in
+                isSettingUp = false
             }
-            
-            await chatService.loadUserSessions(userId: userId, authUserId: authUserId)
-            
-            var sessionToUse: ChatSession?
-            
-            if let existingId = existingSessionId {
-                isSessionSaved = true
-                if let existingSession = chatService.chatSessions.first(where: { $0.id == existingId }) {
-                    sessionToUse = existingSession
-                    currentSessionId = existingSession.id
-                    await chatService.selectSession(existingSession)
-                }
+        }
+        
+        await setupChat()
+    }
+    
+    private func setupChat() async {
+        guard let userId = authManager.currentUser?.id else { return }
+        
+        let authUserId = authManager.currentUser?.authUserId ?? ""
+        
+        await chatService.loadUserSessions(userId: userId, authUserId: authUserId)
+        
+        var sessionToUse: ChatSession?
+        
+        if let existingId = existingSessionId {
+            isSessionSaved = true
+            if let existingSession = chatService.chatSessions.first(where: { $0.id == existingId }) {
+                sessionToUse = existingSession
+                currentSessionId = existingSession.id
+                // Wait for messages to fully load before proceeding
+                await chatService.selectSession(existingSession)
+                // Add a small delay to ensure UI is updated
+                try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 second
+            }
+        } else {
+            // For new chats, clear any existing state
+            await chatService.clearForNewChat()
+            let title = initialPrompt?.prefix(50).trimmingCharacters(in: .whitespacesAndNewlines) ?? "New Chat"
+            let session = ChatSession(
+                id: UUID(),
+                userId: userId,
+                title: title,
+                createdAt: Date(),
+                updatedAt: Date()
+            )
+            sessionToUse = session
+            currentSessionId = session.id
+            await chatService.setCurrentSession(session)
+        }
+        
+        // Only add welcome message for NEW chats, never for existing sessions
+        if existingSessionId == nil && chatService.messages.isEmpty, let session = sessionToUse {
+            let welcomeContent = if let prompt = initialPrompt, !prompt.isEmpty {
+                "I see you're feeling \(prompt). I'm here to listen and support you. What's on your mind?"
             } else {
-                let title = initialPrompt?.prefix(50).trimmingCharacters(in: .whitespacesAndNewlines) ?? "New Chat"
-                let session = ChatSession(
-                    id: UUID(),
-                    userId: userId,
-                    title: title,
-                    createdAt: Date(),
-                    updatedAt: Date()
-                )
-                sessionToUse = session
-                currentSessionId = session.id
-                await chatService.setCurrentSession(session)
+                "Hi there! How are you feeling today? I'm here to listen and support you."
             }
             
-            if chatService.messages.isEmpty && existingSessionId == nil, let session = sessionToUse {
-                let welcomeContent = if let prompt = initialPrompt, !prompt.isEmpty {
-                    "I see you're feeling \(prompt). I'm here to listen and support you. What's on your mind?"
-                } else {
-                    "Hi there! How are you feeling today? I'm here to listen and support you."
-                }
-                
-                let welcomeMessage = ChatMessage(
-                    content: welcomeContent,
-                    isUser: false,
-                    sessionId: session.id
-                )
-                
-                await MainActor.run {
-                    chatService.messages.append(welcomeMessage)
-                }
+            let welcomeMessage = ChatMessage(
+                content: welcomeContent,
+                isUser: false,
+                sessionId: session.id
+            )
+            
+            await MainActor.run {
+                chatService.messages.append(welcomeMessage)
             }
         }
     }
