@@ -16,18 +16,34 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="LaunchScreenImage" translatesAutoresizingMaskIntoConstraints="NO" id="Tz6-8c-WeS">
-                                <rect key="frame" x="71.666666666666686" y="276" width="250" height="300"/>
+                                <rect key="frame" x="21.5" y="226" width="350" height="350"/>
                                 <constraints>
-                                    <constraint firstAttribute="width" constant="250" id="3ge-Uw-lbC"/>
-                                    <constraint firstAttribute="height" constant="300" id="f7A-gd-9lW"/>
+                                    <constraint firstAttribute="width" constant="350" id="3ge-Uw-lbC"/>
+                                    <constraint firstAttribute="height" constant="350" id="f7A-gd-9lW"/>
                                 </constraints>
                             </imageView>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Omni" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Omni-Title-Label">
+                                <rect key="frame" x="146.5" y="596" width="100" height="48"/>
+                                <fontDescription key="fontDescription" type="boldSystem" pointSize="40"/>
+                                <color key="textColor" red="0.47058823529411764" green="0.41176470588235292" blue="0.92156862745098034" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Your AI Mental Health Companion" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Tagline-Label">
+                                <rect key="frame" x="50" y="654" width="293" height="21"/>
+                                <fontDescription key="fontDescription" type="system" weight="medium" pointSize="17"/>
+                                <color key="textColor" red="0.6" green="0.6" blue="0.67" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                         <color key="backgroundColor" red="0.98039215686274506" green="0.97647058823529409" blue="0.96862745098039216" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
                             <constraint firstItem="Tz6-8c-WeS" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="1HN-zK-b4Q"/>
-                            <constraint firstItem="Tz6-8c-WeS" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="4Ae-eH-xbD"/>
+                            <constraint firstItem="Tz6-8c-WeS" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" constant="-25" id="4Ae-eH-xbD"/>
+                            <constraint firstItem="Omni-Title-Label" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="Title-CenterX"/>
+                            <constraint firstItem="Omni-Title-Label" firstAttribute="top" secondItem="Tz6-8c-WeS" secondAttribute="bottom" constant="20" id="Title-Top"/>
+                            <constraint firstItem="Tagline-Label" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="Tagline-CenterX"/>
+                            <constraint firstItem="Tagline-Label" firstAttribute="top" secondItem="Omni-Title-Label" secondAttribute="bottom" constant="10" id="Tagline-Top"/>
                         </constraints>
                     </view>
                 </viewController>

@@ -68,7 +68,10 @@ class FirebaseManager: ObservableObject {
             "biometricEnabled": user.biometricEnabled,
             "notificationsEnabled": user.notificationsEnabled,
             "dailyReminder": user.dailyReminder,
-            "authProvider": user.authProvider.rawValue
+            "authProvider": user.authProvider.rawValue,
+            "hasCompletedOnboarding": user.hasCompletedOnboarding,
+            "companionName": user.companionName,
+            "companionPersonality": user.companionPersonality
         ]
         
         try await userRef.setData(userData, merge: true)
@@ -97,6 +100,9 @@ class FirebaseManager: ObservableObject {
         user.biometricEnabled = data["biometricEnabled"] as? Bool ?? false
         user.notificationsEnabled = data["notificationsEnabled"] as? Bool ?? false
         user.dailyReminder = data["dailyReminder"] as? Bool ?? true
+        user.hasCompletedOnboarding = data["hasCompletedOnboarding"] as? Bool ?? false
+        user.companionName = data["companionName"] as? String ?? "Omni"
+        user.companionPersonality = data["companionPersonality"] as? String ?? "supportive"
         return user
     }
     

@@ -113,7 +113,7 @@ struct StatsOverviewCard: View {
             }
         }
         .padding()
-        .background(Color.white)
+        .background(Color(UIColor.secondarySystemBackground))
         .cornerRadius(16)
         .padding(.horizontal)
     }
@@ -201,13 +201,13 @@ struct MoodDistributionChart: View {
                     .foregroundColor(.omniTextSecondary)
                     .frame(height: 200)
                     .frame(maxWidth: .infinity)
-                    .background(Color.white)
+                    .background(Color(UIColor.secondarySystemBackground))
                     .cornerRadius(12)
                     .padding(.horizontal)
             }
         }
         .padding(.vertical)
-        .background(Color.white)
+        .background(Color(UIColor.secondarySystemBackground))
         .cornerRadius(16)
         .padding(.horizontal)
     }
@@ -292,13 +292,13 @@ struct WeeklyTrendChart: View {
                     .foregroundColor(.omniTextSecondary)
                     .frame(height: 200)
                     .frame(maxWidth: .infinity)
-                    .background(Color.gray.opacity(0.1))
+                    .background(Color(UIColor.tertiarySystemBackground))
                     .cornerRadius(12)
                     .padding(.horizontal)
             }
         }
         .padding(.vertical)
-        .background(Color.white)
+        .background(Color(UIColor.secondarySystemBackground))
         .cornerRadius(16)
         .padding(.horizontal)
     }
@@ -345,7 +345,7 @@ struct InsightsCard: View {
             }
         }
         .padding()
-        .background(Color.white)
+        .background(Color(UIColor.secondarySystemBackground))
         .cornerRadius(16)
         .padding(.horizontal)
     }
@@ -401,13 +401,13 @@ struct RecentMoodsCard: View {
                     .foregroundColor(.omniTextSecondary)
                     .padding()
                     .frame(maxWidth: .infinity)
-                    .background(Color.gray.opacity(0.1))
+                    .background(Color(UIColor.tertiarySystemBackground))
                     .cornerRadius(12)
                     .padding(.horizontal)
             }
         }
         .padding(.vertical)
-        .background(Color.white)
+        .background(Color(UIColor.secondarySystemBackground))
         .cornerRadius(16)
         .padding(.horizontal)
     }

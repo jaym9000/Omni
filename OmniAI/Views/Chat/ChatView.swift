@@ -5,24 +5,23 @@ struct ChatView: View {
     @EnvironmentObject var authManager: AuthenticationManager
     @EnvironmentObject var chatService: ChatService
     @EnvironmentObject var offlineManager: OfflineManager
+    
     @State private var inputText = ""
     @State private var currentSessionId: UUID?
     @FocusState private var isInputFocused: Bool
+    @State private var isSessionSaved = false
+    @State private var selectedInputMode: InputMode = .chat
+    @State private var dragOffset = CGSize.zero
     @State private var sendButtonScale: CGFloat = 1.0
-    @State private var inputFieldScale: CGFloat = 1.0
     @State private var micButtonScale: CGFloat = 1.0
-    @State private var micButtonGlow: Bool = false
-    @State private var dragAmount = CGSize.zero
-    @State private var keyboardHeight: CGFloat = 0
+    
     let initialPrompt: String?
-    let existingSessionId: UUID? // For continuing existing conversations
+    let existingSessionId: UUID?
     
     init(initialPrompt: String? = nil, existingSessionId: UUID? = nil) {
         self.initialPrompt = initialPrompt
         self.existingSessionId = existingSessionId
     }
-    
-    @State private var selectedInputMode: InputMode = .chat
     
     enum InputMode {
         case chat
@@ -32,7 +31,7 @@ struct ChatView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Guest conversation counter (only show for guest users)
+                // Guest counter if needed
                 if let user = authManager.currentUser, user.isGuest {
                     GuestConversationCounter(
                         conversationsUsed: user.guestConversationCount,
@@ -43,22 +42,36 @@ struct ChatView: View {
                 // Input mode selector
                 InputModeSelector(selectedMode: $selectedInputMode)
                 
-                // Messages with input bar as safe area inset
-                MessagesView(messages: chatService.messages, isTyping: chatService.isTyping)
-                    .safeAreaInset(edge: .bottom, spacing: 0) {
-                        if selectedInputMode == .chat {
-                            ChatInputView(
-                                inputText: $inputText,
-                                inputFieldScale: inputFieldScale,
-                                sendButtonScale: sendButtonScale,
-                                sendMessage: sendMessage
-                            )
-                            .background(Color.omniBackground)
-                        } else {
-                            VoiceInputView(micButtonScale: micButtonScale)
-                                .background(Color.omniBackground)
+                // Messages ScrollView
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        VStack(spacing: 12) {
+                            ForEach(chatService.messages) { message in
+                                MessageBubble(message: message)
+                                    .id(message.id)
+                            }
+                            
+                            if chatService.isTyping {
+                                TypingIndicator()
+                                    .id("typing")
+                            }
+                            
+                            Color.clear
+                                .frame(height: 1)
+                                .id("bottom")
+                        }
+                        .padding(.vertical)
+                    }
+                    .scrollDismissesKeyboard(.interactively)
+                    .onChange(of: chatService.messages.count) { _ in
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            proxy.scrollTo("bottom", anchor: .bottom)
                         }
                     }
+                    .onAppear {
+                        proxy.scrollTo("bottom", anchor: .bottom)
+                    }
+                }
             }
             .navigationTitle("Chat with \(authManager.currentUser?.companionName ?? "Omni")")
             .navigationBarTitleDisplayMode(.inline)
@@ -70,101 +83,102 @@ struct ChatView: View {
                     .foregroundColor(.omniPrimary)
                 }
             }
+            .safeAreaInset(edge: .bottom) {
+                VStack(spacing: 0) {
+                    Divider()
+                    if selectedInputMode == .chat {
+                        ChatInputView(
+                            inputText: $inputText,
+                            isInputFocused: _isInputFocused,
+                            sendButtonScale: sendButtonScale,
+                            sendMessage: sendMessage
+                        )
+                        .background(Color.omniBackground)
+                    } else {
+                        VoiceInputView(micButtonScale: micButtonScale)
+                            .background(Color.omniBackground)
+                    }
+                }
+                .background(.regularMaterial)
+            }
         }
-        .offset(y: dragAmount.height)
-        .opacity(2 - Double(abs(dragAmount.height / 500)))
+        .offset(x: dragOffset.width)
+        .opacity(1 - Double(abs(dragOffset.width / 300)))
         .gesture(
             DragGesture()
                 .onChanged { value in
-                    if value.translation.height > 0 {
-                        dragAmount = value.translation
+                    // Only allow right swipe (positive translation)
+                    if value.translation.width > 0 {
+                        dragOffset = value.translation
                     }
                 }
                 .onEnded { value in
-                    if value.translation.height > 100 {
-                        dismiss()
+                    // Dismiss if swiped more than 40% of screen width
+                    if value.translation.width > UIScreen.main.bounds.width * 0.4 {
+                        withAnimation(.easeOut(duration: 0.3)) {
+                            dragOffset.width = UIScreen.main.bounds.width
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            dismiss()
+                        }
                     } else {
-                        withAnimation(.spring()) {
-                            dragAmount = .zero
+                        // Bounce back
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            dragOffset = .zero
                         }
                     }
                 }
         )
         .onAppear {
             setupChat()
+            // Auto-focus for better UX
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                isInputFocused = true
+            }
         }
     }
     
     private func setupChat() {
         Task {
-            guard let userId = authManager.currentUser?.id else { 
-                print("❌ No current user found in authManager")
-                return 
-            }
+            guard let userId = authManager.currentUser?.id else { return }
             
-            print("🔍 Setting up chat for user:")
-            print("   - User ID (public.users.id): \(userId)")
-            print("   - Auth User ID: \(authManager.currentUser?.authUserId ?? "nil")")
-            print("   - Email: \(authManager.currentUser?.email ?? "unknown")")
-            
-            // Clear messages immediately if opening new chat
-            if existingSessionId == nil {
-                await MainActor.run {
-                    chatService.messages.removeAll()
-                }
-            }
-            
-            // First load user's existing sessions for history using authUserId
             let authUserId = authManager.currentUser?.authUserId ?? ""
+            
+            // Always clear messages when setting up chat to prevent duplicates
+            await MainActor.run {
+                chatService.messages.removeAll()
+            }
+            
             await chatService.loadUserSessions(userId: userId, authUserId: authUserId)
             
             var sessionToUse: ChatSession?
             
-            // Check if we're continuing an existing session or creating a new one
             if let existingId = existingSessionId {
-                print("📂 Continuing existing session: \(existingId)")
-                // Continue existing session from chat history
-                // First, try to find in already loaded sessions
+                isSessionSaved = true
                 if let existingSession = chatService.chatSessions.first(where: { $0.id == existingId }) {
-                    print("✅ Found session in loaded sessions")
                     sessionToUse = existingSession
                     currentSessionId = existingSession.id
                     await chatService.selectSession(existingSession)
-                } else {
-                    // If not found, try to load it from database
-                    print("⚠️ Session not in loaded list, loading from database...")
-                    await chatService.loadUserSessions(userId: userId, authUserId: authUserId)
-                    if let existingSession = chatService.chatSessions.first(where: { $0.id == existingId }) {
-                        sessionToUse = existingSession
-                        currentSessionId = existingSession.id
-                        await chatService.selectSession(existingSession)
-                    }
                 }
             } else {
-                // Always create a new session when opening from home
-                do {
-                    let title = initialPrompt?.prefix(50).trimmingCharacters(in: .whitespacesAndNewlines) ?? "New Chat"
-                    let session = try await chatService.createNewSession(
-                        userId: userId,
-                        authUserId: authUserId,
-                        title: title
-                    )
-                    sessionToUse = session
-                    currentSessionId = session.id
-                } catch {
-                    print("Failed to create chat session: \(error)")
-                    return
-                }
+                let title = initialPrompt?.prefix(50).trimmingCharacters(in: .whitespacesAndNewlines) ?? "New Chat"
+                let session = ChatSession(
+                    id: UUID(),
+                    userId: userId,
+                    title: title,
+                    createdAt: Date(),
+                    updatedAt: Date()
+                )
+                sessionToUse = session
+                currentSessionId = session.id
+                await chatService.setCurrentSession(session)
             }
             
-            // Only add welcome message if this is a brand new session (not from history) with no messages
             if chatService.messages.isEmpty && existingSessionId == nil, let session = sessionToUse {
-                let welcomeContent: String
-                if let prompt = initialPrompt, !prompt.isEmpty {
-                    // If there's an initial prompt (from mood selection), use it as the first message
-                    welcomeContent = "I see you're feeling \(prompt). I'm here to listen and support you. What's on your mind?"
+                let welcomeContent = if let prompt = initialPrompt, !prompt.isEmpty {
+                    "I see you're feeling \(prompt). I'm here to listen and support you. What's on your mind?"
                 } else {
-                    welcomeContent = "Hi there! 👋 How are you feeling today? I'm here to listen and support you."
+                    "Hi there! How are you feeling today? I'm here to listen and support you."
                 }
                 
                 let welcomeMessage = ChatMessage(
@@ -176,144 +190,67 @@ struct ChatView: View {
                 await MainActor.run {
                     chatService.messages.append(welcomeMessage)
                 }
-                
-                // Save welcome message to Firebase
-                let firebaseWelcomeMessage = FirebaseMessage(
-                    id: welcomeMessage.id,
-                    content: welcomeContent,
-                    role: .assistant,
-                    timestamp: Date(),
-                    mood: nil
-                )
-                
-                do {
-                    try await chatService.firebaseManager.saveChatMessage(firebaseWelcomeMessage, sessionId: session.id.uuidString)
-                    print("✅ Welcome message saved to Firestore")
-                    
-                    // Update session lastMessage
-                    if var updatedSession = sessionToUse {
-                        updatedSession.lastMessage = welcomeContent
-                        updatedSession.updatedAt = Date()
-                        
-                        // Save updated session to Firebase
-                        try await chatService.firebaseManager.saveChatSession(updatedSession, authUserId: authUserId)
-                        sessionToUse = updatedSession
-                        currentSessionId = updatedSession.id
-                        
-                        // Update local session in chatService
-                        await chatService.updateLocalSession(updatedSession)
-                    }
-                } catch {
-                    print("⚠️ Failed to save welcome message to Firestore: \(error)")
-                }
             }
         }
     }
     
     private func sendMessage() {
         guard let sessionId = currentSessionId else { return }
+        guard !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         
         let userInput = inputText
         inputText = ""
-        isInputFocused = false
+        
+        // Haptic feedback
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
         
         Task {
             do {
+                if !isSessionSaved {
+                    if let userId = authManager.currentUser?.id,
+                       let authUserId = authManager.currentUser?.authUserId {
+                        
+                        let title = initialPrompt?.prefix(50).trimmingCharacters(in: .whitespacesAndNewlines) ?? "New Chat"
+                        let session = ChatSession(
+                            id: sessionId,
+                            userId: userId,
+                            title: title,
+                            createdAt: Date(),
+                            updatedAt: Date()
+                        )
+                        
+                        try await chatService.firebaseManager.saveChatSession(session, authUserId: authUserId)
+                        
+                        if !chatService.chatSessions.contains(where: { $0.id == sessionId }) {
+                            await MainActor.run {
+                                chatService.chatSessions.insert(session, at: 0)
+                            }
+                        }
+                        
+                        isSessionSaved = true
+                        
+                        if let welcomeMessage = chatService.messages.first(where: { !$0.isUser }) {
+                            let firebaseWelcomeMessage = FirebaseMessage(
+                                id: welcomeMessage.id,
+                                content: welcomeMessage.content,
+                                role: .assistant,
+                                timestamp: welcomeMessage.timestamp,
+                                mood: nil
+                            )
+                            try await chatService.firebaseManager.saveChatMessage(firebaseWelcomeMessage, sessionId: sessionId.uuidString)
+                        }
+                    }
+                }
+                
                 try await chatService.sendMessage(content: userInput, sessionId: sessionId)
             } catch {
                 print("Failed to send message: \(error)")
-                // Show error to user
-                await MainActor.run {
-                    // You could show an alert here
-                }
             }
-        }
-    }
-    
-}
-
-// MARK: - Message Bubble
-struct MessageBubble: View {
-    let message: ChatMessage
-    @State private var messageOpacity: Double = 0
-    @State private var messageOffset: CGFloat = 20
-    
-    var body: some View {
-        HStack {
-            if message.isUser { Spacer() }
-            
-            VStack(alignment: message.isUser ? .trailing : .leading, spacing: 4) {
-                Text(message.content)
-                    .font(.system(size: 16))
-                    .foregroundColor(message.isUser ? .white : .omniTextPrimary)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .background(
-                        message.isUser ?
-                        AnyView(
-                            LinearGradient(
-                                colors: [Color.omniPrimary, Color.omniSecondary],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        ) :
-                        AnyView(Color.omniSecondaryBackground)
-                    )
-                    .cornerRadius(20)
-                
-                Text(formatTime(message.timestamp))
-                    .font(.system(size: 12))
-                    .foregroundColor(.omniTextTertiary)
-            }
-            .frame(maxWidth: 280, alignment: message.isUser ? .trailing : .leading)
-            
-            if !message.isUser { Spacer() }
-        }
-        .opacity(messageOpacity)
-        .offset(x: message.isUser ? messageOffset : -messageOffset)
-        .onAppear {
-            messageOpacity = 1.0
-            messageOffset = 0
-        }
-    }
-    
-    private func formatTime(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
-    }
-}
-
-// MARK: - Typing Indicator
-struct TypingIndicator: View {
-    @State private var animationAmount = 0.0
-    
-    var body: some View {
-        HStack {
-            HStack(spacing: 4) {
-                ForEach(0..<3) { index in
-                    Circle()
-                        .fill(Color.omniTextTertiary)
-                        .frame(width: 8, height: 8)
-                        .scaleEffect(animationAmount)
-                        .scaleEffect(animationAmount > 0 ? 1.2 : 1.0)
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(Color.omniSecondaryBackground)
-            .cornerRadius(20)
-            
-            Spacer()
-        }
-        .onAppear {
-            animationAmount = 1.2
         }
     }
 }
 
-// MARK: - Subviews
-
+// MARK: - Input Mode Selector
 struct InputModeSelector: View {
     @Binding var selectedMode: ChatView.InputMode
     
@@ -363,84 +300,30 @@ struct InputModeSelector: View {
     }
 }
 
-struct MessagesView: View {
-    let messages: [ChatMessage]
-    let isTyping: Bool
-    @FocusState private var isInputFocused: Bool
-    
-    var body: some View {
-        ScrollViewReader { scrollProxy in
-            ScrollView {
-                LazyVStack(spacing: 16) {
-                    ForEach(messages) { message in
-                        MessageBubble(message: message)
-                            .id(message.id)
-                    }
-                    
-                    if isTyping {
-                        TypingIndicator()
-                            .id("typing")
-                    }
-                }
-                .padding()
-            }
-            .scrollDismissesKeyboard(.interactively)
-            .onTapGesture {
-                isInputFocused = false
-            }
-            .onAppear {
-                // Scroll to bottom when view appears
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    withAnimation {
-                        if let lastMessage = messages.last {
-                            scrollProxy.scrollTo(lastMessage.id, anchor: .bottom)
-                        }
-                    }
-                }
-            }
-            .onChange(of: messages.count) { _ in
-                // Scroll to bottom when messages change - with small delay to ensure render
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        if let lastMessage = messages.last {
-                            scrollProxy.scrollTo(lastMessage.id, anchor: .bottom)
-                        }
-                    }
-                }
-            }
-            .onChange(of: isTyping) { newValue in
-                // Scroll to typing indicator when it appears - immediate
-                if newValue {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        scrollProxy.scrollTo("typing", anchor: .bottom)
-                    }
-                }
-            }
-        }
-    }
-}
-
+// MARK: - Chat Input View
 struct ChatInputView: View {
     @Binding var inputText: String
-    @FocusState private var isInputFocused: Bool
-    let inputFieldScale: CGFloat
+    @FocusState var isInputFocused: Bool
     let sendButtonScale: CGFloat
     let sendMessage: () -> Void
     
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(alignment: .bottom, spacing: 8) {
             TextField("Type your message...", text: $inputText, axis: .vertical)
                 .textFieldStyle(.plain)
-                .padding(12)
+                .foregroundColor(Color.omniTextPrimary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
                 .background(
                     RoundedRectangle(cornerRadius: 20)
-                        .fill(Color.white)
+                        .fill(Color.omniSecondaryBackground)
                         .overlay(
                             RoundedRectangle(cornerRadius: 20)
-                                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                                .stroke(Color(UIColor.separator).opacity(0.3), lineWidth: 1)
                         )
                 )
                 .focused($isInputFocused)
+                .textInputAutocapitalization(.sentences)
                 .submitLabel(.send)
                 .onSubmit {
                     if !inputText.isEmpty {
@@ -462,13 +345,14 @@ struct ChatInputView: View {
             .scaleEffect(sendButtonScale)
         }
         .padding(.horizontal)
-        .padding(.vertical, 12)
-        .padding(.bottom, 4)
+        .padding(.vertical, 8)
     }
 }
 
+// MARK: - Voice Input View
 struct VoiceInputView: View {
     let micButtonScale: CGFloat
+    @State private var isRecording = false
     
     var body: some View {
         VStack(spacing: 16) {
@@ -476,6 +360,8 @@ struct VoiceInputView: View {
             
             Button(action: {
                 // Voice recording logic would go here
+                isRecording.toggle()
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
             }) {
                 ZStack {
                     Circle()
@@ -486,7 +372,8 @@ struct VoiceInputView: View {
                     Circle()
                         .stroke(Color.omniPrimary.opacity(0.3), lineWidth: 2)
                         .frame(width: 100, height: 100)
-                        .scaleEffect(micButtonScale)
+                        .scaleEffect(isRecording ? 1.1 : 1.0)
+                        .animation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true), value: isRecording)
                     
                     Circle()
                         .fill(
@@ -497,20 +384,18 @@ struct VoiceInputView: View {
                             )
                         )
                         .frame(width: 80, height: 80)
-                        .shadow(color: Color.omniPrimary.opacity(0.3), 
-                                radius: 8, 
-                                x: 0, 
-                                y: 4)
+                        .shadow(color: Color.omniPrimary.opacity(0.3), radius: 8, x: 0, y: 4)
                         .scaleEffect(micButtonScale)
                     
-                    Image(systemName: "mic.fill")
+                    Image(systemName: isRecording ? "mic.fill" : "mic")
                         .font(.system(size: 28))
                         .foregroundColor(.white)
-                        .scaleEffect(micButtonScale)
+                        .scaleEffect(isRecording ? 1.2 : 1.0)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isRecording)
                 }
             }
             
-            Text("Tap and hold to speak")
+            Text(isRecording ? "Recording..." : "Tap and hold to speak")
                 .font(.system(size: 16, weight: .medium))
                 .foregroundColor(.omniTextSecondary)
             
@@ -521,8 +406,86 @@ struct VoiceInputView: View {
     }
 }
 
-// MARK: - Guest Conversation Counter
+// MARK: - Message Bubble
+struct MessageBubble: View {
+    let message: ChatMessage
+    
+    var body: some View {
+        HStack {
+            if message.isUser { Spacer() }
+            
+            VStack(alignment: message.isUser ? .trailing : .leading, spacing: 4) {
+                Text(message.content)
+                    .font(.system(size: 16))
+                    .foregroundColor(message.isUser ? .white : .omniTextPrimary)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(
+                        message.isUser ?
+                        AnyView(
+                            LinearGradient(
+                                colors: [Color.omniPrimary, Color.omniSecondary],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        ) :
+                        AnyView(Color.omniSecondaryBackground)
+                    )
+                    .cornerRadius(20)
+                
+                Text(formatTime(message.timestamp))
+                    .font(.system(size: 12))
+                    .foregroundColor(.omniTextTertiary)
+            }
+            .frame(maxWidth: UIScreen.main.bounds.width * 0.75, alignment: message.isUser ? .trailing : .leading)
+            
+            if !message.isUser { Spacer() }
+        }
+        .padding(.horizontal)
+    }
+    
+    private func formatTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+}
 
+// MARK: - Typing Indicator
+struct TypingIndicator: View {
+    @State private var animationAmount = 0.0
+    
+    var body: some View {
+        HStack {
+            HStack(spacing: 4) {
+                ForEach(0..<3) { index in
+                    Circle()
+                        .fill(Color.omniTextTertiary)
+                        .frame(width: 8, height: 8)
+                        .scaleEffect(animationAmount)
+                        .animation(
+                            .easeInOut(duration: 0.6)
+                            .repeatForever()
+                            .delay(Double(index) * 0.2),
+                            value: animationAmount
+                        )
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(Color.omniSecondaryBackground)
+            .cornerRadius(20)
+            
+            Spacer()
+        }
+        .padding(.horizontal)
+        .onAppear {
+            animationAmount = 1.2
+        }
+    }
+}
+
+// MARK: - Guest Conversation Counter
 struct GuestConversationCounter: View {
     let conversationsUsed: Int
     let maxConversations: Int
@@ -537,12 +500,10 @@ struct GuestConversationCounter: View {
     
     var body: some View {
         HStack(spacing: 12) {
-            // Icon
             Image(systemName: isLowOnConversations ? "exclamationmark.triangle.fill" : "message.circle.fill")
                 .font(.system(size: 16))
                 .foregroundColor(isLowOnConversations ? .orange : .omniPrimary)
             
-            // Counter text
             VStack(alignment: .leading, spacing: 2) {
                 Text("Guest Trial")
                     .font(.system(size: 12, weight: .medium))
@@ -561,10 +522,8 @@ struct GuestConversationCounter: View {
             
             Spacer()
             
-            // Upgrade button for low conversations
             if conversationsRemaining <= 1 {
                 Button("Upgrade") {
-                    // This would trigger signup modal
                     NotificationCenter.default.post(
                         name: NSNotification.Name("ShowGuestUpgradeModal"),
                         object: nil,
@@ -606,4 +565,6 @@ struct GuestConversationCounter: View {
 #Preview {
     ChatView()
         .environmentObject(AuthenticationManager())
+        .environmentObject(ChatService())
+        .environmentObject(OfflineManager())
 }

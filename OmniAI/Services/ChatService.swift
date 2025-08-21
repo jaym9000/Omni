@@ -98,7 +98,17 @@ class ChatService: ObservableObject {
     
     func selectSession(_ session: ChatSession) async {
         currentSession = session
+        // Clear messages before loading new session to prevent duplicates
+        await MainActor.run {
+            messages.removeAll()
+        }
         await loadMessages(for: session.id)
+    }
+    
+    func setCurrentSession(_ session: ChatSession) async {
+        await MainActor.run {
+            currentSession = session
+        }
     }
     
     // MARK: - Message Management
@@ -106,25 +116,33 @@ class ChatService: ObservableObject {
     func loadMessages(for sessionId: UUID) async {
         print("📖 Loading messages for session: \(sessionId)")
         
+        // Clear existing messages to prevent duplicates
+        await MainActor.run {
+            messages.removeAll()
+        }
+        
         // Load from Firebase Firestore
         do {
             let loadedMessages = try await firebaseManager.fetchMessages(sessionId: sessionId.uuidString)
             
-            // Convert Firebase messages to app messages
-            messages = loadedMessages.map { firebaseMsg in
-                ChatMessage(
-                    content: firebaseMsg.content,
-                    isUser: firebaseMsg.role == .user,
-                    sessionId: sessionId,
-                    timestamp: firebaseMsg.timestamp,
-                    mood: firebaseMsg.mood
-                )
+            // Convert Firebase messages to app messages and assign on MainActor
+            await MainActor.run {
+                messages = loadedMessages.map { firebaseMsg in
+                    ChatMessage(
+                        id: firebaseMsg.id,  // Use the Firebase message ID to prevent duplicates
+                        content: firebaseMsg.content,
+                        isUser: firebaseMsg.role == .user,
+                        sessionId: sessionId,
+                        timestamp: firebaseMsg.timestamp,
+                        mood: firebaseMsg.mood
+                    )
+                }
+                
+                print("✅ Loaded \(messages.count) messages from Firestore")
             }
             
-            print("✅ Loaded \(messages.count) messages from Firestore")
-            
-            // Setup real-time listener for new messages
-            setupMessageListener(for: sessionId)
+            // Don't setup real-time listener - it causes duplicates
+            // setupMessageListener(for: sessionId)
         } catch {
             print("⚠️ Failed to load messages from Firestore: \(error)")
             messages = []
@@ -143,6 +161,7 @@ class ChatService: ObservableObject {
                 // Convert and update messages  
                 self.messages = firebaseMessages.map { firebaseMsg in
                     ChatMessage(
+                        id: firebaseMsg.id,  // Use the Firebase message ID to prevent duplicates
                         content: firebaseMsg.content,
                         isUser: firebaseMsg.role == .user,
                         sessionId: sessionId,

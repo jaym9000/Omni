@@ -205,6 +205,9 @@ struct HomeView: View {
             }
             .padding(.horizontal, 20)
         }
+        .onTapGesture {
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        }
         .sheet(isPresented: $showMoodSheet) {
             AddMoodSheet(initialMood: selectedMood)
                 .environmentObject(authManager)
@@ -582,12 +585,16 @@ struct DailyPromptCard: View {
                             .padding(8)
                             .frame(minHeight: 100)
                             .background(Color.clear)
+                            .scrollDismissesKeyboard(.immediately)
                     }
                     .background(
                         RoundedRectangle(cornerRadius: 12)
                             .fill(Color.omniCardSoftBlue)
                             .shadow(color: Color.black.opacity(0.04), radius: 2, x: 0, y: 1)
                     )
+                    .onTapGesture {
+                        // Allow tap inside TextEditor to focus
+                    }
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(text.isEmpty ? Color.clear : Color.omniPrimary.opacity(0.3), lineWidth: 1)

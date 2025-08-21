@@ -101,7 +101,7 @@ struct MoodBottomSheet: View {
             .opacity(buttonsOpacity)
         }
         .background(
-            Color.white
+            Color(UIColor.systemBackground)
                 .clipShape(
                     RoundedRectangle(cornerRadius: 16)
                 )

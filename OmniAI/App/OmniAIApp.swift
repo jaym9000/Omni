@@ -28,7 +28,6 @@ struct OmniAIApp: App {
     @StateObject private var chatService = ChatService()
     @StateObject private var offlineManager = OfflineManager()
     @StateObject private var moodManager = MoodManager.shared
-    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     
     var body: some Scene {
         WindowGroup {

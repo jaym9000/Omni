@@ -62,4 +62,14 @@ struct ChatMessage: Codable, Identifiable {
         self.timestamp = timestamp
         self.mood = mood
     }
+    
+    // Init with existing ID (for messages loaded from Firebase)
+    init(id: UUID, content: String, isUser: Bool, sessionId: UUID, timestamp: Date = Date(), mood: String? = nil) {
+        self.id = id
+        self.sessionId = sessionId
+        self.content = content
+        self.isUser = isUser
+        self.timestamp = timestamp
+        self.mood = mood
+    }
 }

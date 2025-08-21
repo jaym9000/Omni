@@ -8,6 +8,7 @@ struct JournalView: View {
     @State private var headerOpacity: Double = 0
     @State private var optionsVisible = false
     @State private var entriesVisible = false
+    @State private var selectedEntry: JournalEntry?
     
     var body: some View {
         NavigationStack {
@@ -103,14 +104,17 @@ struct JournalView: View {
                         
                         if !journalManager.journalEntries.isEmpty {
                             ForEach(Array(journalManager.journalEntries.prefix(5).enumerated()), id: \.element.id) { index, entry in
-                                JournalEntryCard(entry: entry)
-                                    .opacity(entriesVisible ? 1 : 0)
-                                    .offset(y: entriesVisible ? 0 : 20)
-                                    .animation(
-                                        .spring(response: 0.5, dampingFraction: 0.8)
-                                        .delay(Double(index) * 0.1 + 0.4),
-                                        value: entriesVisible
-                                    )
+                                Button(action: { selectedEntry = entry }) {
+                                    JournalEntryCard(entry: entry)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                .opacity(entriesVisible ? 1 : 0)
+                                .offset(y: entriesVisible ? 0 : 20)
+                                .animation(
+                                    .spring(response: 0.5, dampingFraction: 0.8)
+                                    .delay(Double(index) * 0.1 + 0.4),
+                                    value: entriesVisible
+                                )
                             }
                         } else {
                             // Empty state - properly centered
@@ -160,6 +164,10 @@ struct JournalView: View {
             }
             .sheet(isPresented: $showCalendar) {
                 JournalCalendarView()
+            }
+            .sheet(item: $selectedEntry) { entry in
+                JournalDetailView(entry: entry)
+                    .environmentObject(journalManager)
             }
         }
     }
@@ -336,7 +344,7 @@ struct JournalEntryCard: View {
             }
             .padding()
         }
-        .background(Color.white)
+        .background(Color(UIColor.secondarySystemBackground))
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 2)
     }
@@ -777,7 +785,7 @@ struct ThemedJournalEntryView: View {
                         }
                         .background(
                             RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.white)
+                                .fill(Color(UIColor.systemBackground))
                                 .shadow(color: Color.black.opacity(0.08), radius: 2, x: 0, y: 1)
                         )
                         .overlay(
@@ -837,6 +845,178 @@ struct ThemedJournalEntryView: View {
         // Note: In a real app, we would inject JournalManager here
         // For now, this creates the entry structure
         dismiss()
+    }
+}
+
+// MARK: - Journal Detail View
+struct JournalDetailView: View {
+    let entry: JournalEntry
+    @EnvironmentObject var journalManager: JournalManager
+    @Environment(\.dismiss) var dismiss
+    @State private var showDeleteAlert = false
+    @State private var showEditSheet = false
+    
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    // Mood and Date Header
+                    HStack {
+                        if let mood = entry.mood {
+                            HStack(spacing: 8) {
+                                Text(mood.emoji)
+                                    .font(.system(size: 32))
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(mood.label)
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(mood.color)
+                                    
+                                    Text(formatDate(entry.createdAt))
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.omniTextSecondary)
+                                }
+                            }
+                        } else {
+                            Text(formatDate(entry.createdAt))
+                                .font(.system(size: 14))
+                                .foregroundColor(.omniTextSecondary)
+                        }
+                        
+                        Spacer()
+                        
+                        if entry.isFavorite {
+                            Image(systemName: "star.fill")
+                                .font(.system(size: 20))
+                                .foregroundColor(.moodHappy)
+                        }
+                    }
+                    .padding()
+                    .background(Color(UIColor.secondarySystemBackground))
+                    .cornerRadius(12)
+                    
+                    // Tags if any
+                    if !entry.tags.isEmpty {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(entry.tags, id: \.self) { tag in
+                                    Text(tag)
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(.omniPrimary)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 6)
+                                        .background(Color.omniPrimary.opacity(0.1))
+                                        .cornerRadius(15)
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Content
+                    Text(entry.content)
+                        .font(.system(size: 16))
+                        .foregroundColor(.omniTextPrimary)
+                        .lineSpacing(4)
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(UIColor.secondarySystemBackground))
+                        .cornerRadius(12)
+                    
+                    // Journal Type
+                    HStack {
+                        Image(systemName: iconForType(entry.type))
+                            .font(.system(size: 14))
+                            .foregroundColor(.omniTextSecondary)
+                        
+                        Text(entry.type.rawValue.capitalized + " Entry")
+                            .font(.system(size: 14))
+                            .foregroundColor(.omniTextSecondary)
+                    }
+                    
+                    Spacer(minLength: 50)
+                }
+                .padding()
+            }
+            .navigationTitle(entry.title)
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Close") {
+                        dismiss()
+                    }
+                    .foregroundColor(.omniPrimary)
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        Button(action: { showEditSheet = true }) {
+                            Label("Edit", systemImage: "pencil")
+                        }
+                        
+                        Button(action: toggleFavorite) {
+                            Label(entry.isFavorite ? "Remove from Favorites" : "Add to Favorites", 
+                                  systemImage: entry.isFavorite ? "star.slash" : "star")
+                        }
+                        
+                        Button(role: .destructive, action: { showDeleteAlert = true }) {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                            .foregroundColor(.omniPrimary)
+                    }
+                }
+            }
+            .alert("Delete Entry?", isPresented: $showDeleteAlert) {
+                Button("Cancel", role: .cancel) {}
+                Button("Delete", role: .destructive) {
+                    deleteEntry()
+                }
+            } message: {
+                Text("This action cannot be undone.")
+            }
+        }
+    }
+    
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .long
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+    
+    private func iconForType(_ type: JournalType) -> String {
+        switch type {
+        case .freeForm:
+            return "pencil"
+        case .tagged:
+            return "tag"
+        case .themed:
+            return "book.closed"
+        case .dailyPrompt:
+            return "calendar"
+        }
+    }
+    
+    private func toggleFavorite() {
+        Task {
+            do {
+                try await journalManager.toggleFavorite(entry.id)
+            } catch {
+                print("Failed to toggle favorite: \(error)")
+            }
+        }
+    }
+    
+    private func deleteEntry() {
+        Task {
+            do {
+                try await journalManager.deleteEntry(entry.id)
+                dismiss()
+            } catch {
+                print("Failed to delete entry: \(error)")
+            }
+        }
     }
 }
 

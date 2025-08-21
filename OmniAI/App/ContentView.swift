@@ -4,9 +4,16 @@ struct ContentView: View {
     @EnvironmentObject var authManager: AuthenticationManager
     @State private var showLogin = false
     @State private var showSignUp = false
+    @State private var showSplash = true
     
     var body: some View {
-        if authManager.isAuthenticated {
+        if showSplash {
+            SplashScreenView(onComplete: {
+                withAnimation {
+                    showSplash = false
+                }
+            })
+        } else if authManager.isAuthenticated {
             if !authManager.isEmailVerified && !authManager.isAppleUser && !(authManager.currentUser?.isGuest ?? false) {
                 EmailVerificationView()
             } else if !(authManager.currentUser?.hasCompletedOnboarding ?? false) {

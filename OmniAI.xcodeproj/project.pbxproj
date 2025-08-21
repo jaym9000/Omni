@@ -59,6 +59,8 @@
 		LS1A2B3C4D5E6F78901234AB /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = LS1A2B3C4D5E6F7890123456 /* LaunchScreen.storyboard */; };
 		S2A2B3C4D5E6F7890123456C /* ChatService.swift in Sources */ = {isa = PBXBuildFile; fileRef = S2A2B3C4D5E6F7890123456B /* ChatService.swift */; };
 		S3A2B3C4D5E6F7890123456D /* OfflineManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = S3A2B3C4D5E6F7890123456C /* OfflineManager.swift */; };
+		92D282D241728D6C284F3479 /* KeyboardResponder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BF4B9B519072C1B199C8026 /* KeyboardResponder.swift */; };
+		35C8A84CFA950B7FCAAD35D1 /* SplashScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C9DD1F1706D617D045BAB8B /* SplashScreenView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -110,6 +112,8 @@
 		LS1A2B3C4D5E6F7890123456 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		S2A2B3C4D5E6F7890123456B /* ChatService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Services/ChatService.swift; sourceTree = "<group>"; };
 		S3A2B3C4D5E6F7890123456C /* OfflineManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Services/OfflineManager.swift; sourceTree = "<group>"; };
+		2BF4B9B519072C1B199C8026 /* KeyboardResponder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Utilities/KeyboardResponder.swift; sourceTree = "<group>"; };
+		7C9DD1F1706D617D045BAB8B /* SplashScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/SplashScreenView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -372,6 +376,8 @@
 				5E002263827A6EAD12A94944 /* MoodAnalyticsView.swift in Sources */,
 				77AB8A02183C9A56B9A697B0 /* MoodHistoryView.swift in Sources */,
 				0134A36349B062A37B769D07 /* MoodReflectionSheet.swift in Sources */,
+				92D282D241728D6C284F3479 /* KeyboardResponder.swift in Sources */,
+				35C8A84CFA950B7FCAAD35D1 /* SplashScreenView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

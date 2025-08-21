@@ -123,7 +123,7 @@ struct MoodCalendarView: View {
             )
         }
         .padding()
-        .background(Color.white)
+        .background(Color(UIColor.secondarySystemBackground))
         .cornerRadius(16)
         .padding(.horizontal)
     }
@@ -363,7 +363,7 @@ struct EmptyDateCard: View {
         }
         .padding()
         .frame(maxWidth: .infinity)
-        .background(Color.white)
+        .background(Color(UIColor.secondarySystemBackground))
         .cornerRadius(16)
         .padding(.horizontal)
     }
@@ -453,7 +453,7 @@ struct MoodHistoryRow: View {
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
-        .background(Color.white)
+        .background(Color(UIColor.secondarySystemBackground))
         .cornerRadius(8)
         .padding(.horizontal)
     }
@@ -481,7 +481,8 @@ struct AddMoodSheet: View {
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
+            ScrollView {
+                VStack(spacing: 24) {
                 Text("How are you feeling?")
                     .font(.title2)
                     .fontWeight(.bold)
@@ -512,7 +513,8 @@ struct AddMoodSheet: View {
                     
                     TextEditor(text: $moodNote)
                         .padding(8)
-                        .background(Color.gray.opacity(0.1))
+                        .foregroundColor(Color(UIColor.label))
+                        .background(Color(UIColor.secondarySystemBackground))
                         .cornerRadius(8)
                         .frame(height: 100)
                 }
@@ -537,6 +539,10 @@ struct AddMoodSheet: View {
                 .cornerRadius(12)
                 .padding(.horizontal)
                 .disabled(selectedMood == nil || isSaving)
+                }
+            }
+            .onTapGesture {
+                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
             }
             .navigationTitle("Track Mood")
             .navigationBarTitleDisplayMode(.inline)
