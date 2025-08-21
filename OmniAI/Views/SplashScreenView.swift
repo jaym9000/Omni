@@ -4,12 +4,13 @@ struct SplashScreenView: View {
     @State private var isAnimating = false
     @State private var imageScale: CGFloat = 1.0
     @State private var opacity: Double = 1.0
+    @Environment(\.colorScheme) var colorScheme
     let onComplete: () -> Void
     
     var body: some View {
         ZStack {
-            // Background matching launch screen
-            Color(red: 250/255, green: 249/255, blue: 247/255)
+            // Background that adapts to light/dark mode
+            Color.omniBackground
                 .ignoresSafeArea()
             
             VStack(spacing: 20) {
@@ -18,7 +19,10 @@ struct SplashScreenView: View {
                     Circle()
                         .fill(
                             LinearGradient(
-                                colors: [Color.omniPrimary.opacity(0.1), Color.omniSecondary.opacity(0.05)],
+                                colors: [
+                                    Color.omniPrimary.opacity(colorScheme == .dark ? 0.15 : 0.1),
+                                    Color.omniSecondary.opacity(colorScheme == .dark ? 0.08 : 0.05)
+                                ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
@@ -32,7 +36,12 @@ struct SplashScreenView: View {
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 350, height: 350)
                         .clipShape(Circle())
-                        .shadow(color: Color.omniPrimary.opacity(0.2), radius: 20, x: 0, y: 10)
+                        .shadow(
+                            color: Color.omniPrimary.opacity(colorScheme == .dark ? 0.3 : 0.2),
+                            radius: 20,
+                            x: 0,
+                            y: 10
+                        )
                         .scaleEffect(imageScale)
                 }
                 .offset(y: -25)
@@ -46,22 +55,23 @@ struct SplashScreenView: View {
                 // Tagline
                 Text("Your AI Mental Health Companion")
                     .font(.system(size: 17, weight: .medium))
-                    .foregroundColor(Color(red: 0.6, green: 0.6, blue: 0.67))
-                    .opacity(opacity * 0.8)
+                    .foregroundColor(Color.omniTextSecondary)
+                    .opacity(opacity * 0.9)
             }
             .scaleEffect(imageScale)
             .opacity(opacity)
         }
         .onAppear {
-            // Start animation after a brief delay
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                withAnimation(.easeOut(duration: 0.8)) {
-                    imageScale = 1.1
+            // Let users take in the splash screen for longer (1.5 seconds)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                // Slower, smoother fade out animation (1.2 seconds)
+                withAnimation(.easeInOut(duration: 1.2)) {
+                    imageScale = 1.05  // Subtle scale instead of 1.1
                     opacity = 0
                 }
                 
-                // Complete after animation
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                // Complete after animation finishes
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
                     onComplete()
                 }
             }

@@ -56,7 +56,6 @@
 		F3C4D5E6F7890123456ABC2 /* ThemedJournalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F6789012345678AB2 /* ThemedJournalView.swift */; };
 		F43E33E4E978E51A338029D6 /* MoodManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 338CC29195CF25AD5A7A4C13 /* MoodManager.swift */; };
 		FB1A2B3C4D5E6F7890123456 /* FirebaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB1A2B3C4D5E6F7890123455 /* FirebaseManager.swift */; };
-		LS1A2B3C4D5E6F78901234AB /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = LS1A2B3C4D5E6F7890123456 /* LaunchScreen.storyboard */; };
 		S2A2B3C4D5E6F7890123456C /* ChatService.swift in Sources */ = {isa = PBXBuildFile; fileRef = S2A2B3C4D5E6F7890123456B /* ChatService.swift */; };
 		S3A2B3C4D5E6F7890123456D /* OfflineManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = S3A2B3C4D5E6F7890123456C /* OfflineManager.swift */; };
 		92D282D241728D6C284F3479 /* KeyboardResponder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BF4B9B519072C1B199C8026 /* KeyboardResponder.swift */; };
@@ -109,7 +108,6 @@
 		F73589E241BE45EB82914253 /* CrisisResourcesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Profile/CrisisResourcesView.swift; sourceTree = "<group>"; };
 		F7812EB4E60482D7435A843C /* JournalEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Models/JournalEntry.swift; sourceTree = "<group>"; };
 		FB1A2B3C4D5E6F7890123455 /* FirebaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Services/FirebaseManager.swift; sourceTree = "<group>"; };
-		LS1A2B3C4D5E6F7890123456 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		S2A2B3C4D5E6F7890123456B /* ChatService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Services/ChatService.swift; sourceTree = "<group>"; };
 		S3A2B3C4D5E6F7890123456C /* OfflineManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Services/OfflineManager.swift; sourceTree = "<group>"; };
 		2BF4B9B519072C1B199C8026 /* KeyboardResponder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Utilities/KeyboardResponder.swift; sourceTree = "<group>"; };
@@ -162,7 +160,6 @@
 				1D1A1A2D2C8F123500123456 /* Assets.xcassets */,
 				1D1A1A2F2C8F123500123456 /* Info.plist */,
 				888E26FC2E55387500609191 /* GoogleService-Info.plist */,
-				LS1A2B3C4D5E6F7890123456 /* LaunchScreen.storyboard */,
 			);
 			path = OmniAI;
 			sourceTree = "<group>";
@@ -323,7 +320,6 @@
 			files = (
 				1D1A1A2E2C8F123500123456 /* Assets.xcassets in Resources */,
 				888E26FD2E55387500609191 /* GoogleService-Info.plist in Resources */,
-				LS1A2B3C4D5E6F78901234AB /* LaunchScreen.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -510,7 +506,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = OmniAI/OmniAI.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 22;
+				CURRENT_PROJECT_VERSION = 24;
 				DEVELOPMENT_TEAM = 92493ZAN98;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -549,7 +545,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = OmniAI/OmniAI.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 22;
+				CURRENT_PROJECT_VERSION = 24;
 				DEVELOPMENT_TEAM = 92493ZAN98;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
