@@ -3,8 +3,11 @@ import SwiftUI
 struct HomeView: View {
     @EnvironmentObject var authManager: AuthenticationManager
     @EnvironmentObject var premiumManager: PremiumManager
+    @StateObject private var moodManager = MoodManager.shared
     @State private var selectedMood: MoodType?
     @State private var showMoodSheet = false
+    @State private var showMoodAnalytics = false
+    @State private var showMoodHistory = false
     @State private var gratitudeText = ""
     @State private var isGratitudeCompleted = false
     @State private var showRecentChats = false
@@ -97,19 +100,46 @@ struct HomeView: View {
                 
                 // Mood Tracker
                 VStack(alignment: .leading, spacing: 16) {
-                    Text("How are you feeling today?")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundColor(.omniTextPrimary)
-                    
-                    Text("(Tap to log your mood)")
-                        .font(.system(size: 14))
-                        .foregroundColor(.omniTextSecondary)
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("How are you feeling today?")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundColor(.omniTextPrimary)
+                            
+                            if let todaysMood = moodManager.todaysMood {
+                                Text("Mood tracked: \(todaysMood.mood.emoji) \(todaysMood.mood.label)")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.omniTextSecondary)
+                            } else {
+                                Text("(Tap to log your mood)")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.omniTextSecondary)
+                            }
+                        }
+                        
+                        Spacer()
+                        
+                        // Analytics and History buttons
+                        HStack(spacing: 12) {
+                            Button(action: { showMoodAnalytics = true }) {
+                                Image(systemName: "chart.line.uptrend.xyaxis")
+                                    .font(.system(size: 16))
+                                    .foregroundColor(.omniPrimary)
+                            }
+                            
+                            Button(action: { showMoodHistory = true }) {
+                                Image(systemName: "calendar")
+                                    .font(.system(size: 16))
+                                    .foregroundColor(.omniPrimary)
+                            }
+                        }
+                    }
                     
                     HStack(spacing: 0) {
                         ForEach(Array(MoodType.allCases.enumerated()), id: \.element) { index, mood in
                             MoodButton(
                                 mood: mood,
-                                isSelected: selectedMood == mood,
+                                isSelected: moodManager.todaysMood?.mood == mood,
                                 action: {
                                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                         selectedMood = mood
@@ -128,6 +158,22 @@ struct HomeView: View {
                         }
                     }
                     .frame(maxWidth: .infinity)
+                    
+                    // Mood insights if available
+                    if let stats = moodManager.moodStats, stats.currentStreak > 0 {
+                        HStack {
+                            Image(systemName: "flame.fill")
+                                .font(.system(size: 14))
+                                .foregroundColor(.orange)
+                            Text("\(stats.currentStreak) day streak!")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.omniTextSecondary)
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.orange.opacity(0.1))
+                        .cornerRadius(20)
+                    }
                 }
                 
                 // Anxiety Card with entrance animation
@@ -160,20 +206,16 @@ struct HomeView: View {
             .padding(.horizontal, 20)
         }
         .sheet(isPresented: $showMoodSheet) {
-            MoodBottomSheet(
-                selectedMood: selectedMood,
-                onClose: { showMoodSheet = false },
-                onTalkToOmni: { prompt in
-                    chatInitialPrompt = prompt
-                    showChat = true
-                },
-                onJournal: { mood in
-                    journalMood = mood
-                    showJournal = true
-                }
-            )
-            .presentationDetents([.height(300), .medium])
-            .presentationDragIndicator(.visible)
+            AddMoodSheet(initialMood: selectedMood)
+                .environmentObject(authManager)
+        }
+        .sheet(isPresented: $showMoodAnalytics) {
+            MoodAnalyticsView()
+                .environmentObject(authManager)
+        }
+        .sheet(isPresented: $showMoodHistory) {
+            MoodHistoryView()
+                .environmentObject(authManager)
         }
         .sheet(isPresented: $showRecentChats) {
             RecentChatsView()
@@ -181,6 +223,18 @@ struct HomeView: View {
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OpenChatFromHistory"))) { _ in
             chatInitialPrompt = ""
             showChat = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OpenChatWithMood"))) { notification in
+            if let mood = notification.userInfo?["mood"] as? MoodType {
+                chatInitialPrompt = generateMoodPrompt(for: mood)
+                showChat = true
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OpenJournalWithMood"))) { notification in
+            if let mood = notification.userInfo?["mood"] as? MoodType {
+                journalMood = mood
+                showJournal = true
+            }
         }
         .sheet(isPresented: $showJournal) {
             JournalEntryView(mood: journalMood)
@@ -195,6 +249,12 @@ struct HomeView: View {
         .onAppear {
             checkDailyPrompt()
             animateViewEntrance()
+            loadMoodData()
+        }
+        .task {
+            if let user = authManager.currentUser {
+                await moodManager.loadUserMoods(userId: user.id)
+            }
         }
     }
     
@@ -207,6 +267,14 @@ struct HomeView: View {
             gratitudeText = ""
             isGratitudeCompleted = false
             todaysGratitude = ""
+        }
+    }
+    
+    private func loadMoodData() {
+        Task {
+            if let user = authManager.currentUser {
+                await moodManager.loadUserMoods(userId: user.id)
+            }
         }
     }
     
@@ -239,6 +307,21 @@ struct HomeView: View {
         // Cards entrance
         withAnimation(.spring().delay(0.4)) {
             cardsVisible = true
+        }
+    }
+    
+    private func generateMoodPrompt(for mood: MoodType) -> String {
+        switch mood {
+        case .happy:
+            return "I just tracked that I'm feeling happy! I'd love to talk about what's bringing me this joy today."
+        case .anxious:
+            return "I'm feeling anxious right now. Can you help me work through these feelings and find some calm?"
+        case .sad:
+            return "I'm feeling sad today. I could use some support and understanding about what I'm going through."
+        case .overwhelmed:
+            return "I'm feeling overwhelmed at the moment. Can you help me break things down and find clarity?"
+        case .calm:
+            return "I'm feeling calm and peaceful right now. I'd like to reflect on what's helping me maintain this state."
         }
     }
 }

@@ -63,7 +63,7 @@ class FirebaseManager: ObservableObject {
             "avatarImageName": user.avatarImageName ?? "",
             "isPremium": user.isPremium,
             "isGuest": user.isGuest,
-            "createdAt": user.createdAt ?? Date(),
+            "createdAt": user.createdAt,
             "lastActiveAt": Date(),
             "biometricEnabled": user.biometricEnabled,
             "notificationsEnabled": user.notificationsEnabled,
@@ -118,6 +118,25 @@ class FirebaseManager: ObservableObject {
         ]
         
         try await sessionRef.setData(sessionData, merge: true)
+    }
+    
+    /// Delete a chat session and all its messages
+    func deleteChatSession(sessionId: String) async throws {
+        // Delete all messages in the session first
+        let messagesRef = firestore.collection(chatSessionsCollection)
+            .document(sessionId)
+            .collection("messages")
+        
+        let messagesSnapshot = try await messagesRef.getDocuments()
+        
+        // Delete all messages
+        for document in messagesSnapshot.documents {
+            try await document.reference.delete()
+        }
+        
+        // Delete the session document
+        let sessionRef = firestore.collection(chatSessionsCollection).document(sessionId)
+        try await sessionRef.delete()
     }
     
     /// Fetch chat sessions for a user by Firebase Auth UID
@@ -226,6 +245,221 @@ class FirebaseManager: ObservableObject {
                 
                 completion(messages)
             }
+    }
+    
+    // MARK: - Mood Management
+    
+    /// Save mood entry to Firestore
+    func saveMoodEntry(_ entry: MoodEntry, authUserId: String) async throws {
+        let entryRef = firestore.collection(moodEntriesCollection).document(entry.id.uuidString)
+        
+        let entryData: [String: Any] = [
+            "id": entry.id.uuidString,
+            "userId": entry.userId.uuidString,
+            "authUserId": authUserId,
+            "mood": entry.mood.rawValue,
+            "note": entry.note ?? "",
+            "timestamp": entry.timestamp
+        ]
+        
+        try await entryRef.setData(entryData)
+    }
+    
+    /// Fetch mood entries for a user
+    func fetchMoodEntries(authUserId: String) async throws -> [MoodEntry] {
+        let snapshot = try await firestore.collection(moodEntriesCollection)
+            .whereField("authUserId", isEqualTo: authUserId)
+            .order(by: "timestamp", descending: true)
+            .getDocuments()
+        
+        return snapshot.documents.compactMap { document in
+            let data = document.data()
+            var entry = MoodEntry(
+                userId: UUID(uuidString: data["userId"] as? String ?? "") ?? UUID(),
+                mood: MoodType(rawValue: data["mood"] as? String ?? "calm") ?? .calm,
+                note: data["note"] as? String
+            )
+            entry.timestamp = (data["timestamp"] as? Timestamp)?.dateValue() ?? Date()
+            return entry
+        }
+    }
+    
+    /// Listen to mood entries in real-time
+    func listenToMoodEntries(authUserId: String, completion: @escaping ([MoodEntry]) -> Void) -> ListenerRegistration {
+        return firestore.collection(moodEntriesCollection)
+            .whereField("authUserId", isEqualTo: authUserId)
+            .order(by: "timestamp", descending: true)
+            .addSnapshotListener { snapshot, error in
+                guard let documents = snapshot?.documents else {
+                    print("❌ Error fetching mood entries: \(error?.localizedDescription ?? "Unknown error")")
+                    return
+                }
+                
+                let entries = documents.compactMap { document -> MoodEntry? in
+                    let data = document.data()
+                    var entry = MoodEntry(
+                        userId: UUID(uuidString: data["userId"] as? String ?? "") ?? UUID(),
+                        mood: MoodType(rawValue: data["mood"] as? String ?? "calm") ?? .calm,
+                        note: data["note"] as? String
+                    )
+                    entry.timestamp = (data["timestamp"] as? Timestamp)?.dateValue() ?? Date()
+                    return entry
+                }
+                
+                completion(entries)
+            }
+    }
+    
+    /// Update mood entry
+    func updateMoodEntry(_ entry: MoodEntry, authUserId: String) async throws {
+        let entryRef = firestore.collection(moodEntriesCollection).document(entry.id.uuidString)
+        
+        try await entryRef.updateData([
+            "note": entry.note as Any,
+            "updatedAt": Date()
+        ])
+    }
+    
+    /// Delete mood entry
+    func deleteMoodEntry(entryId: String, authUserId: String) async throws {
+        let entryRef = firestore.collection(moodEntriesCollection).document(entryId)
+        try await entryRef.delete()
+    }
+    
+    /// Get latest mood for context
+    func getLatestMood(authUserId: String) async throws -> MoodEntry? {
+        let snapshot = try await firestore.collection(moodEntriesCollection)
+            .whereField("authUserId", isEqualTo: authUserId)
+            .order(by: "timestamp", descending: true)
+            .limit(to: 1)
+            .getDocuments()
+        
+        guard let document = snapshot.documents.first else { return nil }
+        
+        let data = document.data()
+        var entry = MoodEntry(
+            userId: UUID(uuidString: data["userId"] as? String ?? "") ?? UUID(),
+            mood: MoodType(rawValue: data["mood"] as? String ?? "calm") ?? .calm,
+            note: data["note"] as? String
+        )
+        entry.timestamp = (data["timestamp"] as? Timestamp)?.dateValue() ?? Date()
+        return entry
+    }
+    
+    // MARK: - Journal Management
+    
+    /// Save journal entry to Firestore
+    func saveJournalEntry(_ entry: JournalEntry, authUserId: String) async throws {
+        let entryRef = firestore.collection(journalEntriesCollection).document(entry.id.uuidString)
+        
+        let entryData: [String: Any] = [
+            "id": entry.id.uuidString,
+            "userId": entry.userId.uuidString,
+            "authUserId": authUserId,
+            "type": entry.type.rawValue,
+            "title": entry.title,
+            "content": entry.content,
+            "mood": entry.mood?.rawValue ?? "",
+            "tags": entry.tags,
+            "isFavorite": entry.isFavorite,
+            "createdAt": entry.createdAt,
+            "updatedAt": entry.updatedAt,
+            "prompt": entry.prompt ?? ""
+        ]
+        
+        try await entryRef.setData(entryData, merge: true)
+    }
+    
+    /// Fetch journal entries for a user
+    func fetchJournalEntries(authUserId: String) async throws -> [JournalEntry] {
+        let snapshot = try await firestore.collection(journalEntriesCollection)
+            .whereField("authUserId", isEqualTo: authUserId)
+            .order(by: "createdAt", descending: true)
+            .getDocuments()
+        
+        return snapshot.documents.compactMap { document in
+            let data = document.data()
+            var entry = JournalEntry(
+                userId: UUID(uuidString: data["userId"] as? String ?? "") ?? UUID(),
+                title: data["title"] as? String ?? "",
+                content: data["content"] as? String ?? "",
+                type: JournalType(rawValue: data["type"] as? String ?? "freeForm") ?? .freeForm
+            )
+            entry.mood = MoodType(rawValue: data["mood"] as? String ?? "")
+            entry.tags = data["tags"] as? [String] ?? []
+            entry.isFavorite = data["isFavorite"] as? Bool ?? false
+            entry.createdAt = (data["createdAt"] as? Timestamp)?.dateValue() ?? Date()
+            entry.updatedAt = (data["updatedAt"] as? Timestamp)?.dateValue() ?? Date()
+            entry.prompt = data["prompt"] as? String
+            return entry
+        }
+    }
+    
+    /// Listen to journal entries in real-time
+    func listenToJournalEntries(authUserId: String, completion: @escaping ([JournalEntry]) -> Void) -> ListenerRegistration {
+        return firestore.collection(journalEntriesCollection)
+            .whereField("authUserId", isEqualTo: authUserId)
+            .order(by: "createdAt", descending: true)
+            .addSnapshotListener { snapshot, error in
+                guard let documents = snapshot?.documents else {
+                    print("❌ Error fetching journal entries: \(error?.localizedDescription ?? "Unknown error")")
+                    return
+                }
+                
+                let entries = documents.compactMap { document -> JournalEntry? in
+                    let data = document.data()
+                    var entry = JournalEntry(
+                        userId: UUID(uuidString: data["userId"] as? String ?? "") ?? UUID(),
+                        title: data["title"] as? String ?? "",
+                        content: data["content"] as? String ?? "",
+                        type: JournalType(rawValue: data["type"] as? String ?? "freeForm") ?? .freeForm
+                    )
+                    entry.mood = MoodType(rawValue: data["mood"] as? String ?? "")
+                    entry.tags = data["tags"] as? [String] ?? []
+                    entry.isFavorite = data["isFavorite"] as? Bool ?? false
+                    entry.createdAt = (data["createdAt"] as? Timestamp)?.dateValue() ?? Date()
+                    entry.updatedAt = (data["updatedAt"] as? Timestamp)?.dateValue() ?? Date()
+                    entry.prompt = data["prompt"] as? String
+                    return entry
+                }
+                
+                completion(entries)
+            }
+    }
+    
+    /// Update journal entry
+    func updateJournalEntry(_ entry: JournalEntry, authUserId: String) async throws {
+        let entryRef = firestore.collection(journalEntriesCollection).document(entry.id.uuidString)
+        
+        let updateData: [String: Any] = [
+            "title": entry.title,
+            "content": entry.content,
+            "tags": entry.tags,
+            "isFavorite": entry.isFavorite,
+            "updatedAt": Date()
+        ]
+        
+        try await entryRef.updateData(updateData)
+    }
+    
+    /// Delete journal entry
+    func deleteJournalEntry(entryId: String, authUserId: String) async throws {
+        let entryRef = firestore.collection(journalEntriesCollection).document(entryId)
+        try await entryRef.delete()
+    }
+    
+    /// Search journal entries
+    func searchJournalEntries(authUserId: String, searchText: String) async throws -> [JournalEntry] {
+        // Note: For full-text search, consider using Algolia or Cloud Functions
+        // This is a basic implementation that searches titles
+        let entries = try await fetchJournalEntries(authUserId: authUserId)
+        
+        let searchLower = searchText.lowercased()
+        return entries.filter { entry in
+            entry.title.lowercased().contains(searchLower) ||
+            entry.content.lowercased().contains(searchLower) ||
+            entry.tags.contains { $0.lowercased().contains(searchLower) }
+        }
     }
     
     // MARK: - Error Handling

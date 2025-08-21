@@ -1,4 +1,5 @@
 import * as functions from "firebase-functions";
+import {onRequest} from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import {OpenAI} from "openai";
 import * as cors from "cors";
@@ -21,9 +22,15 @@ export const testFunction = functions.https.onRequest((request, response) => {
   response.json({message: "Hello from Firebase Functions!"});
 });
 
-// AI Chat Function
-export const aiChat = functions.https.onRequest(
-    {secrets: [openaiApiKey]},
+// AI Chat Function - Using v2 with public access
+// Still validates Firebase Auth tokens internally
+export const aiChat = onRequest(
+    {
+      secrets: ["OPENAI_API_KEY"],
+      cors: true,
+      // Allow unauthenticated invocations
+      invoker: "public",
+    },
     (request, response) => {
       corsHandler(request, response, async () => {
         // Initialize OpenAI with secret
@@ -95,12 +102,12 @@ export const aiChat = functions.https.onRequest(
             }
           }
 
-          // Prepare conversation history
+          // Prepare conversation history - reduced for faster response
           const messagesSnapshot = await db.collection("chat_sessions")
               .doc(sessionId)
               .collection("messages")
               .orderBy("timestamp", "desc")
-              .limit(10)
+              .limit(5)
               .get();
 
           const conversationHistory: OpenAI.Chat.Completions.ChatCompletionMessageParam[] =
@@ -116,20 +123,16 @@ export const aiChat = functions.https.onRequest(
           conversationHistory.push({role: "user" as const, content: message});
 
           // Generate AI response using OpenAI
-          const systemPrompt = `You are Omni, a compassionate and supportive AI mental health companion. 
-Your role is to provide empathetic, non-judgmental support for users dealing with anxiety, depression, 
-and other mental health challenges. 
+          const systemPrompt = `You are Omni, a friendly AI assistant. Be natural and conversational.
 
-Key guidelines:
-- Be warm, understanding, and validating of emotions
-- Use evidence-based therapeutic techniques (CBT, mindfulness, etc.)
+- For simple questions (math, facts, etc.), give direct answers
+- For emotional or mental health topics, be supportive and empathetic
+- Don't force mental health context into unrelated conversations
+- Keep responses concise and relevant to what was asked
+- Only suggest professional help when truly appropriate
 - Never provide medical advice or diagnoses
-- Encourage professional help when appropriate
-- Detect crisis situations and provide appropriate resources
-- Keep responses concise but meaningful (2-3 paragraphs max)
-- Use a conversational, supportive tone
 
-${mood ? `The user's current mood is: ${mood}` : ""}`;
+${mood ? `Current mood: ${mood}` : ""}`;
 
           const completion = await openai.chat.completions.create({
             model: "gpt-4o-mini",
@@ -138,7 +141,7 @@ ${mood ? `The user's current mood is: ${mood}` : ""}`;
               ...conversationHistory,
             ],
             temperature: 0.7,
-            max_tokens: 500,
+            max_tokens: 300,
           });
 
           const aiResponse = completion.choices[0].message.content || "I'm here to support you.";

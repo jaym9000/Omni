@@ -662,7 +662,15 @@ class AuthenticationManager: ObservableObject {
             }
         }
         
-        // TODO: Update in Firebase
+        // Update in Firebase
+        if let user = currentUser {
+            do {
+                try await firebaseManager.saveUser(user)
+                print("✅ Onboarding completion saved to Firebase")
+            } catch {
+                print("❌ Failed to save onboarding completion to Firebase: \(error)")
+            }
+        }
     }
     
     func updateCompanionSettings(name: String, personality: String) async {
@@ -681,7 +689,15 @@ class AuthenticationManager: ObservableObject {
             }
         }
         
-        // TODO: Update in Firebase
+        // Update in Firebase
+        if let user = currentUser {
+            do {
+                try await firebaseManager.saveUser(user)
+                print("✅ Companion settings saved to Firebase")
+            } catch {
+                print("❌ Failed to save companion settings to Firebase: \(error)")
+            }
+        }
     }
     
     func toggleBiometricAuth(_ enabled: Bool) async {

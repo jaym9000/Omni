@@ -83,4 +83,6 @@ struct JournalPrompt: Identifiable {
         JournalPrompt(text: "What's one thing you learned about yourself today?", category: "Self-Discovery"),
         JournalPrompt(text: "How did you practice self-care today?", category: "Self-Care")
     ]
+    
+    static let samplePrompts = dailyPrompts
 }

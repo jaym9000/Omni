@@ -1,50 +1,91 @@
 import Foundation
 import SwiftUI
+import FirebaseFirestore
+import FirebaseAuth
 
+@MainActor
 class JournalManager: ObservableObject {
     static let shared = JournalManager()
     
     @Published var journalEntries: [JournalEntry] = []
+    @Published var isLoading = false
+    @Published var searchText = ""
     
-    private let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-    private let journalFile: URL
+    private let firebaseManager = FirebaseManager.shared
+    private var listener: ListenerRegistration?
+    
+    var filteredEntries: [JournalEntry] {
+        if searchText.isEmpty {
+            return journalEntries
+        }
+        
+        let searchLower = searchText.lowercased()
+        return journalEntries.filter { entry in
+            entry.title.lowercased().contains(searchLower) ||
+            entry.content.lowercased().contains(searchLower) ||
+            entry.tags.contains { $0.lowercased().contains(searchLower) }
+        }
+    }
     
     private init() {
-        journalFile = documentsDirectory.appendingPathComponent("journal_entries.json")
-        loadEntries()
+        setupJournalListener()
+    }
+    
+    deinit {
+        listener?.remove()
     }
     
     // MARK: - CRUD Operations
     
-    func saveEntry(_ entry: JournalEntry) {
-        // Check if entry already exists (for updates)
-        if let index = journalEntries.firstIndex(where: { $0.id == entry.id }) {
-            journalEntries[index] = entry
-        } else {
-            // New entry - add to beginning for most recent first
-            journalEntries.insert(entry, at: 0)
+    func saveEntry(_ entry: JournalEntry) async throws {
+        isLoading = true
+        defer { isLoading = false }
+        
+        // Get Firebase Auth UID
+        guard let authUserId = firebaseManager.auth.currentUser?.uid else {
+            throw FirebaseManager.FirebaseError.userNotFound
         }
-        persistEntries()
+        
+        // Save to Firebase - the listener will update local state
+        try await firebaseManager.saveJournalEntry(entry, authUserId: authUserId)
+        
+        // Don't update local state here - let the listener handle it to avoid duplicates
     }
     
-    func updateEntry(_ entry: JournalEntry) {
+    func updateEntry(_ entry: JournalEntry) async throws {
+        isLoading = true
+        defer { isLoading = false }
+        
+        guard let authUserId = firebaseManager.auth.currentUser?.uid else {
+            throw FirebaseManager.FirebaseError.userNotFound
+        }
+        
+        var updatedEntry = entry
+        updatedEntry.updatedAt = Date()
+        
+        try await firebaseManager.updateJournalEntry(updatedEntry, authUserId: authUserId)
+        
         if let index = journalEntries.firstIndex(where: { $0.id == entry.id }) {
-            var updatedEntry = entry
-            updatedEntry.updatedAt = Date()
             journalEntries[index] = updatedEntry
-            persistEntries()
         }
     }
     
-    func deleteEntry(_ id: UUID) {
+    func deleteEntry(_ id: UUID) async throws {
+        isLoading = true
+        defer { isLoading = false }
+        
+        guard let authUserId = firebaseManager.auth.currentUser?.uid else {
+            throw FirebaseManager.FirebaseError.userNotFound
+        }
+        
+        try await firebaseManager.deleteJournalEntry(entryId: id.uuidString, authUserId: authUserId)
         journalEntries.removeAll { $0.id == id }
-        persistEntries()
     }
     
-    func toggleFavorite(_ id: UUID) {
+    func toggleFavorite(_ id: UUID) async throws {
         if let index = journalEntries.firstIndex(where: { $0.id == id }) {
             journalEntries[index].isFavorite.toggle()
-            persistEntries()
+            try await updateEntry(journalEntries[index])
         }
     }
     
@@ -76,18 +117,13 @@ class JournalManager: ObservableObject {
         })
     }
     
-    func searchEntries(query: String) -> [JournalEntry] {
-        let lowercasedQuery = query.lowercased()
-        
-        if lowercasedQuery.isEmpty {
-            return journalEntries
-        }
-        
-        return journalEntries.filter { entry in
-            entry.title.lowercased().contains(lowercasedQuery) ||
-            entry.content.lowercased().contains(lowercasedQuery) ||
-            entry.tags.contains { $0.lowercased().contains(lowercasedQuery) }
-        }
+    func getEntriesWithTag(_ tag: String) -> [JournalEntry] {
+        return journalEntries.filter { $0.tags.contains(tag) }
+    }
+    
+    func getRecentPrompts() -> [JournalPrompt] {
+        // Return sample prompts for now
+        return JournalPrompt.samplePrompts
     }
     
     func getEntriesByMood(_ mood: MoodType) -> [JournalEntry] {
@@ -154,109 +190,69 @@ class JournalManager: ObservableObject {
         return streak
     }
     
-    // MARK: - Persistence
+    // MARK: - Firebase Integration
     
-    private func loadEntries() {
-        guard FileManager.default.fileExists(atPath: journalFile.path) else {
-            // Load sample data for demo
-            loadSampleEntries()
+    func loadUserJournals(userId: UUID) async {
+        isLoading = true
+        defer { isLoading = false }
+        
+        guard let authUserId = firebaseManager.auth.currentUser?.uid else {
+            print("⚠️ No authenticated user")
             return
         }
         
         do {
-            let data = try Data(contentsOf: journalFile)
-            let decoder = JSONDecoder()
-            decoder.dateDecodingStrategy = .iso8601
-            journalEntries = try decoder.decode([JournalEntry].self, from: data)
+            let entries = try await firebaseManager.fetchJournalEntries(authUserId: authUserId)
+            journalEntries = entries.sorted { $0.createdAt > $1.createdAt }
+            print("✅ Loaded \(entries.count) journal entries from Firebase")
         } catch {
-            print("Error loading journal entries: \(error)")
-            journalEntries = []
+            print("❌ Failed to load journal entries: \(error)")
         }
     }
     
-    private func persistEntries() {
-        do {
-            let encoder = JSONEncoder()
-            encoder.dateEncodingStrategy = .iso8601
-            encoder.outputFormatting = .prettyPrinted
-            let data = try encoder.encode(journalEntries)
-            try data.write(to: journalFile)
-        } catch {
-            print("Error saving journal entries: \(error)")
+    private func setupJournalListener() {
+        guard let authUserId = firebaseManager.auth.currentUser?.uid else { return }
+        
+        listener = firebaseManager.listenToJournalEntries(authUserId: authUserId) { [weak self] entries in
+            guard let self = self else { return }
+            
+            Task { @MainActor in
+                self.journalEntries = entries.sorted { $0.createdAt > $1.createdAt }
+            }
         }
     }
     
-    private func loadSampleEntries() {
-        // Create some sample entries for demo purposes
-        let sampleEntries = [
-            createSampleEntry(
-                daysAgo: 0,
-                title: "A Peaceful Morning",
-                content: "Started my day with meditation and felt really centered. The breathing exercises from Omni really helped me manage my morning anxiety.",
-                mood: .calm,
-                tags: ["meditation", "morning", "breathing"]
-            ),
-            createSampleEntry(
-                daysAgo: 1,
-                title: "Challenging but Growth",
-                content: "Work was overwhelming today, but I used the grounding techniques to stay focused. Proud of how I handled the pressure without panic.",
-                mood: .overwhelmed,
-                tags: ["work", "growth", "coping"]
-            ),
-            createSampleEntry(
-                daysAgo: 2,
-                title: "Gratitude Practice",
-                content: "Three things I'm grateful for today: 1) My supportive family, 2) This app helping me track my moods, 3) The progress I'm making in therapy.",
-                mood: .happy,
-                tags: ["gratitude", "family", "progress"],
-                isFavorite: true
-            ),
-            createSampleEntry(
-                daysAgo: 3,
-                title: "Anxiety Episode",
-                content: "Had a panic attack at the grocery store. Used the 5-4-3-2-1 technique and it helped ground me. Still shaky but proud I got through it.",
-                mood: .anxious,
-                tags: ["anxiety", "panic", "coping"]
-            ),
-            createSampleEntry(
-                daysAgo: 5,
-                title: "Therapy Insights",
-                content: "My therapist helped me recognize patterns in my anxiety triggers. Journaling here has made it easier to identify these patterns.",
-                mood: .calm,
-                tags: ["therapy", "insights", "patterns"]
-            )
-        ]
+    // MARK: - Search & Tags
+    
+    func searchJournalEntries(_ searchText: String) async throws -> [JournalEntry] {
+        guard let authUserId = firebaseManager.auth.currentUser?.uid else {
+            throw FirebaseManager.FirebaseError.userNotFound
+        }
         
-        journalEntries = sampleEntries
-        persistEntries()
+        return try await firebaseManager.searchJournalEntries(authUserId: authUserId, searchText: searchText)
     }
     
-    private func createSampleEntry(daysAgo: Int, title: String, content: String, mood: MoodType, tags: [String], isFavorite: Bool = false) -> JournalEntry {
-        var entry = JournalEntry(
-            userId: UUID(),
-            title: title,
-            content: content,
-            type: .tagged
-        )
-        entry.mood = mood
-        entry.tags = tags
-        entry.isFavorite = isFavorite
+    func getAllTags() -> [String] {
+        var allTags = Set<String>()
+        for entry in journalEntries {
+            allTags.formUnion(entry.tags)
+        }
+        return Array(allTags).sorted()
+    }
+    
+    func getPopularTags(limit: Int = 10) -> [(tag: String, count: Int)] {
+        var tagCounts: [String: Int] = [:]
         
-        // Adjust creation date
-        if daysAgo > 0 {
-            let calendar = Calendar.current
-            if let _ = calendar.date(byAdding: .day, value: -daysAgo, to: Date()) {
-                // Use mirror to set read-only property for demo data
-                let mirror = Mirror(reflecting: entry)
-                for child in mirror.children {
-                    if child.label == "createdAt" {
-                        // This is a workaround for demo data - in production, dates are set at creation
-                    }
-                }
+        for entry in journalEntries {
+            for tag in entry.tags {
+                tagCounts[tag, default: 0] += 1
             }
         }
         
-        return entry
+        return tagCounts
+            .sorted { $0.value > $1.value }
+            .prefix(limit)
+            .map { (tag: $0.key, count: $0.value) }
     }
     
     // MARK: - Export Functions

@@ -283,44 +283,62 @@ struct JournalEntryCard: View {
     let entry: JournalEntry
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text(entry.title)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.omniTextPrimary)
-                    .lineLimit(1)
-                
-                Spacer()
-                
-                if entry.isFavorite {
-                    Image(systemName: "star.fill")
-                        .font(.system(size: 14))
-                        .foregroundColor(.moodHappy)
-                }
+        HStack(spacing: 0) {
+            // Mood color accent bar
+            if let mood = entry.mood {
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(mood.color.opacity(0.8))
+                    .frame(width: 4)
+            } else {
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.omniPrimary.opacity(0.3))
+                    .frame(width: 4)
             }
             
-            Text(entry.content)
-                .font(.system(size: 14))
-                .foregroundColor(.omniTextSecondary)
-                .lineLimit(2)
-            
-            HStack {
-                if let mood = entry.mood {
-                    Label(mood.label, systemImage: "face.smiling")
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text(entry.title)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.omniTextPrimary)
+                        .lineLimit(1)
+                    
+                    Spacer()
+                    
+                    if entry.isFavorite {
+                        Image(systemName: "star.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(.moodHappy)
+                    }
+                }
+                
+                Text(entry.content)
+                    .font(.system(size: 14))
+                    .foregroundColor(.omniTextSecondary)
+                    .lineLimit(2)
+                
+                HStack {
+                    if let mood = entry.mood {
+                        HStack(spacing: 4) {
+                            Text(mood.emoji)
+                                .font(.system(size: 14))
+                            Text(mood.label)
+                                .font(.system(size: 12))
+                                .foregroundColor(mood.color)
+                        }
+                    }
+                    
+                    Spacer()
+                    
+                    Text(formatDate(entry.createdAt))
                         .font(.system(size: 12))
-                        .foregroundColor(mood.color)
+                        .foregroundColor(.omniTextTertiary)
                 }
-                
-                Spacer()
-                
-                Text(formatDate(entry.createdAt))
-                    .font(.system(size: 12))
-                    .foregroundColor(.omniTextTertiary)
             }
+            .padding()
         }
-        .padding()
-        .background(Color.omniCardLavender)
+        .background(Color.white)
         .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 2)
     }
     
     private func formatDate(_ date: Date) -> String {
@@ -540,9 +558,16 @@ struct JournalEntryView: View {
         }
         
         // Save through JournalManager
-        journalManager.saveEntry(entry)
-        
-        dismiss()
+        Task {
+            do {
+                try await journalManager.saveEntry(entry)
+                await MainActor.run {
+                    dismiss()
+                }
+            } catch {
+                print("Failed to save entry: \(error)")
+            }
+        }
     }
 }
 

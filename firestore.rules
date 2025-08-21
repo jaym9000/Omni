@@ -47,25 +47,25 @@ service cloud.firestore {
     // Journal entries - users can only access their own entries
     match /journal_entries/{entryId} {
       allow read: if isAuthenticated() && 
-        resource.data.userId == request.auth.uid;
+        resource.data.authUserId == request.auth.uid;
       allow write: if isAuthenticated() && 
-        request.resource.data.userId == request.auth.uid;
+        request.resource.data.authUserId == request.auth.uid;
       allow create: if isAuthenticated() && 
-        request.resource.data.userId == request.auth.uid;
+        request.resource.data.authUserId == request.auth.uid;
       allow delete: if isAuthenticated() && 
-        resource.data.userId == request.auth.uid;
+        resource.data.authUserId == request.auth.uid;
     }
     
     // Mood entries - users can only access their own entries
     match /mood_entries/{entryId} {
       allow read: if isAuthenticated() && 
-        resource.data.userId == request.auth.uid;
+        resource.data.authUserId == request.auth.uid;
       allow write: if isAuthenticated() && 
-        request.resource.data.userId == request.auth.uid;
+        request.resource.data.authUserId == request.auth.uid;
       allow create: if isAuthenticated() && 
-        request.resource.data.userId == request.auth.uid;
+        request.resource.data.authUserId == request.auth.uid;
       allow delete: if isAuthenticated() && 
-        resource.data.userId == request.auth.uid;
+        resource.data.authUserId == request.auth.uid;
     }
   }
 }

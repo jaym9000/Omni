@@ -27,6 +27,7 @@ struct OmniAIApp: App {
     @StateObject private var journalManager = JournalManager.shared
     @StateObject private var chatService = ChatService()
     @StateObject private var offlineManager = OfflineManager()
+    @StateObject private var moodManager = MoodManager.shared
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     
     var body: some Scene {
@@ -38,6 +39,7 @@ struct OmniAIApp: App {
                 .environmentObject(journalManager)
                 .environmentObject(chatService)
                 .environmentObject(offlineManager)
+                .environmentObject(moodManager)
                 .preferredColorScheme(themeManager.isDarkMode ? .dark : .light)
                 .onAppear {
                     // Start offline monitoring when app launches

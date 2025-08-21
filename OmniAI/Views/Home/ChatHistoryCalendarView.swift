@@ -106,7 +106,7 @@ struct CalendarGrid: View {
             LazyVGrid(columns: columns, spacing: 10) {
                 ForEach(getDaysInMonth(), id: \.self) { day in
                     if let day = day {
-                        DayCell(
+                        ChatDayCell(
                             date: day,
                             isSelected: calendar.isDate(day, inSameDayAs: selectedDate),
                             hasChats: hasChatsOnDate(day),
@@ -159,7 +159,7 @@ struct CalendarGrid: View {
     }
 }
 
-struct DayCell: View {
+struct ChatDayCell: View {
     let date: Date
     let isSelected: Bool
     let hasChats: Bool

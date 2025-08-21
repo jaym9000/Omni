@@ -11,7 +11,7 @@ class ChatService: ObservableObject {
     @Published var isLoading = false
     @Published var isTyping = false
     
-    private let firebaseManager = FirebaseManager.shared
+    let firebaseManager = FirebaseManager.shared
     private var messagesListener: ListenerRegistration?
     private var sessionsListener: ListenerRegistration?
     private var messagesSubscription: Task<Void, Never>?
@@ -30,6 +30,17 @@ class ChatService: ObservableObject {
     }
     
     // MARK: - Session Management
+    
+    func updateLocalSession(_ session: ChatSession) async {
+        if let index = chatSessions.firstIndex(where: { $0.id == session.id }) {
+            await MainActor.run {
+                chatSessions[index] = session
+            }
+        }
+        await MainActor.run {
+            currentSession = session
+        }
+    }
     
     func createNewSession(userId: UUID, authUserId: String? = nil, title: String = "New Chat") async throws -> ChatSession {
         print("📝 Creating new chat session for user ID: \(userId)")
@@ -207,8 +218,9 @@ class ChatService: ObservableObject {
             // Continue anyway for offline support
         }
         
-        // Update session timestamp and title if first message
+        // Update session timestamp, title, and lastMessage
         currentSession.updatedAt = Date()
+        currentSession.lastMessage = content
         
         // Update title with first user message if it's still "New Chat"
         if currentSession.title == "New Chat" && messages.count <= 2 {
@@ -259,6 +271,9 @@ class ChatService: ObservableObject {
             throw NSError(domain: "ChatService", code: 401, userInfo: [NSLocalizedDescriptionKey: "User not authenticated"])
         }
         
+        // Get the latest mood for context
+        let latestMood = try? await firebaseManager.getLatestMood(authUserId: firebaseManager.auth.currentUser?.uid ?? "")
+        
         // Prepare the request - Firebase Functions v2 Cloud Run URL
         let url = URL(string: "https://aichat-265kkl2lea-uc.a.run.app")!
         var request = URLRequest(url: url)
@@ -271,8 +286,17 @@ class ChatService: ObservableObject {
             "message": userMessage,
             "sessionId": sessionId.uuidString
         ]
-        // Add mood if available (optional parameter)
-        // requestBody["mood"] = moodValue
+        
+        // Add mood context if available
+        if let mood = latestMood {
+            requestBody["mood"] = mood.mood.rawValue
+            
+            // Include mood note if it's recent (within last 4 hours)
+            let hoursSinceMood = Date().timeIntervalSince(mood.timestamp) / 3600
+            if hoursSinceMood < 4, let note = mood.note, !note.isEmpty {
+                requestBody["moodContext"] = "User is feeling \(mood.mood.label). They noted: \(note)"
+            }
+        }
         
         request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
         
@@ -337,6 +361,26 @@ class ChatService: ObservableObject {
         await MainActor.run {
             messages.append(aiMessage)
         }
+        
+        // Update session's lastMessage with AI response
+        if var currentSession = currentSession {
+            currentSession.lastMessage = aiMessage.content
+                currentSession.updatedAt = Date()
+            
+            // Update session in Firebase
+            let authUserId = firebaseManager.auth.currentUser?.uid ?? ""
+            do {
+                try await firebaseManager.saveChatSession(currentSession, authUserId: authUserId)
+            } catch {
+                print("⚠️ Failed to update session lastMessage in Firestore: \(error)")
+            }
+            
+            // Update local session
+            if let index = chatSessions.firstIndex(where: { $0.id == sessionId }) {
+                chatSessions[index] = currentSession
+            }
+            self.currentSession = currentSession
+        }
     }
     
     private func handleFallbackResponse(for sessionId: UUID, userMessage: String) async {
@@ -373,6 +417,26 @@ class ChatService: ObservableObject {
         // Add to local messages
         await MainActor.run {
             messages.append(aiMessage)
+        }
+        
+        // Update session's lastMessage with AI response
+        if var currentSession = currentSession {
+            currentSession.lastMessage = aiMessage.content
+                currentSession.updatedAt = Date()
+            
+            // Update session in Firebase
+            let authUserId = firebaseManager.auth.currentUser?.uid ?? ""
+            do {
+                try await firebaseManager.saveChatSession(currentSession, authUserId: authUserId)
+            } catch {
+                print("⚠️ Failed to update session lastMessage in Firestore: \(error)")
+            }
+            
+            // Update local session
+            if let index = chatSessions.firstIndex(where: { $0.id == sessionId }) {
+                chatSessions[index] = currentSession
+            }
+            self.currentSession = currentSession
         }
     }
     
@@ -429,15 +493,23 @@ class ChatService: ObservableObject {
     // MARK: - Chat Actions
     
     func deleteSession(_ session: ChatSession) async {
-        // TODO: Delete from Firebase Firestore
+        // Delete from Firebase Firestore
+        do {
+            try await firebaseManager.deleteChatSession(sessionId: session.id.uuidString)
+            print("✅ Chat session deleted from Firebase: \(session.id)")
+        } catch {
+            print("❌ Failed to delete chat session from Firebase: \(error)")
+        }
         
         // Remove from local sessions
-        chatSessions.removeAll { $0.id == session.id }
-        
-        if currentSession?.id == session.id {
-            currentSession = nil
-            messages = []
-            messagesSubscription?.cancel()
+        await MainActor.run {
+            chatSessions.removeAll { $0.id == session.id }
+            
+            if currentSession?.id == session.id {
+                currentSession = nil
+                messages = []
+                messagesSubscription?.cancel()
+            }
         }
     }
     

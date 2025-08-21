@@ -44,7 +44,7 @@ struct JournalCalendarView: View {
                     .padding(.horizontal)
                     
                     // Calendar Grid
-                    CalendarGridView(
+                    JournalCalendarGridView(
                         month: currentMonth,
                         selectedDate: $selectedDate,
                         journalManager: journalManager
@@ -140,7 +140,7 @@ struct JournalCalendarView: View {
 }
 
 // MARK: - Calendar Grid View
-struct CalendarGridView: View {
+struct JournalCalendarGridView: View {
     let month: Date
     @Binding var selectedDate: Date
     let journalManager: JournalManager

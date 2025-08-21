@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct RecentChatsView: View {
     @Environment(\.dismiss) var dismiss
@@ -14,8 +15,15 @@ struct RecentChatsView: View {
         NavigationStack {
             Group {
                 if isLoading {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    // Skeleton loading view for better UX
+                    VStack(spacing: 0) {
+                        ForEach(0..<5, id: \.self) { _ in
+                            SkeletonChatRow()
+                                .padding(.horizontal)
+                                .padding(.vertical, 8)
+                        }
+                    }
+                    .padding(.top)
                 } else if chatSessions.isEmpty {
                     // Empty state
                     VStack(spacing: 24) {
@@ -187,11 +195,26 @@ struct RecentChatsView: View {
     }
     
     private func deleteSession(from sessions: [ChatSession], at offsets: IndexSet) {
+        // Haptic feedback for deletion
+        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+        impactFeedback.impactOccurred()
+        
+        // Optimistically remove from UI first for smooth animation
+        withAnimation(.easeOut(duration: 0.3)) {
+            for index in offsets {
+                if let sessionIndex = chatSessions.firstIndex(where: { $0.id == sessions[index].id }) {
+                    chatSessions.remove(at: sessionIndex)
+                }
+            }
+        }
+        
+        // Then delete from Firebase in background
         Task {
             for index in offsets {
                 await chatService.deleteSession(sessions[index])
             }
-            loadChatSessions()
+            // Reload to ensure sync with Firebase
+            await loadChatSessionsAsync()
         }
     }
 }
@@ -200,32 +223,113 @@ struct ChatSessionRow: View {
     let session: ChatSession
     let action: () -> Void
     
-    var body: some View {
-        Button(action: action) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(session.title)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.omniTextPrimary)
-                
-                if let lastMessage = session.messages.last {
-                    Text(lastMessage.content)
-                        .font(.system(size: 14))
-                        .foregroundColor(.omniTextSecondary)
-                        .lineLimit(2)
-                }
-                
-                Text(formatDate(session.updatedAt))
-                    .font(.system(size: 12))
-                    .foregroundColor(.omniTextTertiary)
-            }
-            .padding(.vertical, 8)
+    private func timeAgo(_ date: Date) -> String {
+        let now = Date()
+        let components = Calendar.current.dateComponents([.minute, .hour, .day], from: date, to: now)
+        
+        if let days = components.day, days > 0 {
+            return days == 1 ? "1d" : "\(days)d"
+        } else if let hours = components.hour, hours > 0 {
+            return hours == 1 ? "1h" : "\(hours)h"
+        } else if let minutes = components.minute, minutes > 0 {
+            return minutes == 1 ? "1m" : "\(minutes)m"
+        } else {
+            return "now"
         }
     }
     
-    private func formatDate(_ date: Date) -> String {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: date, relativeTo: Date())
+    var body: some View {
+        Button(action: action) {
+            HStack(alignment: .top, spacing: 12) {
+                // Avatar circle with gradient
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.omniPrimary.opacity(0.8), Color.omniSecondary.opacity(0.8)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 48, height: 48)
+                    .overlay(
+                        Text(session.title.prefix(1).uppercased())
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundColor(.white)
+                    )
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text(session.title)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.omniTextPrimary)
+                            .lineLimit(1)
+                        
+                        Spacer()
+                        
+                        Text(timeAgo(session.updatedAt))
+                            .font(.system(size: 13))
+                            .foregroundColor(.omniTextTertiary)
+                    }
+                    
+                    if let lastMessage = session.lastMessage {
+                        Text(lastMessage)
+                            .font(.system(size: 14))
+                            .foregroundColor(.omniTextSecondary)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
+                    } else {
+                        Text("No messages yet")
+                            .font(.system(size: 14))
+                            .foregroundColor(.omniTextTertiary)
+                            .italic()
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.vertical, 4)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// MARK: - Skeleton Loading View
+struct SkeletonChatRow: View {
+    @State private var isAnimating = false
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Title skeleton
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color.gray.opacity(0.3))
+                .frame(width: 200, height: 16)
+                .overlay(
+                    LinearGradient(
+                        gradient: Gradient(colors: [Color.clear, Color.white.opacity(0.3), Color.clear]),
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                    .offset(x: isAnimating ? 200 : -200)
+                    .animation(
+                        Animation.linear(duration: 1.5)
+                            .repeatForever(autoreverses: false),
+                        value: isAnimating
+                    )
+                )
+            
+            // Content skeleton
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color.gray.opacity(0.2))
+                .frame(width: 280, height: 14)
+            
+            // Date skeleton
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color.gray.opacity(0.15))
+                .frame(width: 100, height: 12)
+        }
+        .padding(.vertical, 8)
+        .onAppear {
+            isAnimating = true
+        }
     }
 }
 

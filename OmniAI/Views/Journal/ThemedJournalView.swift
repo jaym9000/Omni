@@ -162,8 +162,16 @@ struct ThemedJournalView: View {
         // Set the prompt for themed entries
         entry.prompt = currentPrompt
         
-        journalManager.saveEntry(entry)
-        dismiss()
+        Task {
+            do {
+                try await journalManager.saveEntry(entry)
+                await MainActor.run {
+                    dismiss()
+                }
+            } catch {
+                print("Failed to save entry: \(error)")
+            }
+        }
     }
 }
 

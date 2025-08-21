@@ -13,6 +13,7 @@ struct ChatView: View {
     @State private var micButtonScale: CGFloat = 1.0
     @State private var micButtonGlow: Bool = false
     @State private var dragAmount = CGSize.zero
+    @State private var keyboardHeight: CGFloat = 0
     let initialPrompt: String?
     let existingSessionId: UUID? // For continuing existing conversations
     
@@ -42,20 +43,22 @@ struct ChatView: View {
                 // Input mode selector
                 InputModeSelector(selectedMode: $selectedInputMode)
                 
-                // Messages
+                // Messages with input bar as safe area inset
                 MessagesView(messages: chatService.messages, isTyping: chatService.isTyping)
-                
-                // Input bar
-                if selectedInputMode == .chat {
-                    ChatInputView(
-                        inputText: $inputText,
-                        inputFieldScale: inputFieldScale,
-                        sendButtonScale: sendButtonScale,
-                        sendMessage: sendMessage
-                    )
-                } else {
-                    VoiceInputView(micButtonScale: micButtonScale)
-                }
+                    .safeAreaInset(edge: .bottom, spacing: 0) {
+                        if selectedInputMode == .chat {
+                            ChatInputView(
+                                inputText: $inputText,
+                                inputFieldScale: inputFieldScale,
+                                sendButtonScale: sendButtonScale,
+                                sendMessage: sendMessage
+                            )
+                            .background(Color.omniBackground)
+                        } else {
+                            VoiceInputView(micButtonScale: micButtonScale)
+                                .background(Color.omniBackground)
+                        }
+                    }
             }
             .navigationTitle("Chat with \(authManager.currentUser?.companionName ?? "Omni")")
             .navigationBarTitleDisplayMode(.inline)
@@ -103,6 +106,13 @@ struct ChatView: View {
             print("   - User ID (public.users.id): \(userId)")
             print("   - Auth User ID: \(authManager.currentUser?.authUserId ?? "nil")")
             print("   - Email: \(authManager.currentUser?.email ?? "unknown")")
+            
+            // Clear messages immediately if opening new chat
+            if existingSessionId == nil {
+                await MainActor.run {
+                    chatService.messages.removeAll()
+                }
+            }
             
             // First load user's existing sessions for history using authUserId
             let authUserId = authManager.currentUser?.authUserId ?? ""
@@ -167,8 +177,35 @@ struct ChatView: View {
                     chatService.messages.append(welcomeMessage)
                 }
                 
-                // TODO: Save welcome message to Firebase
-                // For now, it's already added to local messages
+                // Save welcome message to Firebase
+                let firebaseWelcomeMessage = FirebaseMessage(
+                    id: welcomeMessage.id,
+                    content: welcomeContent,
+                    role: .assistant,
+                    timestamp: Date(),
+                    mood: nil
+                )
+                
+                do {
+                    try await chatService.firebaseManager.saveChatMessage(firebaseWelcomeMessage, sessionId: session.id.uuidString)
+                    print("✅ Welcome message saved to Firestore")
+                    
+                    // Update session lastMessage
+                    if var updatedSession = sessionToUse {
+                        updatedSession.lastMessage = welcomeContent
+                        updatedSession.updatedAt = Date()
+                        
+                        // Save updated session to Firebase
+                        try await chatService.firebaseManager.saveChatSession(updatedSession, authUserId: authUserId)
+                        sessionToUse = updatedSession
+                        currentSessionId = updatedSession.id
+                        
+                        // Update local session in chatService
+                        await chatService.updateLocalSession(updatedSession)
+                    }
+                } catch {
+                    print("⚠️ Failed to save welcome message to Firestore: \(error)")
+                }
             }
         }
     }
@@ -329,6 +366,7 @@ struct InputModeSelector: View {
 struct MessagesView: View {
     let messages: [ChatMessage]
     let isTyping: Bool
+    @FocusState private var isInputFocused: Bool
     
     var body: some View {
         ScrollViewReader { scrollProxy in
@@ -346,6 +384,10 @@ struct MessagesView: View {
                 }
                 .padding()
             }
+            .scrollDismissesKeyboard(.interactively)
+            .onTapGesture {
+                isInputFocused = false
+            }
             .onAppear {
                 // Scroll to bottom when view appears
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -357,17 +399,19 @@ struct MessagesView: View {
                 }
             }
             .onChange(of: messages.count) { _ in
-                // Scroll to bottom when messages change
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    if let lastMessage = messages.last {
-                        scrollProxy.scrollTo(lastMessage.id, anchor: .bottom)
+                // Scroll to bottom when messages change - with small delay to ensure render
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        if let lastMessage = messages.last {
+                            scrollProxy.scrollTo(lastMessage.id, anchor: .bottom)
+                        }
                     }
                 }
             }
             .onChange(of: isTyping) { newValue in
-                // Scroll to typing indicator when it appears
+                // Scroll to typing indicator when it appears - immediate
                 if newValue {
-                    withAnimation(.easeInOut(duration: 0.3)) {
+                    withAnimation(.easeInOut(duration: 0.2)) {
                         scrollProxy.scrollTo("typing", anchor: .bottom)
                     }
                 }
@@ -386,33 +430,21 @@ struct ChatInputView: View {
     var body: some View {
         HStack(spacing: 12) {
             TextField("Type your message...", text: $inputText, axis: .vertical)
-                .textFieldStyle(PlainTextFieldStyle())
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
+                .textFieldStyle(.plain)
+                .padding(12)
                 .background(
-                    RoundedRectangle(cornerRadius: 24)
+                    RoundedRectangle(cornerRadius: 20)
                         .fill(Color.white)
-                        .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 24)
-                        .stroke(Color.omniTextTertiary.opacity(0.2), lineWidth: 1)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 20)
+                                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                        )
                 )
                 .focused($isInputFocused)
-                .lineLimit(1...5)
-                .scaleEffect(inputFieldScale)
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    isInputFocused = true
-                }
-                .toolbar {
-                    ToolbarItemGroup(placement: .keyboard) {
-                        Spacer()
-                        Button("Done") {
-                            isInputFocused = false
-                        }
-                        .foregroundColor(.omniPrimary)
-                        .fontWeight(.medium)
+                .submitLabel(.send)
+                .onSubmit {
+                    if !inputText.isEmpty {
+                        sendMessage()
                     }
                 }
             
@@ -430,8 +462,8 @@ struct ChatInputView: View {
             .scaleEffect(sendButtonScale)
         }
         .padding(.horizontal)
-        .padding(.vertical, 16)
-        .background(Color.omniBackground)
+        .padding(.vertical, 12)
+        .padding(.bottom, 4)
     }
 }
 
@@ -439,55 +471,53 @@ struct VoiceInputView: View {
     let micButtonScale: CGFloat
     
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 16) {
             Spacer()
             
-            VStack(spacing: 16) {
-                Button(action: {
-                    // Voice recording logic would go here
-                }) {
-                    ZStack {
-                        Circle()
-                            .fill(Color.omniPrimary.opacity(0.1))
-                            .frame(width: 120, height: 120)
-                            .blur(radius: 4)
-                        
-                        Circle()
-                            .stroke(Color.omniPrimary.opacity(0.3), lineWidth: 2)
-                            .frame(width: 100, height: 100)
-                            .scaleEffect(micButtonScale)
-                        
-                        Circle()
-                            .fill(
-                                LinearGradient(
-                                    colors: [Color.omniPrimary, Color.omniPrimary.opacity(0.8)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
+            Button(action: {
+                // Voice recording logic would go here
+            }) {
+                ZStack {
+                    Circle()
+                        .fill(Color.omniPrimary.opacity(0.1))
+                        .frame(width: 120, height: 120)
+                        .blur(radius: 4)
+                    
+                    Circle()
+                        .stroke(Color.omniPrimary.opacity(0.3), lineWidth: 2)
+                        .frame(width: 100, height: 100)
+                        .scaleEffect(micButtonScale)
+                    
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.omniPrimary, Color.omniPrimary.opacity(0.8)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
                             )
-                            .frame(width: 80, height: 80)
-                            .shadow(color: Color.omniPrimary.opacity(0.3), 
-                                    radius: 8, 
-                                    x: 0, 
-                                    y: 4)
-                            .scaleEffect(micButtonScale)
-                        
-                        Image(systemName: "mic.fill")
-                            .font(.system(size: 28))
-                            .foregroundColor(.white)
-                            .scaleEffect(micButtonScale)
-                    }
+                        )
+                        .frame(width: 80, height: 80)
+                        .shadow(color: Color.omniPrimary.opacity(0.3), 
+                                radius: 8, 
+                                x: 0, 
+                                y: 4)
+                        .scaleEffect(micButtonScale)
+                    
+                    Image(systemName: "mic.fill")
+                        .font(.system(size: 28))
+                        .foregroundColor(.white)
+                        .scaleEffect(micButtonScale)
                 }
-                
-                Text("Tap and hold to speak")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.omniTextSecondary)
             }
+            
+            Text("Tap and hold to speak")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.omniTextSecondary)
             
             Spacer()
         }
-        .padding(.vertical, 32)
-        .background(Color.omniBackground)
+        .frame(height: 200)
+        .frame(maxWidth: .infinity)
     }
 }
 
