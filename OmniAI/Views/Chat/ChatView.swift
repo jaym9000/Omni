@@ -15,6 +15,7 @@ struct ChatView: View {
     @State private var sendButtonScale: CGFloat = 1.0
     @State private var micButtonScale: CGFloat = 1.0
     @State private var isSettingUp = false
+    @State private var showGuestLimitAlert = false
     
     let initialPrompt: String?
     let existingSessionId: UUID?
@@ -34,9 +35,9 @@ struct ChatView: View {
             VStack(spacing: 0) {
                 // Guest counter if needed
                 if let user = authManager.currentUser, user.isGuest {
-                    GuestConversationCounter(
-                        conversationsUsed: user.guestConversationCount,
-                        maxConversations: user.maxGuestConversations
+                    GuestMessageCounter(
+                        messagesUsed: user.guestMessageCount,
+                        maxMessages: user.maxGuestMessages
                     )
                 }
                 
@@ -138,6 +139,13 @@ struct ChatView: View {
                     isInputFocused = true
                 }
             }
+        }
+        .alert("Upgrade to Continue", isPresented: $showGuestLimitAlert) {
+            Button("OK") {
+                showGuestLimitAlert = false
+            }
+        } message: {
+            Text("You've used all 20 free messages. Please sign up to continue chatting with Omni.")
         }
     }
     
@@ -263,7 +271,13 @@ struct ChatView: View {
                 
                 try await chatService.sendMessage(content: userInput, sessionId: sessionId)
             } catch {
-                print("Failed to send message: \(error)")
+                if case ChatError.guestLimitReached = error {
+                    await MainActor.run {
+                        showGuestLimitAlert = true
+                    }
+                } else {
+                    print("Failed to send message: \(error)")
+                }
             }
         }
     }
@@ -504,36 +518,36 @@ struct TypingIndicator: View {
     }
 }
 
-// MARK: - Guest Conversation Counter
-struct GuestConversationCounter: View {
-    let conversationsUsed: Int
-    let maxConversations: Int
+// MARK: - Guest Message Counter
+struct GuestMessageCounter: View {
+    let messagesUsed: Int
+    let maxMessages: Int
     
-    private var conversationsRemaining: Int {
-        max(0, maxConversations - conversationsUsed)
+    private var messagesRemaining: Int {
+        max(0, maxMessages - messagesUsed)
     }
     
-    private var isLowOnConversations: Bool {
-        conversationsRemaining <= 1
+    private var isLowOnMessages: Bool {
+        messagesRemaining <= 5
     }
     
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: isLowOnConversations ? "exclamationmark.triangle.fill" : "message.circle.fill")
+            Image(systemName: isLowOnMessages ? "exclamationmark.triangle.fill" : "message.circle.fill")
                 .font(.system(size: 16))
-                .foregroundColor(isLowOnConversations ? .orange : .omniPrimary)
+                .foregroundColor(isLowOnMessages ? .orange : .omniPrimary)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text("Guest Trial")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.omniTextSecondary)
                 
-                if conversationsRemaining > 0 {
-                    Text("\(conversationsRemaining) of \(maxConversations) conversations remaining")
+                if messagesRemaining > 0 {
+                    Text("\(messagesUsed)/\(maxMessages) free messages")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(isLowOnConversations ? .orange : .omniTextPrimary)
+                        .foregroundColor(isLowOnMessages ? .orange : .omniTextPrimary)
                 } else {
-                    Text("Trial limit reached")
+                    Text("Message limit reached")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.red)
                 }
@@ -541,14 +555,14 @@ struct GuestConversationCounter: View {
             
             Spacer()
             
-            if conversationsRemaining <= 1 {
+            if messagesRemaining <= 5 {
                 Button("Upgrade") {
                     NotificationCenter.default.post(
                         name: NSNotification.Name("ShowGuestUpgradeModal"),
                         object: nil,
                         userInfo: [
-                            "conversationsUsed": conversationsUsed,
-                            "conversationsRemaining": conversationsRemaining
+                            "messagesUsed": messagesUsed,
+                            "messagesRemaining": messagesRemaining
                         ]
                     )
                 }
@@ -570,10 +584,10 @@ struct GuestConversationCounter: View {
         .padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(isLowOnConversations ? Color.orange.opacity(0.1) : Color.omniSecondaryBackground)
+                .fill(isLowOnMessages ? Color.orange.opacity(0.1) : Color.omniSecondaryBackground)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(isLowOnConversations ? Color.orange.opacity(0.3) : Color.clear, lineWidth: 1)
+                        .stroke(isLowOnMessages ? Color.orange.opacity(0.3) : Color.clear, lineWidth: 1)
                 )
         )
         .padding(.horizontal, 16)

@@ -57,11 +57,19 @@ class AuthenticationManager: ObservableObject {
     @Published var isAppleUser = false
     @Published var isLoading = false
     
+    // Security managers
+    private let keychainManager = KeychainManager.shared
+    private let tokenManager = TokenManager.shared
+    private let rateLimiter = RateLimiter.shared
+    
     private var currentNonce: String?
     
     init() {
         // Don't call checkAuthenticationStatus() from init to avoid threading issues
         // It will be called from the app's onAppear
+        
+        // Migrate from UserDefaults to Keychain on first launch
+        keychainManager.migrateFromUserDefaults()
     }
     
     func checkAuthenticationStatus(allowDelay: Bool = false) {
@@ -82,9 +90,11 @@ class AuthenticationManager: ObservableObject {
                             self.isEmailVerified = firebaseUser.isEmailVerified
                             self.isAppleUser = userProfile.authProvider == .apple
                             
-                            // Save to UserDefaults
-                            if let encoded = try? JSONEncoder().encode(userProfile) {
-                                UserDefaults.standard.set(encoded, forKey: "currentUser")
+                            // Save to Keychain (secure storage)
+                            try? self.keychainManager.save(userProfile, for: .userProfile)
+                            // Also save Firebase token
+                            Task {
+                                try? await self.tokenManager.saveFirebaseToken()
                             }
                         }
                     } else if firebaseUser.isAnonymous {
@@ -112,9 +122,8 @@ class AuthenticationManager: ObservableObject {
             }
         }
         
-        // Also check UserDefaults for immediate UI update
-        if let userData = UserDefaults.standard.data(forKey: "currentUser"),
-           let user = try? JSONDecoder().decode(User.self, from: userData) {
+        // Check Keychain for immediate UI update (secure storage)
+        if let user = try? keychainManager.retrieve(User.self, for: .userProfile) {
             self.currentUser = user
             self.isAuthenticated = true
             self.isEmailVerified = user.emailVerified
@@ -123,6 +132,12 @@ class AuthenticationManager: ObservableObject {
     }
     
     func signIn(email: String, password: String) async throws {
+        // Check rate limiting first
+        let lockStatus = try rateLimiter.checkIfAccountLocked()
+        if lockStatus.isLocked {
+            throw AuthError.accountLocked
+        }
+        
         await MainActor.run { isLoading = true }
         defer { 
             Task { @MainActor in
@@ -164,12 +179,26 @@ class AuthenticationManager: ObservableObject {
                 self.isAuthenticated = true
                 self.isEmailVerified = firebaseUser.isEmailVerified
                 
-                // Save to UserDefaults as backup
-                if let encoded = try? JSONEncoder().encode(finalUserProfile) {
-                    UserDefaults.standard.set(encoded, forKey: "currentUser")
+                // Save to Keychain (secure storage)
+                if let finalUserProfile = finalUserProfile {
+                    try? self.keychainManager.save(finalUserProfile, for: .userProfile)
                 }
             }
+            
+            // Record successful login for rate limiting
+            try rateLimiter.recordSuccessfulLogin()
+            
+            // Save Firebase token
+            Task {
+                try? await tokenManager.saveFirebaseToken()
+            }
         } catch {
+            // Record failed attempt for rate limiting
+            let lockResult = try rateLimiter.recordFailedAttempt(for: email)
+            if lockResult.shouldLock {
+                throw AuthError.accountLocked
+            }
+            
             // Convert Firebase errors to our custom errors
             if let nsError = error as NSError? {
                 let code = AuthErrorCode(rawValue: nsError.code)
@@ -235,10 +264,8 @@ class AuthenticationManager: ObservableObject {
                 self.isAuthenticated = true
                 self.isEmailVerified = false
                 
-                // Save to UserDefaults as backup
-                if let encoded = try? JSONEncoder().encode(userProfile) {
-                    UserDefaults.standard.set(encoded, forKey: "currentUser")
-                }
+                // Save to Keychain (secure storage)
+                try? self.keychainManager.save(userProfile, for: .userProfile)
             }
         } catch {
             // Convert Firebase errors to our custom errors
@@ -337,9 +364,9 @@ class AuthenticationManager: ObservableObject {
                 self.isEmailVerified = true
                 self.isAppleUser = true
                 
-                // Save to UserDefaults as backup
-                if let encoded = try? JSONEncoder().encode(finalUserProfile) {
-                    UserDefaults.standard.set(encoded, forKey: "currentUser")
+                // Save to Keychain (secure storage)
+                if let finalUserProfile = finalUserProfile {
+                    try? self.keychainManager.save(finalUserProfile, for: .userProfile)
                 }
             }
             
@@ -431,9 +458,9 @@ class AuthenticationManager: ObservableObject {
                 self.isEmailVerified = true
                 self.isAppleUser = true
                 
-                // Save to UserDefaults as backup
-                if let encoded = try? JSONEncoder().encode(finalUserProfile) {
-                    UserDefaults.standard.set(encoded, forKey: "currentUser")
+                // Save to Keychain (secure storage)
+                if let finalUserProfile = finalUserProfile {
+                    try? self.keychainManager.save(finalUserProfile, for: .userProfile)
                 }
             }
             
@@ -478,10 +505,8 @@ class AuthenticationManager: ObservableObject {
                 self.isEmailVerified = true  // Guest users don't need email verification
                 self.isAppleUser = false
                 
-                // Save to UserDefaults
-                if let encoded = try? JSONEncoder().encode(guestUser) {
-                    UserDefaults.standard.set(encoded, forKey: "currentUser")
-                }
+                // Save to Keychain
+                try? self.keychainManager.save(guestUser, for: .userProfile)
             }
             
             print("✅ Guest session created successfully")
@@ -545,10 +570,8 @@ class AuthenticationManager: ObservableObject {
                 self.currentUser = finalUser
                 self.isEmailVerified = false
                 
-                // Update UserDefaults
-                if let encoded = try? JSONEncoder().encode(finalUser) {
-                    UserDefaults.standard.set(encoded, forKey: "currentUser")
-                }
+                // Update Keychain
+                try? self.keychainManager.save(finalUser, for: .userProfile)
             }
             
             print("✅ Guest successfully converted to permanent account")
@@ -576,6 +599,15 @@ class AuthenticationManager: ObservableObject {
             // Sign out from Firebase
             try firebaseManager.auth.signOut()
             
+            // Clear tokens
+            try tokenManager.clearTokens()
+            
+            // Clear Keychain
+            try keychainManager.delete(for: .userProfile)
+            
+            // Reset rate limiting
+            try rateLimiter.recordSuccessfulLogin()
+            
             Task { @MainActor in
                 currentUser = nil
                 isAuthenticated = false
@@ -583,7 +615,6 @@ class AuthenticationManager: ObservableObject {
                 isAppleUser = false
             }
             
-            UserDefaults.standard.removeObject(forKey: "currentUser")
             UserDefaults.standard.removeObject(forKey: "hasCompletedOnboarding")
             
             print("✅ Successfully signed out")
@@ -593,110 +624,137 @@ class AuthenticationManager: ObservableObject {
     }
     
     func sendVerificationEmail() async throws {
-        guard let user = currentUser else { 
+        // Check rate limiting for verification emails
+        guard let userId = Auth.auth().currentUser?.uid else {
             throw AuthError.userNotFound
         }
         
-        // TODO: Implement Firebase email verification
-        print("✅ Verification email would be sent to \(user.email)")
+        let rateLimit = rateLimiter.checkVerificationEmailRateLimit(for: userId)
+        if !rateLimit.allowed {
+            throw AuthError.rateLimitExceeded(retryAfter: rateLimit.nextAllowedTime)
+        }
+        
+        guard let firebaseUser = Auth.auth().currentUser else {
+            throw AuthError.userNotFound
+        }
+        
+        try await firebaseUser.sendEmailVerification()
+        print("✅ Verification email sent to \(firebaseUser.email ?? "user")")
     }
     
-    func checkEmailVerification() async throws {
-        // TODO: Implement Firebase email verification check
-        // For now, just mark as verified after a delay
-        try await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
+    func checkEmailVerification() async throws -> Bool {
+        guard let firebaseUser = Auth.auth().currentUser else {
+            throw AuthError.userNotFound
+        }
+        
+        // Reload user to get latest verification status
+        try await firebaseUser.reload()
+        
+        let isVerified = firebaseUser.isEmailVerified
         
         await MainActor.run {
-            self.isEmailVerified = true
+            self.isEmailVerified = isVerified
             if var user = currentUser {
-                user.emailVerified = true
+                user.emailVerified = isVerified
                 self.currentUser = user
                 
-                // Update UserDefaults
-                if let encoded = try? JSONEncoder().encode(user) {
-                    UserDefaults.standard.set(encoded, forKey: "currentUser")
-                }
+                // Update Keychain
+                try? keychainManager.save(user, for: .userProfile)
             }
         }
+        
+        return isVerified
     }
     
     func resetPassword(email: String) async throws {
-        // TODO: Implement Firebase password reset
-        print("Password reset would be sent to \(email)")
-    }
-    
-    func updateProfile(displayName: String, avatarEmoji: String? = nil, bio: String? = nil) async {
-        await MainActor.run {
-            guard var user = self.currentUser else { return }
-            
-            // Update user properties
-            user.displayName = displayName
-            if let avatarEmoji = avatarEmoji {
-                user.avatarURL = avatarEmoji
-            }
-            user.updatedAt = Date()
-            
-            self.currentUser = user
-            
-            // Save to UserDefaults
-            if let encoded = try? JSONEncoder().encode(user) {
-                UserDefaults.standard.set(encoded, forKey: "currentUser")
-            }
+        // Check rate limiting for password reset
+        let rateLimit = rateLimiter.checkPasswordResetRateLimit(for: email)
+        if !rateLimit.allowed {
+            throw AuthError.rateLimitExceeded(retryAfter: rateLimit.nextAllowedTime)
         }
         
-        // TODO: Implement Firebase profile update
+        // Validate email format
+        try validateEmail(email)
+        
+        // Send password reset email via Firebase
+        try await Auth.auth().sendPasswordReset(withEmail: email)
+        print("✅ Password reset email sent to \(email)")
+    }
+    
+    func updateProfile(displayName: String, avatarEmoji: String? = nil, bio: String? = nil) async throws {
+        guard var user = self.currentUser else {
+            throw AuthError.userNotFound
+        }
+        
+        // Update Firebase Auth profile
+        if let firebaseUser = Auth.auth().currentUser {
+            let changeRequest = firebaseUser.createProfileChangeRequest()
+            changeRequest.displayName = displayName
+            try await changeRequest.commitChanges()
+        }
+        
+        // Update local user object
+        user.displayName = displayName
+        if let avatarEmoji = avatarEmoji {
+            user.avatarURL = avatarEmoji
+        }
+        user.updatedAt = Date()
+        
+        // Save to Firestore
+        try await firebaseManager.saveUser(user)
+        
+        await MainActor.run {
+            self.currentUser = user
+            
+            // Save to Keychain
+            try? self.keychainManager.save(user, for: .userProfile)
+        }
+        
+        print("✅ Profile updated successfully")
     }
     
     func markOnboardingCompleted() async {
-        await MainActor.run {
-            guard var user = self.currentUser else { return }
-            
-            user.hasCompletedOnboarding = true
-            user.updatedAt = Date()
-            
-            self.currentUser = user
-            
-            // Save to UserDefaults
-            if let encoded = try? JSONEncoder().encode(user) {
-                UserDefaults.standard.set(encoded, forKey: "currentUser")
-            }
-        }
+        guard var user = self.currentUser else { return }
+        
+        user.hasCompletedOnboarding = true
+        user.updatedAt = Date()
         
         // Update in Firebase
-        if let user = currentUser {
-            do {
-                try await firebaseManager.saveUser(user)
-                print("✅ Onboarding completion saved to Firebase")
-            } catch {
-                print("❌ Failed to save onboarding completion to Firebase: \(error)")
+        do {
+            try await firebaseManager.saveUser(user)
+            print("✅ Onboarding completion saved to Firebase")
+            
+            await MainActor.run {
+                self.currentUser = user
+                
+                // Save to Keychain
+                try? self.keychainManager.save(user, for: .userProfile)
             }
+        } catch {
+            print("❌ Failed to save onboarding completion to Firebase: \(error)")
         }
     }
     
     func updateCompanionSettings(name: String, personality: String) async {
-        await MainActor.run {
-            guard var user = self.currentUser else { return }
-            
-            user.companionName = name
-            user.companionPersonality = personality
-            user.updatedAt = Date()
-            
-            self.currentUser = user
-            
-            // Save to UserDefaults
-            if let encoded = try? JSONEncoder().encode(user) {
-                UserDefaults.standard.set(encoded, forKey: "currentUser")
-            }
-        }
+        guard var user = self.currentUser else { return }
+        
+        user.companionName = name
+        user.companionPersonality = personality
+        user.updatedAt = Date()
         
         // Update in Firebase
-        if let user = currentUser {
-            do {
-                try await firebaseManager.saveUser(user)
-                print("✅ Companion settings saved to Firebase")
-            } catch {
-                print("❌ Failed to save companion settings to Firebase: \(error)")
+        do {
+            try await firebaseManager.saveUser(user)
+            print("✅ Companion settings saved to Firebase")
+            
+            await MainActor.run {
+                self.currentUser = user
+                
+                // Save to Keychain
+                try? self.keychainManager.save(user, for: .userProfile)
             }
+        } catch {
+            print("❌ Failed to save companion settings to Firebase: \(error)")
         }
     }
     
@@ -709,31 +767,50 @@ class AuthenticationManager: ObservableObject {
             
             self.currentUser = user
             
-            // Save to UserDefaults
-            if let encoded = try? JSONEncoder().encode(user) {
-                UserDefaults.standard.set(encoded, forKey: "currentUser")
-            }
+            // Save to Keychain
+            try? self.keychainManager.save(user, for: .userProfile)
         }
         
-        // TODO: Update in Firebase
+        // Update in Firebase
+        if let user = currentUser {
+            do {
+                try await firebaseManager.saveUser(user)
+                print("✅ Biometric auth preference saved to Firebase")
+            } catch {
+                print("❌ Failed to save biometric auth preference: \(error)")
+            }
+        }
     }
     
-    func incrementGuestConversationCount() async {
-        await MainActor.run {
-            guard var user = self.currentUser, user.isGuest else { return }
-            
-            user.guestConversationCount += 1
-            user.updatedAt = Date()
-            
-            self.currentUser = user
-            
-            // Save to UserDefaults
-            if let encoded = try? JSONEncoder().encode(user) {
-                UserDefaults.standard.set(encoded, forKey: "currentUser")
-            }
+    func incrementGuestMessageCount() async throws -> Bool {
+        guard var user = self.currentUser, user.isGuest else {
+            return true // Not a guest, no limit
         }
         
-        // TODO: Update in Firebase
+        // Check if limit reached
+        if user.guestMessageCount >= user.maxGuestMessages {
+            print("⚠️ Guest message limit reached: \(user.guestMessageCount)/\(user.maxGuestMessages)")
+            return false
+        }
+        
+        // Increment count
+        user.guestMessageCount += 1
+        user.updatedAt = Date()
+        
+        // Update in Firebase
+        try await firebaseManager.saveUser(user)
+        
+        await MainActor.run {
+            self.currentUser = user
+            
+            // Save to Keychain
+            try? self.keychainManager.save(user, for: .userProfile)
+        }
+        
+        print("💬 Guest message count: \(user.guestMessageCount)/\(user.maxGuestMessages)")
+        
+        // Return true if still under limit
+        return user.guestMessageCount < user.maxGuestMessages
     }
     
     // MARK: - Nonce Generation for Apple Sign-In Security

@@ -1,9 +1,14 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper function to check if user is authenticated
+    // Helper function to check if user is authenticated (including anonymous)
     function isAuthenticated() {
       return request.auth != null;
+    }
+    
+    // Helper function to check if user is anonymous
+    function isAnonymous() {
+      return request.auth != null && request.auth.token.firebase.sign_in_provider == 'anonymous';
     }
     
     // Helper function to check if user owns the document

@@ -43,6 +43,7 @@ struct MoodAnalyticsView: View {
                     MoodDistributionChart(
                         moodEntries: moodManager.getMoodHistory(days: selectedTimeRange.days)
                     )
+                    .id(selectedTimeRange)  // Force refresh when time range changes
                     
                     // Weekly Trend Chart
                     WeeklyTrendChart(weekData: moodManager.getWeeklyMoodTrend())

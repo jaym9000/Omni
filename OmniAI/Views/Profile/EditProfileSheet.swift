@@ -135,11 +135,15 @@ struct EditProfileSheet: View {
     }
     
     private func saveProfile() async {
-        await authManager.updateProfile(
-            displayName: displayName,
-            avatarEmoji: selectedEmoji,
-            bio: bio.isEmpty ? nil : bio
-        )
+        do {
+            try await authManager.updateProfile(
+                displayName: displayName,
+                avatarEmoji: selectedEmoji,
+                bio: bio.isEmpty ? nil : bio
+            )
+        } catch {
+            print("Failed to update profile: \(error)")
+        }
     }
 }
 

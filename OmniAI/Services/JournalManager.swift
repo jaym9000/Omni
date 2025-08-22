@@ -29,6 +29,23 @@ class JournalManager: ObservableObject {
     
     private init() {
         setupJournalListener()
+        
+        // Re-setup listener when auth state changes
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(authStateDidChange),
+            name: NSNotification.Name("AuthStateDidChange"),
+            object: nil
+        )
+    }
+    
+    @objc private func authStateDidChange() {
+        Task { @MainActor in
+            setupJournalListener()
+            if let authUserId = firebaseManager.auth.currentUser?.uid {
+                await loadUserJournals(userId: UUID())
+            }
+        }
     }
     
     deinit {
@@ -211,13 +228,20 @@ class JournalManager: ObservableObject {
     }
     
     private func setupJournalListener() {
-        guard let authUserId = firebaseManager.auth.currentUser?.uid else { return }
+        // Remove old listener if exists
+        listener?.remove()
+        
+        guard let authUserId = firebaseManager.auth.currentUser?.uid else { 
+            print("⚠️ No authenticated user for journal listener")
+            return 
+        }
         
         listener = firebaseManager.listenToJournalEntries(authUserId: authUserId) { [weak self] entries in
             guard let self = self else { return }
             
             Task { @MainActor in
                 self.journalEntries = entries.sorted { $0.createdAt > $1.createdAt }
+                print("📚 Journal listener updated: \(entries.count) entries")
             }
         }
     }

@@ -477,6 +477,8 @@ struct AddMoodSheet: View {
     
     init(initialMood: MoodType? = nil) {
         self.initialMood = initialMood
+        // Initialize selectedMood with initialMood
+        self._selectedMood = State(initialValue: initialMood)
     }
     
     var body: some View {

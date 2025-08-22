@@ -3,6 +3,23 @@ import SwiftUI
 import FirebaseFirestore
 import FirebaseAuth
 
+enum ChatError: Error, LocalizedError {
+    case guestLimitReached
+    case sessionNotFound
+    case sendMessageFailed
+    
+    var errorDescription: String? {
+        switch self {
+        case .guestLimitReached:
+            return "You've used all 20 free messages. Please sign up to continue."
+        case .sessionNotFound:
+            return "Chat session not found"
+        case .sendMessageFailed:
+            return "Failed to send message"
+        }
+    }
+}
+
 @MainActor
 class ChatService: ObservableObject {
     @Published var currentSession: ChatSession?
@@ -44,6 +61,9 @@ class ChatService: ObservableObject {
     
     func createNewSession(userId: UUID, authUserId: String? = nil, title: String = "New Chat") async throws -> ChatSession {
         print("📝 Creating new chat session for user ID: \(userId)")
+        
+        // No limits on creating sessions - guests can organize freely
+        // Limits are applied when sending messages
         
         // Create a new session
         let session = ChatSession(userId: userId, title: title)
@@ -208,38 +228,11 @@ class ChatService: ObservableObject {
         if let authManager = await getAuthManager(),
            let user = authManager.currentUser,
            user.isGuest {
-            // Check guest message count for today
-            let maxMessages = 5 // 5 free messages per day
-            
-            // Count today's messages from this guest user
-            let today = Calendar.current.startOfDay(for: Date())
-            let todayMessages = messages.filter { message in
-                message.isUser && // Only count user messages
-                message.timestamp >= today
-            }.count
-            
-            if todayMessages >= maxMessages {
-                // Create limit reached message
-                let limitMessage = ChatMessage(
-                    content: "🔒 You've reached your daily limit of 5 free messages! Sign up to continue chatting with Omni and unlock unlimited conversations.",
-                    isUser: false,
-                    sessionId: sessionId
-                )
-                
-                await MainActor.run {
-                    // Only add if not already present (prevent duplicates)
-                    if !messages.contains(where: { $0.id == limitMessage.id }) {
-                        messages.append(limitMessage)
-                    }
-                    
-                    // Post notification to show signup modal
-                    NotificationCenter.default.post(
-                        name: NSNotification.Name("ShowGuestUpgradeModal"),
-                        object: nil,
-                        userInfo: ["messagesUsed": todayMessages, "maxMessages": maxMessages]
-                    )
-                }
-                return
+            // Check if guest can send more messages
+            let canContinue = try await authManager.incrementGuestMessageCount()
+            if !canContinue {
+                // Throw error to be handled by the view
+                throw ChatError.guestLimitReached
             }
         }
         
@@ -319,9 +312,27 @@ class ChatService: ObservableObject {
     }
     
     private func callAIChatFunction(for sessionId: UUID, userMessage: String) async throws {
-        // Get the current user's ID token for authentication
-        guard let idToken = try? await firebaseManager.auth.currentUser?.getIDToken() else {
-            throw NSError(domain: "ChatService", code: 401, userInfo: [NSLocalizedDescriptionKey: "User not authenticated"])
+        // Try to get ID token for authentication
+        let idToken: String?
+        if let currentUser = firebaseManager.auth.currentUser {
+            do {
+                // Try to get token, force refresh if anonymous to ensure it's valid
+                idToken = try await currentUser.getIDToken(forcingRefresh: currentUser.isAnonymous)
+                print("✅ Got ID token for \(currentUser.isAnonymous ? "anonymous" : "authenticated") user")
+            } catch {
+                print("⚠️ Failed to get ID token: \(error)")
+                // For anonymous users, continue without token
+                if currentUser.isAnonymous {
+                    idToken = nil
+                    print("📝 Continuing without token for anonymous user")
+                } else {
+                    // For authenticated users, this is an error
+                    throw error
+                }
+            }
+        } else {
+            idToken = nil
+            print("⚠️ No Firebase user, proceeding without authentication")
         }
         
         // Get the latest mood for context
@@ -331,7 +342,9 @@ class ChatService: ObservableObject {
         let url = URL(string: "https://aichat-265kkl2lea-uc.a.run.app")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.setValue("Bearer \(idToken)", forHTTPHeaderField: "Authorization")
+        if let token = idToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
         // Prepare request body
@@ -370,6 +383,11 @@ class ChatService: ObservableObject {
         }
         
         guard httpResponse.statusCode == 200 else {
+            // Log the error response for debugging
+            if let errorData = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                print("❌ AI Chat Function error response: \(errorData)")
+            }
+            
             throw NSError(domain: "ChatService", code: httpResponse.statusCode, 
                          userInfo: [NSLocalizedDescriptionKey: "AI Chat Function returned error: \(httpResponse.statusCode)"])
         }
@@ -502,10 +520,22 @@ class ChatService: ObservableObject {
         
         await MainActor.run {
             // Update local user object with message count
-            // This could trigger UI updates showing remaining messages
             print("👤 Guest messages: \(messagesUsed) used, \(messagesRemaining) remaining")
             
-            // You could post a notification to update UI
+            // Update the auth manager's current user guest message count
+            if let authManager = self.authManager,
+               var currentUser = authManager.currentUser,
+               currentUser.isGuest {
+                currentUser.guestMessageCount = messagesUsed
+                authManager.currentUser = currentUser
+            }
+            
+            // Show a warning when getting close to the limit
+            if messagesRemaining <= 3 && messagesRemaining > 0 {
+                print("⚠️ Guest user approaching message limit: \(messagesRemaining) messages remaining")
+            }
+            
+            // Post notification to update UI
             NotificationCenter.default.post(
                 name: NSNotification.Name("GuestMessageCountUpdated"),
                 object: nil,

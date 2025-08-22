@@ -39,25 +39,31 @@ export const aiChat = onRequest(
         });
 
         try {
-          // Verify authentication
+          // Verify authentication - Allow anonymous users
           const authHeader = request.headers.authorization;
-          if (!authHeader?.startsWith("Bearer ")) {
-            console.log("No Bearer token in Authorization header");
-            response.status(401).json({error: "Unauthorized - No Bearer token"});
-            return;
-          }
+          let userId = null;
+          let isAnonymous = false;
 
-          const idToken = authHeader.split("Bearer ")[1];
-          let decodedToken;
-          let userId;
-          try {
-            decodedToken = await admin.auth().verifyIdToken(idToken);
-            userId = decodedToken.uid;
-            console.log("Successfully verified Firebase ID token for user:", userId);
-          } catch (error) {
-            console.error("Failed to verify Firebase ID token:", error);
-            response.status(401).json({error: "Invalid Firebase ID token"});
-            return;
+          if (authHeader?.startsWith("Bearer ")) {
+            const idToken = authHeader.split("Bearer ")[1];
+            try {
+              const decodedToken = await admin.auth().verifyIdToken(idToken);
+              userId = decodedToken.uid;
+              isAnonymous = decodedToken.firebase?.sign_in_provider === "anonymous";
+              const userType = isAnonymous ? "anonymous" : "authenticated";
+              console.log(`Successfully verified Firebase ID token for ${userType} user:`, userId);
+            } catch (error) {
+              console.error("Failed to verify Firebase ID token:", error);
+              // For guest users, allow fallback without authentication
+              console.log("Allowing request without authentication for guest fallback");
+              userId = `guest_${Date.now()}`; // Generate temporary ID for session
+              isAnonymous = true;
+            }
+          } else {
+            // No token provided - treat as guest
+            console.log("No Bearer token provided - treating as guest user");
+            userId = `guest_${Date.now()}`;
+            isAnonymous = true;
           }
 
           // Get request data
@@ -69,36 +75,50 @@ export const aiChat = onRequest(
           }
 
           // Check if user is guest and enforce limits
-          const userDoc = await db.collection("users").doc(userId).get();
-          const userData = userDoc.data();
-          const isGuest = userData?.isGuest || false;
+          let isGuest = isAnonymous;
+          let userData: Record<string, unknown> = {};
+          let guestMessageCount = 0;
+          let maxGuestMessages = 20; // Total messages, not daily
 
+          // Only try to fetch user data if we have a valid Firebase user ID
+          if (userId && !userId.startsWith("guest_")) {
+            try {
+              const userDoc = await db.collection("users").doc(userId).get();
+              if (userDoc.exists) {
+                userData = userDoc.data() || {};
+                isGuest = Boolean(userData?.isGuest) || isAnonymous;
+                guestMessageCount = Number(userData?.guestMessageCount || 0);
+                maxGuestMessages = Number(userData?.maxGuestMessages || 20);
+              }
+            } catch (error) {
+              console.log("Could not fetch user data, treating as guest:", error);
+              isGuest = true;
+            }
+          }
+
+          // For guest users, check message limit
           if (isGuest) {
-            // Count today's messages for guest user
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-
-            const messagesRef = db.collection("chat_sessions")
-                .doc(sessionId)
-                .collection("messages");
-
-            const todayMessages = await messagesRef
-                .where("userId", "==", userId)
-                .where("timestamp", ">=", today)
-                .where("role", "==", "user")
-                .get();
-
-            const messageCount = todayMessages.size;
-            const maxMessages = 5;
-
-            if (messageCount >= maxMessages) {
+            console.log(`Guest user message count: ${guestMessageCount}/${maxGuestMessages}`);
+            if (guestMessageCount >= maxGuestMessages) {
               response.status(429).json({
                 error: "guest_limit_reached",
-                message: "Daily message limit reached for guest users",
-                messagesUsed: messageCount,
-                maxMessages: maxMessages,
+                message: `You've used all ${maxGuestMessages} free messages. Please sign up to continue.`,
+                messagesUsed: guestMessageCount,
+                maxMessages: maxGuestMessages,
               });
               return;
+            }
+
+            // Increment message count for guest users
+            if (userId && !userId.startsWith("guest_")) {
+              try {
+                await db.collection("users").doc(userId).update({
+                  guestMessageCount: admin.firestore.FieldValue.increment(1),
+                  updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                });
+              } catch (error) {
+                console.log("Could not update guest message count:", error);
+              }
             }
           }
 
@@ -152,8 +172,39 @@ ${mood ? `Current mood: ${mood}` : ""}`;
             message.toLowerCase().includes(keyword)
           );
 
-          // User message is already saved by the Swift app, no need to save again
-          // Only save the AI response to Firestore
+          // Check if session exists first (for testing and guest users)
+          const sessionDoc = await db.collection("chat_sessions").doc(sessionId).get();
+
+          if (!sessionDoc.exists) {
+            // Create the session if it doesn't exist (for testing/guest users)
+            await db.collection("chat_sessions").doc(sessionId).set({
+              userId: userId || "guest",
+              authUserId: userId || "guest",
+              title: message.substring(0, 50),
+              createdAt: admin.firestore.FieldValue.serverTimestamp(),
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              lastMessage: aiResponse.substring(0, 100),
+            });
+
+            // Also save the user message for new sessions
+            await db.collection("chat_sessions")
+                .doc(sessionId)
+                .collection("messages")
+                .add({
+                  content: message,
+                  role: "user",
+                  timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                  userId: userId || "guest",
+                });
+          } else {
+            // Update existing session timestamp
+            await db.collection("chat_sessions").doc(sessionId).update({
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              lastMessage: aiResponse.substring(0, 100),
+            });
+          }
+
+          // Save the AI response to Firestore
           await db.collection("chat_sessions")
               .doc(sessionId)
               .collection("messages")
@@ -164,19 +215,13 @@ ${mood ? `Current mood: ${mood}` : ""}`;
                 requiresCrisisIntervention,
               });
 
-          // Update session timestamp
-          await db.collection("chat_sessions").doc(sessionId).update({
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            lastMessage: aiResponse.substring(0, 100),
-          });
-
           // Send response
           response.json({
             response: aiResponse,
             requiresCrisisIntervention,
             guestInfo: isGuest ? {
-              messagesUsed: (userData?.dailyMessageCount || 0) + 1,
-              messagesRemaining: Math.max(0, 5 - ((userData?.dailyMessageCount || 0) + 1)),
+              messagesUsed: guestMessageCount + 1,
+              messagesRemaining: Math.max(0, maxGuestMessages - (guestMessageCount + 1)),
             } : undefined,
           });
         } catch (error) {

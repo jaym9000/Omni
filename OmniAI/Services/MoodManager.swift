@@ -162,9 +162,9 @@ class MoodManager: ObservableObject {
         let weeklyAverage = calculateMoodScore(for: last7Days)
         let monthlyAverage = calculateMoodScore(for: last30Days)
         
-        // Find most common mood
+        // Find most common mood only if there are entries
         let moodCounts = getMoodCounts()
-        let mostCommon = moodCounts.max(by: { $0.value < $1.value })?.key
+        let mostCommon = moodEntries.isEmpty ? nil : moodCounts.max(by: { $0.value < $1.value })?.key
         
         // Calculate streak
         let currentStreak = calculateMoodTrackingStreak()

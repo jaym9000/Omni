@@ -36,8 +36,8 @@ struct User: Codable, Identifiable {
     
     // Guest user properties
     var isGuest: Bool = false
-    var guestConversationCount: Int = 0
-    var maxGuestConversations: Int = 3
+    var guestMessageCount: Int = 0
+    var maxGuestMessages: Int = 20
     
     // Computed properties for date handling
     var createdAt: Date {
@@ -84,8 +84,8 @@ struct User: Codable, Identifiable {
         case biometricAuthEnabled = "biometric_auth_enabled"
         case hasCompletedOnboarding = "has_completed_onboarding"
         case isGuest = "is_guest"
-        case guestConversationCount = "guest_conversation_count"
-        case maxGuestConversations = "max_guest_conversations"
+        case guestMessageCount = "guest_message_count"
+        case maxGuestMessages = "max_guest_messages"
     }
     
     // Custom initializer for database compatibility
@@ -113,7 +113,7 @@ struct User: Codable, Identifiable {
             authProvider: .anonymous
         )
         guestUser.isGuest = true
-        guestUser.guestConversationCount = 0
+        guestUser.guestMessageCount = 0
         return guestUser
     }
 }

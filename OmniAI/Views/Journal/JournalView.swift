@@ -2,6 +2,7 @@ import SwiftUI
 
 struct JournalView: View {
     @EnvironmentObject var journalManager: JournalManager
+    @EnvironmentObject var authManager: AuthenticationManager
     @State private var showNewEntry = false
     @State private var selectedEntryType: JournalType = .freeForm
     @State private var showCalendar = false
@@ -154,6 +155,12 @@ struct JournalView: View {
             .background(Color.omniBackground)
             .onAppear {
                 animateViewEntrance()
+                // Load journal entries when view appears
+                Task {
+                    if let user = authManager.currentUser {
+                        await journalManager.loadUserJournals(userId: user.id)
+                    }
+                }
             }
             .sheet(isPresented: $showNewEntry) {
                 if selectedEntryType == .themed {

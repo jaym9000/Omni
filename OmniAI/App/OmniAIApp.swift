@@ -28,6 +28,9 @@ struct OmniAIApp: App {
     @StateObject private var chatService = ChatService()
     @StateObject private var offlineManager = OfflineManager()
     @StateObject private var moodManager = MoodManager.shared
+    @Environment(\.scenePhase) var scenePhase
+    
+    private let tokenManager = TokenManager.shared
     
     var body: some Scene {
         WindowGroup {
@@ -48,9 +51,28 @@ struct OmniAIApp: App {
                     // Initialize authentication status asynchronously with delay for session restoration
                     authManager.checkAuthenticationStatus(allowDelay: true)
                 }
+                .onChange(of: scenePhase) { newPhase in
+                    switch newPhase {
+                    case .active:
+                        // App became active - validate session
+                        tokenManager.handleAppDidBecomeActive()
+                    case .inactive:
+                        // App is inactive
+                        break
+                    case .background:
+                        // App went to background - save token state
+                        tokenManager.handleAppWillResignActive()
+                    @unknown default:
+                        break
+                    }
+                }
+                .onReceive(NotificationCenter.default.publisher(for: Notification.Name("SessionExpired"))) { _ in
+                    // Handle session expiration
+                    authManager.isAuthenticated = false
+                    authManager.currentUser = nil
+                }
                 .onOpenURL { url in
                     // Handle auth redirects
-                    // TODO: Handle Firebase auth redirects
                     print("📱 Received URL: \(url)")
                 }
         }

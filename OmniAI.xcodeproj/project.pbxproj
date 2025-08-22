@@ -8,26 +8,29 @@
 
 /* Begin PBXBuildFile section */
 		0134A36349B062A37B769D07 /* MoodReflectionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12229F730BF8043B667B06D0 /* MoodReflectionSheet.swift */; };
-		0AD1848AC6E72DCE1B7B7149 /* ForgotPasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBAD53DF4014B81E01F78A20 /* ForgotPasswordView.swift */; };
-		14CE8E952BFF498596A26FAE /* CrisisResourcesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F73589E241BE45EB82914253 /* CrisisResourcesView.swift */; };
+		0AD1848AC6E72DCE1B7B7149 /* OmniAI/Views/Authentication/ForgotPasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBAD53DF4014B81E01F78A20 /* OmniAI/Views/Authentication/ForgotPasswordView.swift */; };
+		14CE8E952BFF498596A26FAE /* OmniAI/Views/Profile/CrisisResourcesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F73589E241BE45EB82914253 /* OmniAI/Views/Profile/CrisisResourcesView.swift */; };
 		1D1A1A2A2C8F123400123456 /* OmniAIApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1A1A292C8F123400123456 /* OmniAIApp.swift */; };
 		1D1A1A2C2C8F123400123456 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1A1A2B2C8F123400123456 /* ContentView.swift */; };
 		1D1A1A2E2C8F123500123456 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1D1A1A2D2C8F123500123456 /* Assets.xcassets */; };
-		2034E843EF3E2D19A01AC575 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4657DB5378489426017CBB76 /* OnboardingView.swift */; };
-		23DA87E4010CCB0043BAF49C /* ChatSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E77064283C4504754C9C56C /* ChatSession.swift */; };
-		32C7D529B581462F389EA8E7 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F691E7CCE8CE383D06DB414 /* HomeView.swift */; };
-		33F10C8CE90B48B4847C5BF1 /* EditProfileSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1A7EE9C48B345A4ADCF4605 /* EditProfileSheet.swift */; };
-		40FC4E8535CD878D8398CF58 /* PremiumManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59BD9CD02FE5B0B5A23B796D /* PremiumManager.swift */; };
-		4A65213D47AE9BE4CFF6CE68 /* AnxietySessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD511E3928CE6D15E6615DFB /* AnxietySessionView.swift */; };
-		51EEC3EABCD775390BBCF954 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E90AB0DAE96F422F24BE5A56 /* ProfileView.swift */; };
-		522C50837053EC91C8CC13A4 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 746C0A1676285E6A9BF92223 /* LoginView.swift */; };
-		5AF6DB28D7FA17A6057EFD81 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E571A3BD9E4792D38534009 /* SplashView.swift */; };
+		2034E843EF3E2D19A01AC575 /* OmniAI/Views/Onboarding/OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4657DB5378489426017CBB76 /* OmniAI/Views/Onboarding/OnboardingView.swift */; };
+		23DA87E4010CCB0043BAF49C /* OmniAI/Models/ChatSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E77064283C4504754C9C56C /* OmniAI/Models/ChatSession.swift */; };
+		32C7D529B581462F389EA8E7 /* OmniAI/Views/Home/HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F691E7CCE8CE383D06DB414 /* OmniAI/Views/Home/HomeView.swift */; };
+		33F10C8CE90B48B4847C5BF1 /* OmniAI/Views/Profile/EditProfileSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1A7EE9C48B345A4ADCF4605 /* OmniAI/Views/Profile/EditProfileSheet.swift */; };
+		35C8A84CFA950B7FCAAD35D1 /* OmniAI/Views/SplashScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C9DD1F1706D617D045BAB8B /* OmniAI/Views/SplashScreenView.swift */; };
+		40FC4E8535CD878D8398CF58 /* OmniAI/Services/PremiumManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59BD9CD02FE5B0B5A23B796D /* OmniAI/Services/PremiumManager.swift */; };
+		4A65213D47AE9BE4CFF6CE68 /* OmniAI/Views/Home/AnxietySessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD511E3928CE6D15E6615DFB /* OmniAI/Views/Home/AnxietySessionView.swift */; };
+		51EEC3EABCD775390BBCF954 /* OmniAI/Views/Profile/ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E90AB0DAE96F422F24BE5A56 /* OmniAI/Views/Profile/ProfileView.swift */; };
+		522C50837053EC91C8CC13A4 /* OmniAI/Views/Authentication/LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 746C0A1676285E6A9BF92223 /* OmniAI/Views/Authentication/LoginView.swift */; };
+		5AF6DB28D7FA17A6057EFD81 /* OmniAI/Views/Components/SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E571A3BD9E4792D38534009 /* OmniAI/Views/Components/SplashView.swift */; };
 		5E002263827A6EAD12A94944 /* MoodAnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E92A61F607A123B5CDFE501 /* MoodAnalyticsView.swift */; };
-		644A3D49ABA4E39CD4129FD1 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EC01F6CF44E27459759CD44 /* ThemeManager.swift */; };
-		71693C6C3FCF9F3B5851BD00 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1BED2D77686FBCDD21666A /* ChatView.swift */; };
-		725B74232F5466B125B57B45 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5877BF404BEC1B4093897348 /* MainTabView.swift */; };
+		644A3D49ABA4E39CD4129FD1 /* OmniAI/Services/ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EC01F6CF44E27459759CD44 /* OmniAI/Services/ThemeManager.swift */; };
+		71693C6C3FCF9F3B5851BD00 /* OmniAI/Views/Chat/ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1BED2D77686FBCDD21666A /* OmniAI/Views/Chat/ChatView.swift */; };
+		725B74232F5466B125B57B45 /* OmniAI/Views/MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5877BF404BEC1B4093897348 /* OmniAI/Views/MainTabView.swift */; };
 		77AB8A02183C9A56B9A697B0 /* MoodHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C6436D9A5097AE37024036 /* MoodHistoryView.swift */; };
-		78C913AF179B43C2BE6F551A /* PremiumFeatureGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AEC93CFD61F4C1A0FE6C524 /* PremiumFeatureGate.swift */; };
+		78C913AF179B43C2BE6F551A /* OmniAI/Views/Components/PremiumFeatureGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AEC93CFD61F4C1A0FE6C524 /* OmniAI/Views/Components/PremiumFeatureGate.swift */; };
+		8820B7D62E580226005EDCF9 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 8820B7D52E580226005EDCF9 /* RevenueCat */; };
+		8820B7D82E580226005EDCF9 /* RevenueCatUI in Frameworks */ = {isa = PBXBuildFile; productRef = 8820B7D72E580226005EDCF9 /* RevenueCatUI */; };
 		888E26FD2E55387500609191 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 888E26FC2E55387500609191 /* GoogleService-Info.plist */; };
 		888E27002E553E3E00609191 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 888E26FF2E553E3E00609191 /* FirebaseAnalytics */; };
 		888E27022E553E3E00609191 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 888E27012E553E3E00609191 /* FirebaseAuth */; };
@@ -36,82 +39,87 @@
 		888E27082E553E3E00609191 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 888E27072E553E3E00609191 /* FirebaseFirestore */; };
 		888E270A2E553E3E00609191 /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = 888E27092E553E3E00609191 /* FirebaseFunctions */; };
 		888E270C2E553E3E00609191 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 888E270B2E553E3E00609191 /* FirebaseStorage */; };
-		898AA9D983214C54B23A6E8E /* CompanionEditSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA11311476D4E7F8169B70E /* CompanionEditSheet.swift */; };
-		9839C6D93EAF249AE8FC494B /* AuthenticationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E4A151F1F1D424D3D28F2AA /* AuthenticationManager.swift */; };
-		98AEDB5FF8E0430BAAA7B54E /* HelpSupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EA158E8C1ED4D909446DF22 /* HelpSupportView.swift */; };
-		98AEDB5FF8E0430BAAA7B55F /* EvidenceSourcesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EA158E8C1ED4D909446DF23 /* EvidenceSourcesView.swift */; };
-		9951659CEF2400F5A74E07ED /* MoodBottomSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C77B97B1DC9465688BF64806 /* MoodBottomSheet.swift */; };
-		9E2BE49425AFDC871E0858FB /* EmailVerificationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 235D1CC2A08534781E7A6957 /* EmailVerificationView.swift */; };
-		A1998D33F44308818C27B734 /* RecentChatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D7E6D6F346CFE34DC304303 /* RecentChatsView.swift */; };
-		A2F919F530118C864B115E87 /* JournalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2B4145ECD9F966D97E12F42 /* JournalView.swift */; };
-		AB6A2DD62BC2594D1C593528 /* SignUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0197C1B12CE9F989EBA091F8 /* SignUpView.swift */; };
-		AF239906231C1BD7D4CE7C1E /* JournalEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7812EB4E60482D7435A843C /* JournalEntry.swift */; };
-		B1F4F6F11D8EB631F9B8A0D9 /* AuthenticationRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1707B5BC08B8108FCB473CC4 /* AuthenticationRootView.swift */; };
-		C2AAA6026FC938213A50A085 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5265C66D74EAB0013D926B8 /* User.swift */; };
-		CB846EEC2F1BEEEFCFF817E1 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97BFC0C6E3C3284C125F935D /* WelcomeView.swift */; };
-		CH1A2B3C4D5E6F78901234AB /* ChatHistoryCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CH1A2B3C4D5E6F7890123456 /* ChatHistoryCalendarView.swift */; };
-		EF9799360C9DE9BEB143ECA8 /* MoodEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 834A7D4AD0D5712C865894D6 /* MoodEntry.swift */; };
-		F1A2B3C4D5E6F7890123456A /* JournalManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6789012345678 /* JournalManager.swift */; };
-		F2B3C4D5E6F7890123456AB1 /* JournalCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6789012345678A1 /* JournalCalendarView.swift */; };
-		F3C4D5E6F7890123456ABC2 /* ThemedJournalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F6789012345678AB2 /* ThemedJournalView.swift */; };
+		898AA9D983214C54B23A6E8E /* OmniAI/Views/Profile/CompanionEditSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA11311476D4E7F8169B70E /* OmniAI/Views/Profile/CompanionEditSheet.swift */; };
+		92D282D241728D6C284F3479 /* OmniAI/Utilities/KeyboardResponder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BF4B9B519072C1B199C8026 /* OmniAI/Utilities/KeyboardResponder.swift */; };
+		9839C6D93EAF249AE8FC494B /* OmniAI/Services/AuthenticationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E4A151F1F1D424D3D28F2AA /* OmniAI/Services/AuthenticationManager.swift */; };
+		98AEDB5FF8E0430BAAA7B54E /* OmniAI/Views/Profile/HelpSupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EA158E8C1ED4D909446DF22 /* OmniAI/Views/Profile/HelpSupportView.swift */; };
+		98AEDB5FF8E0430BAAA7B55F /* OmniAI/Views/Profile/EvidenceSourcesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EA158E8C1ED4D909446DF23 /* OmniAI/Views/Profile/EvidenceSourcesView.swift */; };
+		9951659CEF2400F5A74E07ED /* OmniAI/Views/Components/MoodBottomSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C77B97B1DC9465688BF64806 /* OmniAI/Views/Components/MoodBottomSheet.swift */; };
+		9E2BE49425AFDC871E0858FB /* OmniAI/Views/Authentication/EmailVerificationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 235D1CC2A08534781E7A6957 /* OmniAI/Views/Authentication/EmailVerificationView.swift */; };
+		A1998D33F44308818C27B734 /* OmniAI/Views/Home/RecentChatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D7E6D6F346CFE34DC304303 /* OmniAI/Views/Home/RecentChatsView.swift */; };
+		A2F919F530118C864B115E87 /* OmniAI/Views/Journal/JournalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2B4145ECD9F966D97E12F42 /* OmniAI/Views/Journal/JournalView.swift */; };
+		AB6A2DD62BC2594D1C593528 /* OmniAI/Views/Authentication/SignUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0197C1B12CE9F989EBA091F8 /* OmniAI/Views/Authentication/SignUpView.swift */; };
+		AF239906231C1BD7D4CE7C1E /* OmniAI/Models/JournalEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7812EB4E60482D7435A843C /* OmniAI/Models/JournalEntry.swift */; };
+		B1F4F6F11D8EB631F9B8A0D9 /* OmniAI/Views/Authentication/AuthenticationRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1707B5BC08B8108FCB473CC4 /* OmniAI/Views/Authentication/AuthenticationRootView.swift */; };
+		C2AAA6026FC938213A50A085 /* OmniAI/Models/User.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5265C66D74EAB0013D926B8 /* OmniAI/Models/User.swift */; };
+		CB846EEC2F1BEEEFCFF817E1 /* OmniAI/Views/Authentication/WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97BFC0C6E3C3284C125F935D /* OmniAI/Views/Authentication/WelcomeView.swift */; };
+		CH1A2B3C4D5E6F78901234AB /* OmniAI/Views/Home/ChatHistoryCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CH1A2B3C4D5E6F7890123456 /* OmniAI/Views/Home/ChatHistoryCalendarView.swift */; };
+		EF9799360C9DE9BEB143ECA8 /* OmniAI/Models/MoodEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 834A7D4AD0D5712C865894D6 /* OmniAI/Models/MoodEntry.swift */; };
+		F1A2B3C4D5E6F7890123456A /* OmniAI/Services/JournalManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6789012345678 /* OmniAI/Services/JournalManager.swift */; };
+		F2B3C4D5E6F7890123456AB1 /* OmniAI/Views/Journal/JournalCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6789012345678A1 /* OmniAI/Views/Journal/JournalCalendarView.swift */; };
+		F3C4D5E6F7890123456ABC2 /* OmniAI/Views/Journal/ThemedJournalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F6789012345678AB2 /* OmniAI/Views/Journal/ThemedJournalView.swift */; };
 		F43E33E4E978E51A338029D6 /* MoodManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 338CC29195CF25AD5A7A4C13 /* MoodManager.swift */; };
-		FB1A2B3C4D5E6F7890123456 /* FirebaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB1A2B3C4D5E6F7890123455 /* FirebaseManager.swift */; };
-		S2A2B3C4D5E6F7890123456C /* ChatService.swift in Sources */ = {isa = PBXBuildFile; fileRef = S2A2B3C4D5E6F7890123456B /* ChatService.swift */; };
-		S3A2B3C4D5E6F7890123456D /* OfflineManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = S3A2B3C4D5E6F7890123456C /* OfflineManager.swift */; };
-		92D282D241728D6C284F3479 /* KeyboardResponder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BF4B9B519072C1B199C8026 /* KeyboardResponder.swift */; };
-		35C8A84CFA950B7FCAAD35D1 /* SplashScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C9DD1F1706D617D045BAB8B /* SplashScreenView.swift */; };
+		FB1A2B3C4D5E6F7890123456 /* OmniAI/Services/FirebaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB1A2B3C4D5E6F7890123455 /* OmniAI/Services/FirebaseManager.swift */; };
+		KM1A2B3C4D5E6F78901234AB /* KeychainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = KM1A2B3C4D5E6F7890123456 /* KeychainManager.swift */; };
+		RL1A2B3C4D5E6F78901234AD /* RateLimiter.swift in Sources */ = {isa = PBXBuildFile; fileRef = RL1A2B3C4D5E6F7890123458 /* RateLimiter.swift */; };
+		S2A2B3C4D5E6F7890123456C /* OmniAI/Services/ChatService.swift in Sources */ = {isa = PBXBuildFile; fileRef = S2A2B3C4D5E6F7890123456B /* OmniAI/Services/ChatService.swift */; };
+		S3A2B3C4D5E6F7890123456D /* OmniAI/Services/OfflineManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = S3A2B3C4D5E6F7890123456C /* OmniAI/Services/OfflineManager.swift */; };
+		TM1A2B3C4D5E6F78901234AC /* TokenManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = TM1A2B3C4D5E6F7890123457 /* TokenManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		0197C1B12CE9F989EBA091F8 /* SignUpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Authentication/SignUpView.swift; sourceTree = "<group>"; };
-		0EA158E8C1ED4D909446DF22 /* HelpSupportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Profile/HelpSupportView.swift; sourceTree = "<group>"; };
-		0EA158E8C1ED4D909446DF23 /* EvidenceSourcesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Profile/EvidenceSourcesView.swift; sourceTree = "<group>"; };
+		0197C1B12CE9F989EBA091F8 /* OmniAI/Views/Authentication/SignUpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Authentication/SignUpView.swift; sourceTree = "<group>"; };
+		0EA158E8C1ED4D909446DF22 /* OmniAI/Views/Profile/HelpSupportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Profile/HelpSupportView.swift; sourceTree = "<group>"; };
+		0EA158E8C1ED4D909446DF23 /* OmniAI/Views/Profile/EvidenceSourcesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Profile/EvidenceSourcesView.swift; sourceTree = "<group>"; };
 		12229F730BF8043B667B06D0 /* MoodReflectionSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MoodReflectionSheet.swift; path = Components/MoodReflectionSheet.swift; sourceTree = "<group>"; };
-		1707B5BC08B8108FCB473CC4 /* AuthenticationRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Authentication/AuthenticationRootView.swift; sourceTree = "<group>"; };
+		1707B5BC08B8108FCB473CC4 /* OmniAI/Views/Authentication/AuthenticationRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Authentication/AuthenticationRootView.swift; sourceTree = "<group>"; };
 		1D1A1A262C8F123400123456 /* OmniAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OmniAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1D1A1A292C8F123400123456 /* OmniAIApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAIApp.swift; sourceTree = "<group>"; };
 		1D1A1A2B2C8F123400123456 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		1D1A1A2D2C8F123500123456 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1D1A1A2F2C8F123500123456 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		235D1CC2A08534781E7A6957 /* EmailVerificationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Authentication/EmailVerificationView.swift; sourceTree = "<group>"; };
-		2CA11311476D4E7F8169B70E /* CompanionEditSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Profile/CompanionEditSheet.swift; sourceTree = "<group>"; };
-		2E77064283C4504754C9C56C /* ChatSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Models/ChatSession.swift; sourceTree = "<group>"; };
-		2F691E7CCE8CE383D06DB414 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Home/HomeView.swift; sourceTree = "<group>"; };
+		235D1CC2A08534781E7A6957 /* OmniAI/Views/Authentication/EmailVerificationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Authentication/EmailVerificationView.swift; sourceTree = "<group>"; };
+		2BF4B9B519072C1B199C8026 /* OmniAI/Utilities/KeyboardResponder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Utilities/KeyboardResponder.swift; sourceTree = "<group>"; };
+		2CA11311476D4E7F8169B70E /* OmniAI/Views/Profile/CompanionEditSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Profile/CompanionEditSheet.swift; sourceTree = "<group>"; };
+		2E77064283C4504754C9C56C /* OmniAI/Models/ChatSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Models/ChatSession.swift; sourceTree = "<group>"; };
+		2F691E7CCE8CE383D06DB414 /* OmniAI/Views/Home/HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Home/HomeView.swift; sourceTree = "<group>"; };
 		338CC29195CF25AD5A7A4C13 /* MoodManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MoodManager.swift; sourceTree = "<group>"; };
-		3D7E6D6F346CFE34DC304303 /* RecentChatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Home/RecentChatsView.swift; sourceTree = "<group>"; };
-		4657DB5378489426017CBB76 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Onboarding/OnboardingView.swift; sourceTree = "<group>"; };
-		4EC01F6CF44E27459759CD44 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Services/ThemeManager.swift; sourceTree = "<group>"; };
-		5877BF404BEC1B4093897348 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/MainTabView.swift; sourceTree = "<group>"; };
-		59BD9CD02FE5B0B5A23B796D /* PremiumManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Services/PremiumManager.swift; sourceTree = "<group>"; };
-		5E571A3BD9E4792D38534009 /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Components/SplashView.swift; sourceTree = "<group>"; };
-		6AEC93CFD61F4C1A0FE6C524 /* PremiumFeatureGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Components/PremiumFeatureGate.swift; sourceTree = "<group>"; };
-		746C0A1676285E6A9BF92223 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Authentication/LoginView.swift; sourceTree = "<group>"; };
-		7E1BED2D77686FBCDD21666A /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Chat/ChatView.swift; sourceTree = "<group>"; };
-		834A7D4AD0D5712C865894D6 /* MoodEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Models/MoodEntry.swift; sourceTree = "<group>"; };
+		3D7E6D6F346CFE34DC304303 /* OmniAI/Views/Home/RecentChatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Home/RecentChatsView.swift; sourceTree = "<group>"; };
+		4657DB5378489426017CBB76 /* OmniAI/Views/Onboarding/OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Onboarding/OnboardingView.swift; sourceTree = "<group>"; };
+		4EC01F6CF44E27459759CD44 /* OmniAI/Services/ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Services/ThemeManager.swift; sourceTree = "<group>"; };
+		5877BF404BEC1B4093897348 /* OmniAI/Views/MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/MainTabView.swift; sourceTree = "<group>"; };
+		59BD9CD02FE5B0B5A23B796D /* OmniAI/Services/PremiumManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Services/PremiumManager.swift; sourceTree = "<group>"; };
+		5E571A3BD9E4792D38534009 /* OmniAI/Views/Components/SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Components/SplashView.swift; sourceTree = "<group>"; };
+		6AEC93CFD61F4C1A0FE6C524 /* OmniAI/Views/Components/PremiumFeatureGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Components/PremiumFeatureGate.swift; sourceTree = "<group>"; };
+		746C0A1676285E6A9BF92223 /* OmniAI/Views/Authentication/LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Authentication/LoginView.swift; sourceTree = "<group>"; };
+		7C9DD1F1706D617D045BAB8B /* OmniAI/Views/SplashScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/SplashScreenView.swift; sourceTree = "<group>"; };
+		7E1BED2D77686FBCDD21666A /* OmniAI/Views/Chat/ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Chat/ChatView.swift; sourceTree = "<group>"; };
+		834A7D4AD0D5712C865894D6 /* OmniAI/Models/MoodEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Models/MoodEntry.swift; sourceTree = "<group>"; };
 		887D3BB62E51FBAE006D6D68 /* OmniAI.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = OmniAI.entitlements; sourceTree = "<group>"; };
 		888E26FC2E55387500609191 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
-		8E4A151F1F1D424D3D28F2AA /* AuthenticationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Services/AuthenticationManager.swift; sourceTree = "<group>"; };
-		97BFC0C6E3C3284C125F935D /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Authentication/WelcomeView.swift; sourceTree = "<group>"; };
+		8E4A151F1F1D424D3D28F2AA /* OmniAI/Services/AuthenticationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Services/AuthenticationManager.swift; sourceTree = "<group>"; };
+		97BFC0C6E3C3284C125F935D /* OmniAI/Views/Authentication/WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Authentication/WelcomeView.swift; sourceTree = "<group>"; };
 		9E92A61F607A123B5CDFE501 /* MoodAnalyticsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MoodAnalyticsView.swift; path = Home/MoodAnalyticsView.swift; sourceTree = "<group>"; };
-		A1B2C3D4E5F6789012345678 /* JournalManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Services/JournalManager.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6789012345678 /* OmniAI/Services/JournalManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Services/JournalManager.swift; sourceTree = "<group>"; };
 		A3C6436D9A5097AE37024036 /* MoodHistoryView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MoodHistoryView.swift; path = Home/MoodHistoryView.swift; sourceTree = "<group>"; };
-		B1A7EE9C48B345A4ADCF4605 /* EditProfileSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Profile/EditProfileSheet.swift; sourceTree = "<group>"; };
-		B2C3D4E5F6789012345678A1 /* JournalCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Journal/JournalCalendarView.swift; sourceTree = "<group>"; };
-		C3D4E5F6789012345678AB2 /* ThemedJournalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Journal/ThemedJournalView.swift; sourceTree = "<group>"; };
-		C77B97B1DC9465688BF64806 /* MoodBottomSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Components/MoodBottomSheet.swift; sourceTree = "<group>"; };
-		CH1A2B3C4D5E6F7890123456 /* ChatHistoryCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Home/ChatHistoryCalendarView.swift; sourceTree = "<group>"; };
-		DD511E3928CE6D15E6615DFB /* AnxietySessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Home/AnxietySessionView.swift; sourceTree = "<group>"; };
-		E2B4145ECD9F966D97E12F42 /* JournalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Journal/JournalView.swift; sourceTree = "<group>"; };
-		E5265C66D74EAB0013D926B8 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Models/User.swift; sourceTree = "<group>"; };
-		E90AB0DAE96F422F24BE5A56 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Profile/ProfileView.swift; sourceTree = "<group>"; };
-		EBAD53DF4014B81E01F78A20 /* ForgotPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Authentication/ForgotPasswordView.swift; sourceTree = "<group>"; };
-		F73589E241BE45EB82914253 /* CrisisResourcesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Profile/CrisisResourcesView.swift; sourceTree = "<group>"; };
-		F7812EB4E60482D7435A843C /* JournalEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Models/JournalEntry.swift; sourceTree = "<group>"; };
-		FB1A2B3C4D5E6F7890123455 /* FirebaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Services/FirebaseManager.swift; sourceTree = "<group>"; };
-		S2A2B3C4D5E6F7890123456B /* ChatService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Services/ChatService.swift; sourceTree = "<group>"; };
-		S3A2B3C4D5E6F7890123456C /* OfflineManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Services/OfflineManager.swift; sourceTree = "<group>"; };
-		2BF4B9B519072C1B199C8026 /* KeyboardResponder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Utilities/KeyboardResponder.swift; sourceTree = "<group>"; };
-		7C9DD1F1706D617D045BAB8B /* SplashScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/SplashScreenView.swift; sourceTree = "<group>"; };
+		B1A7EE9C48B345A4ADCF4605 /* OmniAI/Views/Profile/EditProfileSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Profile/EditProfileSheet.swift; sourceTree = "<group>"; };
+		B2C3D4E5F6789012345678A1 /* OmniAI/Views/Journal/JournalCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Journal/JournalCalendarView.swift; sourceTree = "<group>"; };
+		C3D4E5F6789012345678AB2 /* OmniAI/Views/Journal/ThemedJournalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Journal/ThemedJournalView.swift; sourceTree = "<group>"; };
+		C77B97B1DC9465688BF64806 /* OmniAI/Views/Components/MoodBottomSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Components/MoodBottomSheet.swift; sourceTree = "<group>"; };
+		CH1A2B3C4D5E6F7890123456 /* OmniAI/Views/Home/ChatHistoryCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Home/ChatHistoryCalendarView.swift; sourceTree = "<group>"; };
+		DD511E3928CE6D15E6615DFB /* OmniAI/Views/Home/AnxietySessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Home/AnxietySessionView.swift; sourceTree = "<group>"; };
+		E2B4145ECD9F966D97E12F42 /* OmniAI/Views/Journal/JournalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Journal/JournalView.swift; sourceTree = "<group>"; };
+		E5265C66D74EAB0013D926B8 /* OmniAI/Models/User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Models/User.swift; sourceTree = "<group>"; };
+		E90AB0DAE96F422F24BE5A56 /* OmniAI/Views/Profile/ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Profile/ProfileView.swift; sourceTree = "<group>"; };
+		EBAD53DF4014B81E01F78A20 /* OmniAI/Views/Authentication/ForgotPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Authentication/ForgotPasswordView.swift; sourceTree = "<group>"; };
+		F73589E241BE45EB82914253 /* OmniAI/Views/Profile/CrisisResourcesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Profile/CrisisResourcesView.swift; sourceTree = "<group>"; };
+		F7812EB4E60482D7435A843C /* OmniAI/Models/JournalEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Models/JournalEntry.swift; sourceTree = "<group>"; };
+		FB1A2B3C4D5E6F7890123455 /* OmniAI/Services/FirebaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Services/FirebaseManager.swift; sourceTree = "<group>"; };
+		KM1A2B3C4D5E6F7890123456 /* KeychainManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainManager.swift; sourceTree = "<group>"; };
+		RL1A2B3C4D5E6F7890123458 /* RateLimiter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RateLimiter.swift; sourceTree = "<group>"; };
+		S2A2B3C4D5E6F7890123456B /* OmniAI/Services/ChatService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Services/ChatService.swift; sourceTree = "<group>"; };
+		S3A2B3C4D5E6F7890123456C /* OmniAI/Services/OfflineManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Services/OfflineManager.swift; sourceTree = "<group>"; };
+		TM1A2B3C4D5E6F7890123457 /* TokenManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -123,6 +131,8 @@
 				888E27062E553E3E00609191 /* FirebaseCrashlytics in Frameworks */,
 				888E27042E553E3E00609191 /* FirebaseCore in Frameworks */,
 				888E270A2E553E3E00609191 /* FirebaseFunctions in Frameworks */,
+				8820B7D62E580226005EDCF9 /* RevenueCat in Frameworks */,
+				8820B7D82E580226005EDCF9 /* RevenueCatUI in Frameworks */,
 				888E270C2E553E3E00609191 /* FirebaseStorage in Frameworks */,
 				888E27082E553E3E00609191 /* FirebaseFirestore in Frameworks */,
 				888E27022E553E3E00609191 /* FirebaseAuth in Frameworks */,
@@ -184,6 +194,9 @@
 			isa = PBXGroup;
 			children = (
 				338CC29195CF25AD5A7A4C13 /* MoodManager.swift */,
+				KM1A2B3C4D5E6F7890123456 /* KeychainManager.swift */,
+				TM1A2B3C4D5E6F7890123457 /* TokenManager.swift */,
+				RL1A2B3C4D5E6F7890123458 /* RateLimiter.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -208,42 +221,44 @@
 		887D3B9F2E4966A2006D6D68 /* Recovered References */ = {
 			isa = PBXGroup;
 			children = (
-				834A7D4AD0D5712C865894D6 /* MoodEntry.swift */,
-				2E77064283C4504754C9C56C /* ChatSession.swift */,
-				E5265C66D74EAB0013D926B8 /* User.swift */,
-				F7812EB4E60482D7435A843C /* JournalEntry.swift */,
-				5877BF404BEC1B4093897348 /* MainTabView.swift */,
-				E2B4145ECD9F966D97E12F42 /* JournalView.swift */,
-				3D7E6D6F346CFE34DC304303 /* RecentChatsView.swift */,
-				2F691E7CCE8CE383D06DB414 /* HomeView.swift */,
-				DD511E3928CE6D15E6615DFB /* AnxietySessionView.swift */,
-				CH1A2B3C4D5E6F7890123456 /* ChatHistoryCalendarView.swift */,
-				7E1BED2D77686FBCDD21666A /* ChatView.swift */,
-				C77B97B1DC9465688BF64806 /* MoodBottomSheet.swift */,
-				5E571A3BD9E4792D38534009 /* SplashView.swift */,
-				6AEC93CFD61F4C1A0FE6C524 /* PremiumFeatureGate.swift */,
-				E90AB0DAE96F422F24BE5A56 /* ProfileView.swift */,
-				B1A7EE9C48B345A4ADCF4605 /* EditProfileSheet.swift */,
-				2CA11311476D4E7F8169B70E /* CompanionEditSheet.swift */,
-				F73589E241BE45EB82914253 /* CrisisResourcesView.swift */,
-				0EA158E8C1ED4D909446DF22 /* HelpSupportView.swift */,
-				0EA158E8C1ED4D909446DF23 /* EvidenceSourcesView.swift */,
-				746C0A1676285E6A9BF92223 /* LoginView.swift */,
-				97BFC0C6E3C3284C125F935D /* WelcomeView.swift */,
-				1707B5BC08B8108FCB473CC4 /* AuthenticationRootView.swift */,
-				EBAD53DF4014B81E01F78A20 /* ForgotPasswordView.swift */,
-				235D1CC2A08534781E7A6957 /* EmailVerificationView.swift */,
-				0197C1B12CE9F989EBA091F8 /* SignUpView.swift */,
-				4657DB5378489426017CBB76 /* OnboardingView.swift */,
-				8E4A151F1F1D424D3D28F2AA /* AuthenticationManager.swift */,
-				59BD9CD02FE5B0B5A23B796D /* PremiumManager.swift */,
-				4EC01F6CF44E27459759CD44 /* ThemeManager.swift */,
-				A1B2C3D4E5F6789012345678 /* JournalManager.swift */,
-				B2C3D4E5F6789012345678A1 /* JournalCalendarView.swift */,
-				C3D4E5F6789012345678AB2 /* ThemedJournalView.swift */,
-				S2A2B3C4D5E6F7890123456B /* ChatService.swift */,
-				S3A2B3C4D5E6F7890123456C /* OfflineManager.swift */,
-				FB1A2B3C4D5E6F7890123455 /* FirebaseManager.swift */,
+				834A7D4AD0D5712C865894D6 /* OmniAI/Models/MoodEntry.swift */,
+				2E77064283C4504754C9C56C /* OmniAI/Models/ChatSession.swift */,
+				E5265C66D74EAB0013D926B8 /* OmniAI/Models/User.swift */,
+				F7812EB4E60482D7435A843C /* OmniAI/Models/JournalEntry.swift */,
+				5877BF404BEC1B4093897348 /* OmniAI/Views/MainTabView.swift */,
+				E2B4145ECD9F966D97E12F42 /* OmniAI/Views/Journal/JournalView.swift */,
+				3D7E6D6F346CFE34DC304303 /* OmniAI/Views/Home/RecentChatsView.swift */,
+				2F691E7CCE8CE383D06DB414 /* OmniAI/Views/Home/HomeView.swift */,
+				DD511E3928CE6D15E6615DFB /* OmniAI/Views/Home/AnxietySessionView.swift */,
+				CH1A2B3C4D5E6F7890123456 /* OmniAI/Views/Home/ChatHistoryCalendarView.swift */,
+				7E1BED2D77686FBCDD21666A /* OmniAI/Views/Chat/ChatView.swift */,
+				C77B97B1DC9465688BF64806 /* OmniAI/Views/Components/MoodBottomSheet.swift */,
+				5E571A3BD9E4792D38534009 /* OmniAI/Views/Components/SplashView.swift */,
+				6AEC93CFD61F4C1A0FE6C524 /* OmniAI/Views/Components/PremiumFeatureGate.swift */,
+				E90AB0DAE96F422F24BE5A56 /* OmniAI/Views/Profile/ProfileView.swift */,
+				B1A7EE9C48B345A4ADCF4605 /* OmniAI/Views/Profile/EditProfileSheet.swift */,
+				2CA11311476D4E7F8169B70E /* OmniAI/Views/Profile/CompanionEditSheet.swift */,
+				F73589E241BE45EB82914253 /* OmniAI/Views/Profile/CrisisResourcesView.swift */,
+				0EA158E8C1ED4D909446DF22 /* OmniAI/Views/Profile/HelpSupportView.swift */,
+				0EA158E8C1ED4D909446DF23 /* OmniAI/Views/Profile/EvidenceSourcesView.swift */,
+				746C0A1676285E6A9BF92223 /* OmniAI/Views/Authentication/LoginView.swift */,
+				97BFC0C6E3C3284C125F935D /* OmniAI/Views/Authentication/WelcomeView.swift */,
+				1707B5BC08B8108FCB473CC4 /* OmniAI/Views/Authentication/AuthenticationRootView.swift */,
+				EBAD53DF4014B81E01F78A20 /* OmniAI/Views/Authentication/ForgotPasswordView.swift */,
+				235D1CC2A08534781E7A6957 /* OmniAI/Views/Authentication/EmailVerificationView.swift */,
+				0197C1B12CE9F989EBA091F8 /* OmniAI/Views/Authentication/SignUpView.swift */,
+				4657DB5378489426017CBB76 /* OmniAI/Views/Onboarding/OnboardingView.swift */,
+				8E4A151F1F1D424D3D28F2AA /* OmniAI/Services/AuthenticationManager.swift */,
+				59BD9CD02FE5B0B5A23B796D /* OmniAI/Services/PremiumManager.swift */,
+				4EC01F6CF44E27459759CD44 /* OmniAI/Services/ThemeManager.swift */,
+				A1B2C3D4E5F6789012345678 /* OmniAI/Services/JournalManager.swift */,
+				B2C3D4E5F6789012345678A1 /* OmniAI/Views/Journal/JournalCalendarView.swift */,
+				C3D4E5F6789012345678AB2 /* OmniAI/Views/Journal/ThemedJournalView.swift */,
+				S2A2B3C4D5E6F7890123456B /* OmniAI/Services/ChatService.swift */,
+				S3A2B3C4D5E6F7890123456C /* OmniAI/Services/OfflineManager.swift */,
+				FB1A2B3C4D5E6F7890123455 /* OmniAI/Services/FirebaseManager.swift */,
+				2BF4B9B519072C1B199C8026 /* OmniAI/Utilities/KeyboardResponder.swift */,
+				7C9DD1F1706D617D045BAB8B /* OmniAI/Views/SplashScreenView.swift */,
 			);
 			name = "Recovered References";
 			sourceTree = "<group>";
@@ -303,6 +318,7 @@
 			mainGroup = 1D1A1A1D2C8F123400123456;
 			packageReferences = (
 				888E26FE2E553E3E00609191 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				8820B7D42E580226005EDCF9 /* XCRemoteSwiftPackageReference "purchases-ios" */,
 			);
 			productRefGroup = 1D1A1A272C8F123400123456 /* Products */;
 			projectDirPath = "";
@@ -332,48 +348,51 @@
 			files = (
 				1D1A1A2C2C8F123400123456 /* ContentView.swift in Sources */,
 				1D1A1A2A2C8F123400123456 /* OmniAIApp.swift in Sources */,
-				EF9799360C9DE9BEB143ECA8 /* MoodEntry.swift in Sources */,
-				23DA87E4010CCB0043BAF49C /* ChatSession.swift in Sources */,
-				C2AAA6026FC938213A50A085 /* User.swift in Sources */,
-				AF239906231C1BD7D4CE7C1E /* JournalEntry.swift in Sources */,
-				725B74232F5466B125B57B45 /* MainTabView.swift in Sources */,
-				A2F919F530118C864B115E87 /* JournalView.swift in Sources */,
-				A1998D33F44308818C27B734 /* RecentChatsView.swift in Sources */,
-				32C7D529B581462F389EA8E7 /* HomeView.swift in Sources */,
-				4A65213D47AE9BE4CFF6CE68 /* AnxietySessionView.swift in Sources */,
-				71693C6C3FCF9F3B5851BD00 /* ChatView.swift in Sources */,
-				9951659CEF2400F5A74E07ED /* MoodBottomSheet.swift in Sources */,
-				5AF6DB28D7FA17A6057EFD81 /* SplashView.swift in Sources */,
-				78C913AF179B43C2BE6F551A /* PremiumFeatureGate.swift in Sources */,
-				51EEC3EABCD775390BBCF954 /* ProfileView.swift in Sources */,
-				33F10C8CE90B48B4847C5BF1 /* EditProfileSheet.swift in Sources */,
-				898AA9D983214C54B23A6E8E /* CompanionEditSheet.swift in Sources */,
-				14CE8E952BFF498596A26FAE /* CrisisResourcesView.swift in Sources */,
-				98AEDB5FF8E0430BAAA7B54E /* HelpSupportView.swift in Sources */,
-				98AEDB5FF8E0430BAAA7B55F /* EvidenceSourcesView.swift in Sources */,
-				522C50837053EC91C8CC13A4 /* LoginView.swift in Sources */,
-				CB846EEC2F1BEEEFCFF817E1 /* WelcomeView.swift in Sources */,
-				B1F4F6F11D8EB631F9B8A0D9 /* AuthenticationRootView.swift in Sources */,
-				0AD1848AC6E72DCE1B7B7149 /* ForgotPasswordView.swift in Sources */,
-				9E2BE49425AFDC871E0858FB /* EmailVerificationView.swift in Sources */,
-				AB6A2DD62BC2594D1C593528 /* SignUpView.swift in Sources */,
-				2034E843EF3E2D19A01AC575 /* OnboardingView.swift in Sources */,
-				9839C6D93EAF249AE8FC494B /* AuthenticationManager.swift in Sources */,
-				40FC4E8535CD878D8398CF58 /* PremiumManager.swift in Sources */,
-				644A3D49ABA4E39CD4129FD1 /* ThemeManager.swift in Sources */,
-				F1A2B3C4D5E6F7890123456A /* JournalManager.swift in Sources */,
-				S2A2B3C4D5E6F7890123456C /* ChatService.swift in Sources */,
-				S3A2B3C4D5E6F7890123456D /* OfflineManager.swift in Sources */,
-				FB1A2B3C4D5E6F7890123456 /* FirebaseManager.swift in Sources */,
-				F2B3C4D5E6F7890123456AB1 /* JournalCalendarView.swift in Sources */,
-				F3C4D5E6F7890123456ABC2 /* ThemedJournalView.swift in Sources */,
-				CH1A2B3C4D5E6F78901234AB /* ChatHistoryCalendarView.swift in Sources */,
+				EF9799360C9DE9BEB143ECA8 /* OmniAI/Models/MoodEntry.swift in Sources */,
+				23DA87E4010CCB0043BAF49C /* OmniAI/Models/ChatSession.swift in Sources */,
+				C2AAA6026FC938213A50A085 /* OmniAI/Models/User.swift in Sources */,
+				AF239906231C1BD7D4CE7C1E /* OmniAI/Models/JournalEntry.swift in Sources */,
+				725B74232F5466B125B57B45 /* OmniAI/Views/MainTabView.swift in Sources */,
+				A2F919F530118C864B115E87 /* OmniAI/Views/Journal/JournalView.swift in Sources */,
+				A1998D33F44308818C27B734 /* OmniAI/Views/Home/RecentChatsView.swift in Sources */,
+				32C7D529B581462F389EA8E7 /* OmniAI/Views/Home/HomeView.swift in Sources */,
+				4A65213D47AE9BE4CFF6CE68 /* OmniAI/Views/Home/AnxietySessionView.swift in Sources */,
+				71693C6C3FCF9F3B5851BD00 /* OmniAI/Views/Chat/ChatView.swift in Sources */,
+				9951659CEF2400F5A74E07ED /* OmniAI/Views/Components/MoodBottomSheet.swift in Sources */,
+				5AF6DB28D7FA17A6057EFD81 /* OmniAI/Views/Components/SplashView.swift in Sources */,
+				78C913AF179B43C2BE6F551A /* OmniAI/Views/Components/PremiumFeatureGate.swift in Sources */,
+				51EEC3EABCD775390BBCF954 /* OmniAI/Views/Profile/ProfileView.swift in Sources */,
+				33F10C8CE90B48B4847C5BF1 /* OmniAI/Views/Profile/EditProfileSheet.swift in Sources */,
+				898AA9D983214C54B23A6E8E /* OmniAI/Views/Profile/CompanionEditSheet.swift in Sources */,
+				14CE8E952BFF498596A26FAE /* OmniAI/Views/Profile/CrisisResourcesView.swift in Sources */,
+				98AEDB5FF8E0430BAAA7B54E /* OmniAI/Views/Profile/HelpSupportView.swift in Sources */,
+				98AEDB5FF8E0430BAAA7B55F /* OmniAI/Views/Profile/EvidenceSourcesView.swift in Sources */,
+				522C50837053EC91C8CC13A4 /* OmniAI/Views/Authentication/LoginView.swift in Sources */,
+				CB846EEC2F1BEEEFCFF817E1 /* OmniAI/Views/Authentication/WelcomeView.swift in Sources */,
+				B1F4F6F11D8EB631F9B8A0D9 /* OmniAI/Views/Authentication/AuthenticationRootView.swift in Sources */,
+				0AD1848AC6E72DCE1B7B7149 /* OmniAI/Views/Authentication/ForgotPasswordView.swift in Sources */,
+				9E2BE49425AFDC871E0858FB /* OmniAI/Views/Authentication/EmailVerificationView.swift in Sources */,
+				AB6A2DD62BC2594D1C593528 /* OmniAI/Views/Authentication/SignUpView.swift in Sources */,
+				2034E843EF3E2D19A01AC575 /* OmniAI/Views/Onboarding/OnboardingView.swift in Sources */,
+				9839C6D93EAF249AE8FC494B /* OmniAI/Services/AuthenticationManager.swift in Sources */,
+				40FC4E8535CD878D8398CF58 /* OmniAI/Services/PremiumManager.swift in Sources */,
+				644A3D49ABA4E39CD4129FD1 /* OmniAI/Services/ThemeManager.swift in Sources */,
+				F1A2B3C4D5E6F7890123456A /* OmniAI/Services/JournalManager.swift in Sources */,
+				S2A2B3C4D5E6F7890123456C /* OmniAI/Services/ChatService.swift in Sources */,
+				S3A2B3C4D5E6F7890123456D /* OmniAI/Services/OfflineManager.swift in Sources */,
+				FB1A2B3C4D5E6F7890123456 /* OmniAI/Services/FirebaseManager.swift in Sources */,
+				F2B3C4D5E6F7890123456AB1 /* OmniAI/Views/Journal/JournalCalendarView.swift in Sources */,
+				F3C4D5E6F7890123456ABC2 /* OmniAI/Views/Journal/ThemedJournalView.swift in Sources */,
+				CH1A2B3C4D5E6F78901234AB /* OmniAI/Views/Home/ChatHistoryCalendarView.swift in Sources */,
 				F43E33E4E978E51A338029D6 /* MoodManager.swift in Sources */,
 				5E002263827A6EAD12A94944 /* MoodAnalyticsView.swift in Sources */,
 				77AB8A02183C9A56B9A697B0 /* MoodHistoryView.swift in Sources */,
 				0134A36349B062A37B769D07 /* MoodReflectionSheet.swift in Sources */,
-				92D282D241728D6C284F3479 /* KeyboardResponder.swift in Sources */,
-				35C8A84CFA950B7FCAAD35D1 /* SplashScreenView.swift in Sources */,
+				92D282D241728D6C284F3479 /* OmniAI/Utilities/KeyboardResponder.swift in Sources */,
+				KM1A2B3C4D5E6F78901234AB /* KeychainManager.swift in Sources */,
+				TM1A2B3C4D5E6F78901234AC /* TokenManager.swift in Sources */,
+				RL1A2B3C4D5E6F78901234AD /* RateLimiter.swift in Sources */,
+				35C8A84CFA950B7FCAAD35D1 /* OmniAI/Views/SplashScreenView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -601,6 +620,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		8820B7D42E580226005EDCF9 /* XCRemoteSwiftPackageReference "purchases-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-ios.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.35.0;
+			};
+		};
 		888E26FE2E553E3E00609191 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
@@ -612,6 +639,16 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		8820B7D52E580226005EDCF9 /* RevenueCat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8820B7D42E580226005EDCF9 /* XCRemoteSwiftPackageReference "purchases-ios" */;
+			productName = RevenueCat;
+		};
+		8820B7D72E580226005EDCF9 /* RevenueCatUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8820B7D42E580226005EDCF9 /* XCRemoteSwiftPackageReference "purchases-ios" */;
+			productName = RevenueCatUI;
+		};
 		888E26FF2E553E3E00609191 /* FirebaseAnalytics */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 888E26FE2E553E3E00609191 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
