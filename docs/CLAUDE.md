@@ -13,6 +13,36 @@ OmniAI is a therapeutic mental health companion iOS app built with SwiftUI. Orig
 - Architecture: MVVM with ObservableObject pattern
 - No backend integration - all data is mocked/local
 
+## Files to Exclude from Analysis
+
+**IMPORTANT:** When analyzing or reviewing code in this repository, ALWAYS skip the following files as they are system-generated, temporary, or not relevant to code review:
+
+### System Files (Never analyze these)
+- `.DS_Store` - macOS finder metadata (large and irrelevant)
+- `._*` - macOS resource fork files
+- `Thumbs.db` - Windows thumbnail cache
+- `.Spotlight-V100` - macOS Spotlight index
+- `.Trashes` - macOS trash metadata
+
+### Build Artifacts
+- `build/` - Xcode build output
+- `DerivedData/` - Xcode derived data
+- `*.xcuserdata` - User-specific Xcode data
+- `*.dSYM` - Debug symbols
+- `*.ipa` - App archives
+
+### Temporary Files
+- `*.tmp`, `*.swp`, `*.swo` - Temporary editor files
+- `*~` - Backup files
+- `npm-debug.log*` - npm logs
+- `yarn-error.log*` - yarn logs
+
+### Large Binary Files
+- Images in `test_screenshots/` - Screenshot files
+- `*.png`, `*.jpg` when in Temp/ directories
+
+**Note:** Focus analysis on Swift source files (.swift), configuration files, and documentation. Skip all system-generated metadata.
+
 ## Development Commands
 
 ### Building and Running

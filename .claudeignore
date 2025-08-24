@@ -1,0 +1,120 @@
+# .claudeignore - Files and patterns to exclude from Claude Code analysis
+# This file tells Claude Code which files to skip during code review and analysis
+
+# macOS System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows System Files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Xcode Build Artifacts
+build/
+DerivedData/
+*.xcuserdata
+*.xcuserdatad/
+*.xcscmblueprint
+*.xccheckout
+*.moved-aside
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xcworkspace/xcuserdata/
+
+# iOS Specific
+*.ipa
+*.dSYM.zip
+*.dSYM
+*.hmap
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# CocoaPods
+Pods/
+
+# Carthage
+Carthage/Build/
+
+# Temporary Files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+*.bak
+*.backup
+
+# Log Files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+firebase-debug.log
+pglite-debug.log
+
+# IDE Files
+.vscode/
+.idea/
+*.sublime-*
+
+# Test Artifacts
+test_screenshots/*.png
+test_screenshots/*.jpg
+Temp/*.png
+Temp/*.jpg
+coverage/
+*.coverage
+
+# Node Modules (if any)
+node_modules/
+
+# Environment Files (already in .gitignore but good to exclude from analysis)
+.env
+.env.local
+.env.*.local
+
+# Firebase
+.firebase/
+firebase-debug.log
+
+# Binary Files
+*.zip
+*.tar
+*.gz
+*.rar
+*.7z
+
+# Media Files (when in temp directories)
+Temp/**/*.png
+Temp/**/*.jpg
+Temp/**/*.jpeg
+Temp/**/*.gif
+Temp/**/*.mp4
+Temp/**/*.mov
+
+# Documentation builds
+docs/_build/
+docs/.doctrees/
+
+# Archive directories (old code)
+Archive/**/*.swift
+Archive/**/*.md
+
+# Build output logs
+build_output.txt
+*.build.log
+
+# Provisioning Profiles
+*.mobileprovision
+*.certSigningRequest
+
+# Note: This file helps Claude Code focus on relevant source code
+# and skip system files that slow down analysis
