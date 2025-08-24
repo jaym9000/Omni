@@ -6,7 +6,6 @@ struct WelcomeView: View {
     @Binding var showSignUp: Bool
     @EnvironmentObject var authManager: AuthenticationManager
     @State private var isAnimating = false
-    @State private var showGuestPreview = false
     @State private var showErrorAlert = false
     @State private var errorMessage = ""
     
@@ -77,29 +76,8 @@ struct WelcomeView: View {
                 
                 Spacer()
                 
-                // Enhanced action buttons
+                // Enhanced action buttons - REMOVED GUEST MODE
                 VStack(spacing: 16) {
-                    // Primary CTA - Try it free
-                    Button(action: { showGuestPreview = true }) {
-                        HStack {
-                            Image(systemName: "sparkles")
-                                .font(.system(size: 16))
-                            Text("Try Omni Free")
-                                .font(.system(size: 18, weight: .semibold))
-                        }
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(
-                            LinearGradient(
-                                colors: [Color.omniPrimary, Color.omniSecondary],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .cornerRadius(28)
-                        .shadow(color: Color.omniPrimary.opacity(0.3), radius: 8, x: 0, y: 4)
-                    }
                     
                     // Apple Sign In - Using native button
                     SignInWithAppleButton(
@@ -158,9 +136,6 @@ struct WelcomeView: View {
         .onAppear {
             isAnimating = true
         }
-        .fullScreenCover(isPresented: $showGuestPreview) {
-            GuestModeView(showSignUp: $showSignUp)
-        }
         .alert("Authentication Error", isPresented: $showErrorAlert) {
             Button("OK", role: .cancel) { }
         } message: {
@@ -188,169 +163,6 @@ struct TrustBadge: View {
         .padding(.vertical, 4)
         .background(Color.omniSecondary.opacity(0.1))
         .cornerRadius(8)
-    }
-}
-
-// MARK: - Enhanced Guest Mode View
-struct GuestModeView: View {
-    @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject var authManager: AuthenticationManager
-    @Binding var showSignUp: Bool
-    @State private var isStartingGuestSession = false
-    @State private var showErrorAlert = false
-    @State private var errorMessage = ""
-    
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 30) {
-                Spacer()
-                
-                // Header
-                VStack(spacing: 20) {
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 80))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [Color.omniPrimary, Color.omniSecondary],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                    
-                    Text("Try Omni Free!")
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
-                        .foregroundColor(.omniTextPrimary)
-                    
-                    Text("Experience AI-powered mental health support with no commitment required.")
-                        .font(.system(size: 16))
-                        .foregroundColor(.omniTextSecondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 32)
-                }
-                
-                // Benefits
-                VStack(spacing: 16) {
-                    GuestBenefit(icon: "bubble.left.and.bubble.right", title: "3 Free AI Conversations", description: "Try our therapeutic AI companion")
-                    GuestBenefit(icon: "heart.circle", title: "Evidence-Based Support", description: "Get personalized mental health guidance")
-                    GuestBenefit(icon: "lock.shield", title: "100% Private & Secure", description: "Your conversations are confidential")
-                }
-                .padding(.horizontal, 24)
-                
-                Spacer()
-                
-                // Action buttons
-                VStack(spacing: 16) {
-                    Button(action: startGuestSession) {
-                        HStack {
-                            if isStartingGuestSession {
-                                ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                    .scaleEffect(0.8)
-                            } else {
-                                Image(systemName: "play.circle.fill")
-                                    .font(.system(size: 18))
-                                Text("Start Free Trial")
-                                    .font(.system(size: 18, weight: .semibold))
-                            }
-                        }
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(
-                            LinearGradient(
-                                colors: [Color.omniPrimary, Color.omniSecondary],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .cornerRadius(28)
-                        .shadow(color: Color.omniPrimary.opacity(0.3), radius: 8, x: 0, y: 4)
-                    }
-                    .disabled(isStartingGuestSession)
-                    
-                    Button("Create Full Account") {
-                        showSignUp = true
-                        dismiss()
-                    }
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.omniPrimary)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 28)
-                            .stroke(Color.omniPrimary, lineWidth: 2)
-                    )
-                }
-                .padding(.horizontal, 32)
-                .padding(.bottom, 50)
-            }
-            .background(Color.omniBackground)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Close") {
-                        dismiss()
-                    }
-                    .foregroundColor(.omniTextSecondary)
-                }
-            }
-            .alert("Error", isPresented: $showErrorAlert) {
-                Button("OK", role: .cancel) { }
-            } message: {
-                Text(errorMessage)
-            }
-        }
-    }
-    
-    private func startGuestSession() {
-        isStartingGuestSession = true
-        
-        Task {
-            do {
-                try await authManager.startGuestSession()
-                await MainActor.run {
-                    dismiss()
-                }
-            } catch {
-                print("Error starting guest session: \(error)")
-                await MainActor.run {
-                    isStartingGuestSession = false
-                    errorMessage = "Unable to start guest session. Please check your internet connection and try again."
-                    showErrorAlert = true
-                }
-            }
-        }
-    }
-}
-
-// MARK: - Guest Benefit Component
-struct GuestBenefit: View {
-    let icon: String
-    let title: String
-    let description: String
-    
-    var body: some View {
-        HStack(spacing: 16) {
-            Image(systemName: icon)
-                .font(.system(size: 24))
-                .foregroundColor(.omniPrimary)
-                .frame(width: 40, height: 40)
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.omniTextPrimary)
-                
-                Text(description)
-                    .font(.system(size: 14))
-                    .foregroundColor(.omniTextSecondary)
-            }
-            
-            Spacer()
-        }
-        .padding()
-        .background(Color.omniSecondaryBackground)
-        .cornerRadius(16)
     }
 }
 

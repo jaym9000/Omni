@@ -42,7 +42,7 @@ class JournalManager: ObservableObject {
     @objc private func authStateDidChange() {
         Task { @MainActor in
             setupJournalListener()
-            if let authUserId = firebaseManager.auth.currentUser?.uid {
+            if firebaseManager.auth.currentUser?.uid != nil {
                 await loadUserJournals(userId: UUID())
             }
         }

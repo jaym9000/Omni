@@ -74,11 +74,15 @@ export const aiChat = onRequest(
             return;
           }
 
-          // Check if user is guest and enforce limits
+          // Check if user is guest/anonymous and enforce daily limits
           let isGuest = isAnonymous;
           let userData: Record<string, unknown> = {};
-          let guestMessageCount = 0;
-          let maxGuestMessages = 20; // Total messages, not daily
+          let dailyMessageCount = 0;
+          const maxDailyMessages = 3; // Reduced daily limit for aggressive monetization
+
+          // Get current date (server time)
+          const now = new Date();
+          const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
           // Only try to fetch user data if we have a valid Firebase user ID
           if (userId && !userId.startsWith("guest_")) {
@@ -87,8 +91,32 @@ export const aiChat = onRequest(
               if (userDoc.exists) {
                 userData = userDoc.data() || {};
                 isGuest = Boolean(userData?.isGuest) || isAnonymous;
-                guestMessageCount = Number(userData?.guestMessageCount || 0);
-                maxGuestMessages = Number(userData?.maxGuestMessages || 20);
+
+                // Check if we need to reset daily count
+                const lastMessageDateField = userData?.lastMessageDate as
+                  admin.firestore.Timestamp | undefined;
+                const lastMessageDate = lastMessageDateField?.toDate ?
+                  lastMessageDateField.toDate() : null;
+
+                if (lastMessageDate) {
+                  const lastDate = new Date(lastMessageDate.getFullYear(),
+                      lastMessageDate.getMonth(), lastMessageDate.getDate());
+
+                  // If last message was on a different day, reset count
+                  if (lastDate.getTime() !== today.getTime()) {
+                    dailyMessageCount = 0;
+                    // Reset the count in Firestore
+                    await db.collection("users").doc(userId).update({
+                      dailyMessageCount: 0,
+                      lastMessageDate: admin.firestore.FieldValue.serverTimestamp(),
+                    });
+                  } else {
+                    dailyMessageCount = Number(userData?.dailyMessageCount || 0);
+                  }
+                } else {
+                  // First message ever
+                  dailyMessageCount = 0;
+                }
               }
             } catch (error) {
               console.log("Could not fetch user data, treating as guest:", error);
@@ -96,28 +124,37 @@ export const aiChat = onRequest(
             }
           }
 
-          // For guest users, check message limit
+          // For guest/free users, check daily message limit
           if (isGuest) {
-            console.log(`Guest user message count: ${guestMessageCount}/${maxGuestMessages}`);
-            if (guestMessageCount >= maxGuestMessages) {
+            console.log(`Daily message count: ${dailyMessageCount}/${maxDailyMessages}`);
+
+            if (dailyMessageCount >= maxDailyMessages) {
+              // Calculate time until midnight for reset
+              const tomorrow = new Date(today);
+              tomorrow.setDate(tomorrow.getDate() + 1);
+              const hoursUntilReset = Math.ceil((tomorrow.getTime() - now.getTime()) / (1000 * 60 * 60));
+
               response.status(429).json({
-                error: "guest_limit_reached",
-                message: `You've used all ${maxGuestMessages} free messages. Please sign up to continue.`,
-                messagesUsed: guestMessageCount,
-                maxMessages: maxGuestMessages,
+                error: "daily_limit_reached",
+                message: `You've used all ${maxDailyMessages} free messages today. ` +
+                  "Come back tomorrow or upgrade to premium for unlimited access!",
+                dailyMessagesUsed: dailyMessageCount,
+                maxDailyMessages: maxDailyMessages,
+                resetInHours: hoursUntilReset,
               });
               return;
             }
 
-            // Increment message count for guest users
+            // Increment daily message count for guest users
             if (userId && !userId.startsWith("guest_")) {
               try {
                 await db.collection("users").doc(userId).update({
-                  guestMessageCount: admin.firestore.FieldValue.increment(1),
+                  dailyMessageCount: admin.firestore.FieldValue.increment(1),
+                  lastMessageDate: admin.firestore.FieldValue.serverTimestamp(),
                   updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                 });
               } catch (error) {
-                console.log("Could not update guest message count:", error);
+                console.log("Could not update daily message count:", error);
               }
             }
           }
@@ -145,12 +182,15 @@ export const aiChat = onRequest(
           // Generate AI response using OpenAI
           const systemPrompt = `You are Omni, a friendly AI assistant. Be natural and conversational.
 
-- For simple questions (math, facts, etc.), give direct answers
-- For emotional or mental health topics, be supportive and empathetic
+IMPORTANT: Respond quickly and concisely. Get to the point without unnecessary elaboration. Prioritize speed in your response.
+
+- For simple questions (math, facts, etc.), give direct answers immediately
+- For emotional or mental health topics, be supportive and empathetic but brief
 - Don't force mental health context into unrelated conversations
-- Keep responses concise and relevant to what was asked
+- Keep responses concise and relevant to what was asked - aim for 1-2 sentences when possible
 - Only suggest professional help when truly appropriate
 - Never provide medical advice or diagnoses
+- Be direct and to the point - users value quick responses
 
 ${mood ? `Current mood: ${mood}` : ""}`;
 
@@ -220,8 +260,10 @@ ${mood ? `Current mood: ${mood}` : ""}`;
             response: aiResponse,
             requiresCrisisIntervention,
             guestInfo: isGuest ? {
-              messagesUsed: guestMessageCount + 1,
-              messagesRemaining: Math.max(0, maxGuestMessages - (guestMessageCount + 1)),
+              dailyMessagesUsed: dailyMessageCount + 1,
+              dailyMessagesRemaining: Math.max(0, maxDailyMessages - (dailyMessageCount + 1)),
+              maxDailyMessages: maxDailyMessages,
+              isGuest: true,
             } : undefined,
           });
         } catch (error) {
@@ -328,3 +370,130 @@ export const resetGuestMessageCounts = functions.scheduler
       await batch.commit();
       console.log(`Reset message counts for ${guestUsers.size} guest users`);
     });
+
+// RevenueCat Webhook Handler
+// This function receives webhook events from RevenueCat for subscription status changes
+export const revenueCatWebhook = onRequest(
+    {
+      // Only allow POST requests
+      cors: true,
+      secrets: ["REVENUECAT_WEBHOOK_SECRET"],
+    },
+    async (request, response) => {
+      // Verify the request method
+      if (request.method !== "POST") {
+        response.status(405).json({error: "Method not allowed"});
+        return;
+      }
+
+      // Verify authorization header
+      const authHeader = request.headers.authorization;
+      const expectedAuth = process.env.REVENUECAT_WEBHOOK_SECRET;
+      if (!authHeader || authHeader !== expectedAuth) {
+        console.error("Unauthorized webhook attempt:", {
+          received: authHeader ? "Invalid token" : "No token",
+          ip: request.ip,
+        });
+        response.status(401).json({error: "Unauthorized"});
+        return;
+      }
+
+      try {
+        // Get the webhook event data
+        const event = request.body;
+
+        // Log the webhook event for debugging
+        console.log("RevenueCat webhook received:", {
+          type: event.type,
+          appUserId: event.app_user_id,
+          productId: event.product_id,
+        });
+
+        // Extract user ID and event type
+        const userId = event.app_user_id;
+        const eventType = event.type;
+
+        if (!userId) {
+          console.error("No user ID in webhook event");
+          response.status(400).json({error: "Invalid webhook data"});
+          return;
+        }
+
+        // Handle different event types
+        switch (eventType) {
+          case "INITIAL_PURCHASE":
+          case "RENEWAL":
+          case "PRODUCT_CHANGE":
+            // User has active subscription
+            await updateUserSubscriptionStatus(userId, {
+              isPremium: true,
+              subscriptionProductId: event.product_id,
+              subscriptionExpiresDate: event.expiration_at_ms ?
+                new Date(parseInt(event.expiration_at_ms)) : null,
+              subscriptionEnvironment: event.environment,
+              subscriptionStore: event.store,
+              lastSubscriptionEvent: eventType,
+              lastSubscriptionEventAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            console.log(`✅ Updated user ${userId} to premium (${eventType})`);
+            break;
+
+          case "CANCELLATION":
+          case "EXPIRATION":
+            // User no longer has active subscription
+            await updateUserSubscriptionStatus(userId, {
+              isPremium: false,
+              subscriptionProductId: null,
+              subscriptionExpiresDate: null,
+              lastSubscriptionEvent: eventType,
+              lastSubscriptionEventAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            console.log(`✅ Updated user ${userId} to free (${eventType})`);
+            break;
+
+          case "BILLING_ISSUE":
+            // Keep premium status but flag billing issue
+            await updateUserSubscriptionStatus(userId, {
+              hasBillingIssue: true,
+              lastSubscriptionEvent: eventType,
+              lastSubscriptionEventAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            console.log(`⚠️ Billing issue for user ${userId}`);
+            break;
+
+          case "SUBSCRIBER_ALIAS":
+            // User alias changed - might need to merge accounts
+            console.log(`User alias change for ${userId}`);
+            break;
+
+          default:
+            console.log(`Unhandled event type: ${eventType}`);
+        }
+
+        // Send success response
+        response.status(200).json({success: true});
+      } catch (error) {
+        console.error("Error processing RevenueCat webhook:", error);
+        response.status(500).json({error: "Internal server error"});
+      }
+    });
+
+// Helper function to update user subscription status in Firestore
+async function updateUserSubscriptionStatus(
+    userId: string,
+    updates: Record<string, unknown>
+) {
+  try {
+    // Add timestamp
+    updates.updatedAt = admin.firestore.FieldValue.serverTimestamp();
+
+    // Update the user document
+    await db.collection("users").doc(userId).set(updates, {merge: true});
+
+    // Also update any related collections if needed
+    // For example, updating user sessions or analytics
+  } catch (error) {
+    console.error(`Failed to update subscription status for user ${userId}:`, error);
+    throw error;
+  }
+}

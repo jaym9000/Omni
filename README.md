@@ -1,26 +1,43 @@
 # OmniAI - Mental Health Companion iOS App
 
-A native iOS application built with SwiftUI, providing mental health support through an AI companion. This is a Swift/SwiftUI reimplementation of the original React Native OmniAI app.
+A production-ready iOS mental health companion app featuring AI-powered therapeutic support, built with SwiftUI and Firebase backend integration.
 
-## Features
+## 🚀 Production Features
 
-- **AI Companion Chat**: Conversational AI support for mental health concerns
-- **Mood Tracking**: Daily mood logging with emoji-based interface
-- **Journal System**: Multiple journal types including free-form, tagged, and themed entries
-- **Daily Prompts**: Gratitude and reflection prompts
-- **Anxiety Relief Tools**: Breathing exercises, grounding techniques, and guided meditation
-- **Premium Features**: Gated access to advanced features with subscription model
-- **Dark Mode Support**: Automatic theme switching based on system preference
-- **Secure Authentication**: Email/password and Apple Sign In support
+### Core Functionality
+- **AI Therapy Chat**: GPT-4 powered conversations via Firebase Cloud Functions
+- **Mood Tracking**: Daily mood logging with analytics and insights
+- **Journal System**: Free-form, tagged, and themed journal entries
+- **Daily Prompts**: Gratitude exercises and reflection prompts
+- **Anxiety Management**: Breathing exercises and grounding techniques
+- **Hard Paywall Model**: Subscription required upfront with 7-day free trial
+- **Premium Subscriptions**: RevenueCat integration with App Store subscriptions
 
-## Tech Stack
+### Technical Features
+- **Real-time Sync**: Firebase Firestore for instant data updates
+- **Secure Authentication**: Firebase Auth with email/password and Apple Sign-In
+- **Client-Side Encryption**: AES-256 encryption for sensitive data via CryptoKit
+- **Analytics Integration**: Firebase Analytics with conversion funnel tracking
+- **Offline Support**: Message queuing and offline data persistence
+- **Dark Mode**: Automatic theme switching based on system preference
+- **Biometric Security**: Face ID/Touch ID support
 
+## 💻 Tech Stack
+
+### Frontend
 - **Language**: Swift 5.9+
 - **UI Framework**: SwiftUI
-- **Minimum iOS Version**: iOS 16.0
 - **Architecture**: MVVM with ObservableObject
 - **State Management**: @StateObject, @EnvironmentObject, @AppStorage
-- **Navigation**: NavigationStack with programmatic navigation
+- **Minimum iOS**: 16.0+
+
+### Backend Services
+- **Database**: Firebase Firestore
+- **Authentication**: Firebase Auth
+- **Cloud Functions**: Node.js with TypeScript
+- **AI Integration**: OpenAI GPT-4 API
+- **Subscriptions**: RevenueCat SDK
+- **Analytics**: Firebase Analytics
 
 ## Project Structure
 
@@ -46,8 +63,14 @@ Omni/
 │   │   └── Components/     # Reusable components
 │   ├── Services/           # Business logic
 │   │   ├── AuthenticationManager.swift
-│   │   ├── ThemeManager.swift
-│   │   └── PremiumManager.swift
+│   │   ├── ChatService.swift
+│   │   ├── FirebaseManager.swift
+│   │   ├── JournalManager.swift
+│   │   ├── PremiumManager.swift
+│   │   ├── RevenueCatManager.swift
+│   │   ├── AnalyticsManager.swift
+│   │   ├── EncryptionManager.swift
+│   │   └── ThemeManager.swift
 │   ├── Assets.xcassets/   # Images and colors
 │   └── Info.plist         # App configuration
 └── README.md              # This file
@@ -86,10 +109,10 @@ Omni/
 
 ### Home Screen
 - Mood tracking with 5 emotion options
-- Chat with Omni button (premium feature)
+- Chat with Omni button (requires subscription)
 - Daily gratitude prompt
 - Anxiety relief toolkit card
-- Recent chats access (premium)
+- Recent chats access
 
 ### Journal System
 - Free-form journaling
@@ -97,13 +120,14 @@ Omni/
 - Themed prompts for guided writing
 - Daily reflection prompts
 
-### Premium Features
-- Unlimited chat conversations
+### Premium Features (Required for App Access)
+- Unlimited AI chat conversations
 - Mood-based chat suggestions
-- Advanced analytics
-- Export functionality
-- Custom themes (future)
-- Voice mode (future)
+- Advanced mood analytics
+- Journal entries
+- Export functionality (planned)
+- Voice mode (UI exists, backend planned)
+- Custom themes (planned)
 
 ### Theme System
 - Dynamic color system supporting light/dark modes
@@ -160,16 +184,60 @@ The app includes:
 - Mock data for development
 - Simulated API responses for demo mode
 
-## Notes
+## 🔐 Security & Privacy
 
-This is a UI/UX focused implementation without backend integration. All data is currently mocked or stored locally. To connect to a real backend:
+- **Client-side encryption** using AES-256 via CryptoKit
+- **Secure authentication** with Firebase Auth
+- **Token management** with Keychain Services
+- **Rate limiting** on Firebase Cloud Functions
+- **Crisis detection** with support resource links
+- **Privacy-first design** with minimal data collection
+- **Audit logging** for administrative access
 
-1. Replace mock API calls in manager classes
-2. Implement proper networking layer
-3. Add authentication token management
-4. Configure API endpoints
-5. Handle real-time updates if needed
+## 📈 Business Model
 
-## License
+### Hard Paywall Subscription Model
+- **Subscription Required**: App requires active subscription after onboarding
+- **Pricing Tiers**:
+  - Weekly: Price configured in RevenueCat
+  - Monthly: Price configured in RevenueCat
+  - Yearly: Price configured in RevenueCat
 
-This project is a reimplementation for demonstration purposes. Original concept from OmniAI React Native app.
+### Trial System
+- 7-day free trial for all subscription tiers
+- Simplified onboarding with AI preview
+- Immediate paywall presentation via RevenueCat
+- Auto-renewal after trial period
+
+## 🚀 Deployment Status
+
+- **App Store**: Version 1.1 (Build 26) ready for submission
+- **Bundle ID**: com.jns.Omni
+- **Firebase Project**: omni-ai-8d5d2 (us-central1)
+- **Cloud Functions**: Deployed and active (aiChat function)
+- **RevenueCat**: "Omni New" offering configured with "Omni_Final" paywall
+
+## 📱 Installation
+
+### For Users
+Download from the App Store (pending approval) or join TestFlight beta.
+
+### For Developers
+1. Clone the repository
+2. Open `OmniAI.xcodeproj` in Xcode 15+
+3. Add `GoogleService-Info.plist` to the project
+4. Configure RevenueCat API keys
+5. Build and run on iOS 16.0+ device/simulator
+
+## 🧪 Testing
+
+Run test scripts from the Testing directory:
+```bash
+./Testing/test_monetization_flows.sh
+./Testing/verify_monetization_config.sh
+./Testing/test_end_to_end.sh
+```
+
+## 📄 License
+
+Proprietary - © 2024 Jon McCormick. All rights reserved.

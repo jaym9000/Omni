@@ -96,7 +96,7 @@ struct EmailVerificationView: View {
         isChecking = true
         Task {
             do {
-                try await authManager.checkEmailVerification()
+                _ = try await authManager.checkEmailVerification()
             } catch {
                 // Handle error
             }

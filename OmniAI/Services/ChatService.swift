@@ -247,7 +247,10 @@ class ChatService: ObservableObject {
             }
         }
         
-        // Save to Firebase Firestore
+        // Generate AI response immediately (before saving to database for speed)
+        await generateAIResponse(for: sessionId, userMessage: content)
+        
+        // Save to Firebase Firestore in background
         let firebaseMessage = FirebaseMessage(
             id: userMessage.id,
             content: content,
@@ -256,39 +259,42 @@ class ChatService: ObservableObject {
             mood: nil
         )
         
-        do {
-            try await firebaseManager.saveChatMessage(firebaseMessage, sessionId: sessionId.uuidString)
-            print("✅ User message saved to Firestore")
-        } catch {
-            print("⚠️ Failed to save user message to Firestore: \(error)")
-            // Continue anyway for offline support
+        Task {
+            do {
+                try await firebaseManager.saveChatMessage(firebaseMessage, sessionId: sessionId.uuidString)
+                print("✅ User message saved to Firestore")
+            } catch {
+                print("⚠️ Failed to save user message to Firestore: \(error)")
+                // Continue anyway for offline support
+            }
         }
         
-        // Update session timestamp, title, and lastMessage
-        currentSession.updatedAt = Date()
-        currentSession.lastMessage = content
-        
-        // Update title with first user message if it's still "New Chat"
-        if currentSession.title == "New Chat" && messages.count <= 2 {
-            currentSession.title = String(content.prefix(50))
+        // Update session timestamp, title, and lastMessage in background
+        Task {
+            currentSession.updatedAt = Date()
+            currentSession.lastMessage = content
+            
+            // Update title with first user message if it's still "New Chat"
+            if currentSession.title == "New Chat" && messages.count <= 2 {
+                currentSession.title = String(content.prefix(50))
+            }
+            
+            // Update session in Firebase with authUserId
+            let authUserId = firebaseManager.auth.currentUser?.uid ?? ""
+            do {
+                try await firebaseManager.saveChatSession(currentSession, authUserId: authUserId)
+            } catch {
+                print("⚠️ Failed to update session in Firestore: \(error)")
+            }
+            
+            // Update local session
+            await MainActor.run {
+                if let index = chatSessions.firstIndex(where: { $0.id == sessionId }) {
+                    chatSessions[index] = currentSession
+                }
+                self.currentSession = currentSession
+            }
         }
-        
-        // Update session in Firebase with authUserId
-        let authUserId = firebaseManager.auth.currentUser?.uid ?? ""
-        do {
-            try await firebaseManager.saveChatSession(currentSession, authUserId: authUserId)
-        } catch {
-            print("⚠️ Failed to update session in Firestore: \(error)")
-        }
-        
-        // Update local session
-        if let index = chatSessions.firstIndex(where: { $0.id == sessionId }) {
-            chatSessions[index] = currentSession
-        }
-        self.currentSession = currentSession
-        
-        // Generate AI response
-        await generateAIResponse(for: sessionId, userMessage: content)
     }
     
     private func generateAIResponse(for sessionId: UUID, userMessage: String) async {
@@ -373,14 +379,6 @@ class ChatService: ObservableObject {
             throw NSError(domain: "ChatService", code: 500, userInfo: [NSLocalizedDescriptionKey: "Invalid response"])
         }
         
-        if httpResponse.statusCode == 429 {
-            // Handle guest limit
-            if let responseData = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-               let errorMessage = responseData["message"] as? String {
-                await handleGuestLimitReached(["message": errorMessage])
-                return
-            }
-        }
         
         guard httpResponse.statusCode == 200 else {
             // Log the error response for debugging
@@ -404,10 +402,6 @@ class ChatService: ObservableObject {
             await handleCrisisResponse(requiresEscalation: true)
         }
         
-        // Handle guest info if present
-        if let guestInfo = responseData["guestInfo"] as? [String: Any] {
-            await handleGuestInfo(guestInfo)
-        }
         
         // Create and save the AI message
         let aiMessage = ChatMessage(content: aiResponse, isUser: false, sessionId: sessionId)
@@ -514,59 +508,7 @@ class ChatService: ObservableObject {
         }
     }
     
-    private func handleGuestInfo(_ guestInfo: [String: Any]) async {
-        guard let messagesUsed = guestInfo["messagesUsed"] as? Int,
-              let messagesRemaining = guestInfo["messagesRemaining"] as? Int else { return }
-        
-        await MainActor.run {
-            // Update local user object with message count
-            print("👤 Guest messages: \(messagesUsed) used, \(messagesRemaining) remaining")
-            
-            // Update the auth manager's current user guest message count
-            if let authManager = self.authManager,
-               var currentUser = authManager.currentUser,
-               currentUser.isGuest {
-                currentUser.guestMessageCount = messagesUsed
-                authManager.currentUser = currentUser
-            }
-            
-            // Show a warning when getting close to the limit
-            if messagesRemaining <= 3 && messagesRemaining > 0 {
-                print("⚠️ Guest user approaching message limit: \(messagesRemaining) messages remaining")
-            }
-            
-            // Post notification to update UI
-            NotificationCenter.default.post(
-                name: NSNotification.Name("GuestMessageCountUpdated"),
-                object: nil,
-                userInfo: guestInfo
-            )
-        }
-    }
     
-    private func handleGuestLimitReached(_ errorResponse: [String: Any]) async {
-        let upgradeMessage = errorResponse["message"] as? String ?? "You've reached your conversation limit! Sign up to continue."
-        
-        let limitMessage = ChatMessage(
-            content: "🔒 " + upgradeMessage + "\n\nSign up now to get unlimited conversations with Omni and unlock all premium features!",
-            isUser: false,
-            sessionId: currentSession?.id ?? UUID()
-        )
-        
-        await MainActor.run {
-            // Only add if not already present (prevent duplicates)
-            if !messages.contains(where: { $0.id == limitMessage.id }) {
-                messages.append(limitMessage)
-            }
-            
-            // Post notification to show signup modal
-            NotificationCenter.default.post(
-                name: NSNotification.Name("ShowGuestUpgradeModal"),
-                object: nil,
-                userInfo: errorResponse
-            )
-        }
-    }
     
     // MARK: - Chat Actions
     

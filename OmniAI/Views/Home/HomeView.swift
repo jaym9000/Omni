@@ -1,4 +1,5 @@
 import SwiftUI
+import RevenueCatUI
 
 struct HomeView: View {
     @EnvironmentObject var authManager: AuthenticationManager
@@ -18,6 +19,7 @@ struct HomeView: View {
     @State private var chatInitialPrompt = ""
     @AppStorage("todaysGratitude") private var todaysGratitude = ""
     @AppStorage("lastGratitudeDate") private var lastGratitudeDate = ""
+    @State private var blockedFeatureName = ""
     
     // Animation states
     @State private var welcomeOpacity = 0.0
@@ -60,7 +62,7 @@ struct HomeView: View {
                 // Chat with Omni Button with pulse animation
                 Button(action: { 
                     chatInitialPrompt = ""
-                    showChat = true 
+                    showChat = true
                 }) {
                     HStack {
                         Text("💬")
@@ -82,13 +84,17 @@ struct HomeView: View {
                         x: 0, 
                         y: chatButtonPulse ? 6 : 4)
                 
-                // View Chat History
-                Button(action: { showRecentChats = true }) {
+                // View Chat History (Premium Feature)
+                Button(action: { 
+                    showRecentChats = true
+                }) {
                     HStack {
                         Image(systemName: "clock")
                             .font(.system(size: 16))
                         Text("View chat history")
                             .font(.system(size: 16, weight: .medium))
+                        
+                        
                         Spacer()
                         Image(systemName: "chevron.right")
                             .font(.system(size: 14))
@@ -119,15 +125,19 @@ struct HomeView: View {
                         
                         Spacer()
                         
-                        // Analytics and History buttons
+                        // Analytics and History buttons (Premium Features)
                         HStack(spacing: 12) {
-                            Button(action: { showMoodAnalytics = true }) {
+                            Button(action: { 
+                                showMoodAnalytics = true
+                            }) {
                                 Image(systemName: "chart.line.uptrend.xyaxis")
                                     .font(.system(size: 16))
                                     .foregroundColor(.omniPrimary)
                             }
                             
-                            Button(action: { showMoodHistory = true }) {
+                            Button(action: { 
+                                showMoodHistory = true
+                            }) {
                                 Image(systemName: "calendar")
                                     .font(.system(size: 16))
                                     .foregroundColor(.omniPrimary)
@@ -176,8 +186,13 @@ struct HomeView: View {
                     }
                 }
                 
-                // Anxiety Card with entrance animation
-                AnxietyCard(action: { showAnxietySession = true })
+                // Anxiety Card with entrance animation (Premium)
+                AnxietyCard(
+                    isPremium: false,
+                    action: { 
+                        showAnxietySession = true
+                    }
+                )
                     .opacity(cardsVisible ? 1 : 0)
                     .offset(y: cardsVisible ? 0 : 30)
                     .animation(
@@ -362,6 +377,7 @@ struct MoodButton: View {
 
 // MARK: - Anxiety Card Component
 struct AnxietyCard: View {
+    var isPremium: Bool = false
     let action: () -> Void
     @State private var breathingScale: CGFloat = 1.0
     @State private var glowOpacity: Double = 0.3
@@ -399,9 +415,17 @@ struct AnxietyCard: View {
                 }
                 
                 VStack(spacing: 2) {
-                    Text("Anxiety Management")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(.omniTextPrimary)
+                    HStack(spacing: 4) {
+                        Text("Anxiety Management")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.omniTextPrimary)
+                        
+                        if isPremium {
+                            Image(systemName: "lock.fill")
+                                .font(.system(size: 12))
+                                .foregroundColor(.omniTextTertiary)
+                        }
+                    }
                     
                     Text("Guided breathing & mindfulness")
                         .font(.system(size: 12))

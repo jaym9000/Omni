@@ -1,5 +1,6 @@
 import SwiftUI
 import FirebaseCore
+import RevenueCat
 
 // AppDelegate for Firebase initialization
 class AppDelegate: NSObject, UIApplicationDelegate {
@@ -8,6 +9,11 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         // Configure Firebase
         FirebaseApp.configure()
         print("🔥 Firebase configured successfully")
+        
+        // Configure RevenueCat
+        RevenueCatManager.shared.configure(with: "appl_pFgbZgVGqzPIeHMXmiyTwUrsXNl")
+        print("💰 RevenueCat configured successfully")
+        
         return true
     }
     
@@ -24,6 +30,7 @@ struct OmniAIApp: App {
     @StateObject private var authManager = AuthenticationManager()
     @StateObject private var themeManager = ThemeManager()
     @StateObject private var premiumManager = PremiumManager()
+    @StateObject private var revenueCatManager = RevenueCatManager.shared
     @StateObject private var journalManager = JournalManager.shared
     @StateObject private var chatService = ChatService()
     @StateObject private var offlineManager = OfflineManager()
@@ -38,6 +45,7 @@ struct OmniAIApp: App {
                 .environmentObject(authManager)
                 .environmentObject(themeManager)
                 .environmentObject(premiumManager)
+                .environmentObject(revenueCatManager)
                 .environmentObject(journalManager)
                 .environmentObject(chatService)
                 .environmentObject(offlineManager)
@@ -50,6 +58,11 @@ struct OmniAIApp: App {
                     chatService.setAuthManager(authManager)
                     // Initialize authentication status asynchronously with delay for session restoration
                     authManager.checkAuthenticationStatus(allowDelay: true)
+                    
+                    // Pre-fetch RevenueCat offerings to ensure paywall is ready
+                    Task {
+                        await revenueCatManager.fetchOfferings()
+                    }
                 }
                 .onChange(of: scenePhase) { newPhase in
                     switch newPhase {

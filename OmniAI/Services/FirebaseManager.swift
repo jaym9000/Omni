@@ -4,6 +4,7 @@ import FirebaseFirestore
 import FirebaseAuth
 import FirebaseStorage
 import FirebaseFunctions
+import UIKit
 
 /// Centralized Firebase manager for all Firebase services
 class FirebaseManager: ObservableObject {
@@ -147,19 +148,11 @@ class FirebaseManager: ObservableObject {
     
     /// Fetch chat sessions for a user by Firebase Auth UID
     func fetchChatSessions(authUserId: String) async throws -> [ChatSession] {
-        // Try to fetch by authUserId first (new sessions)
-        var snapshot = try await firestore.collection(chatSessionsCollection)
+        // Only query by authUserId field - must match security rules exactly
+        let snapshot = try await firestore.collection(chatSessionsCollection)
             .whereField("authUserId", isEqualTo: authUserId)
             .order(by: "updatedAt", descending: true)
             .getDocuments()
-        
-        // If no results, try legacy userId field
-        if snapshot.documents.isEmpty {
-            snapshot = try await firestore.collection(chatSessionsCollection)
-                .whereField("userId", isEqualTo: authUserId)
-                .order(by: "updatedAt", descending: true)
-                .getDocuments()
-        }
         
         return snapshot.documents.compactMap { document in
             let data = document.data()
@@ -193,7 +186,7 @@ class FirebaseManager: ObservableObject {
         
         try await messageRef.setData(messageData)
         
-        // Update session's last message and timestamp
+        // Update session's last message
         let sessionRef = firestore.collection(chatSessionsCollection).document(sessionId)
         try await sessionRef.updateData([
             "lastMessage": message.content,
@@ -213,6 +206,7 @@ class FirebaseManager: ObservableObject {
         
         return snapshot.documents.compactMap { document in
             let data = document.data()
+            
             return FirebaseMessage(
                 id: UUID(uuidString: data["id"] as? String ?? "") ?? UUID(),
                 content: data["content"] as? String ?? "",
@@ -240,6 +234,7 @@ class FirebaseManager: ObservableObject {
                 
                 let messages = documents.compactMap { document -> FirebaseMessage? in
                     let data = document.data()
+                    
                     return FirebaseMessage(
                         id: UUID(uuidString: data["id"] as? String ?? "") ?? UUID(),
                         content: data["content"] as? String ?? "",
@@ -491,6 +486,153 @@ class FirebaseManager: ObservableObject {
                 return message
             }
         }
+    }
+    
+    // MARK: - Data Privacy & User Control
+    
+    /// Delete all user data (for PIPEDA compliance)
+    func deleteAllUserData(userId: String) async throws {
+        
+        // Delete all chat sessions
+        let sessionsSnapshot = try await firestore
+            .collection(chatSessionsCollection)
+            .whereField("userId", isEqualTo: userId)
+            .getDocuments()
+        
+        for document in sessionsSnapshot.documents {
+            // Delete all messages in the session
+            let messagesSnapshot = try await firestore
+                .collection(chatSessionsCollection)
+                .document(document.documentID)
+                .collection(messagesCollection)
+                .getDocuments()
+            
+            for messageDoc in messagesSnapshot.documents {
+                try await messageDoc.reference.delete()
+            }
+            
+            // Delete the session itself
+            try await document.reference.delete()
+        }
+        
+        // Delete user document
+        try await firestore.collection(usersCollection).document(userId).delete()
+        
+        // Delete mood entries
+        let moodSnapshot = try await firestore
+            .collection(moodEntriesCollection)
+            .whereField("userId", isEqualTo: userId)
+            .getDocuments()
+        
+        for document in moodSnapshot.documents {
+            try await document.reference.delete()
+        }
+        
+        // Delete journal entries
+        let journalSnapshot = try await firestore
+            .collection(journalEntriesCollection)
+            .whereField("userId", isEqualTo: userId)
+            .getDocuments()
+        
+        for document in journalSnapshot.documents {
+            try await document.reference.delete()
+        }
+    }
+    
+    /// Delete a specific chat session
+    func deleteChatSession(sessionId: String, userId: String) async throws {
+        
+        // Verify user owns this session
+        let sessionDoc = try await firestore
+            .collection(chatSessionsCollection)
+            .document(sessionId)
+            .getDocument()
+        
+        guard let data = sessionDoc.data(),
+              data["userId"] as? String == userId else {
+            throw NSError(domain: "FirebaseManager", code: 403, userInfo: [NSLocalizedDescriptionKey: "Unauthorized"])
+        }
+        
+        // Delete all messages in the session
+        let messagesSnapshot = try await firestore
+            .collection(chatSessionsCollection)
+            .document(sessionId)
+            .collection(messagesCollection)
+            .getDocuments()
+        
+        for document in messagesSnapshot.documents {
+            try await document.reference.delete()
+        }
+        
+        // Delete the session
+        try await sessionDoc.reference.delete()
+    }
+    
+    /// Export all user data (for PIPEDA compliance - data portability)
+    func exportUserData(userId: String) async throws -> [String: Any] {
+        var exportData: [String: Any] = [:]
+        
+        // Export user profile
+        let userDoc = try await firestore.collection(usersCollection).document(userId).getDocument()
+        if let userData = userDoc.data() {
+            exportData["profile"] = userData
+        }
+        
+        // Export chat sessions and messages
+        let sessionsSnapshot = try await firestore
+            .collection(chatSessionsCollection)
+            .whereField("userId", isEqualTo: userId)
+            .getDocuments()
+        
+        var sessions: [[String: Any]] = []
+        for sessionDoc in sessionsSnapshot.documents {
+            var sessionData = sessionDoc.data()
+            
+            // Get messages for this session
+            let messagesSnapshot = try await firestore
+                .collection(chatSessionsCollection)
+                .document(sessionDoc.documentID)
+                .collection(messagesCollection)
+                .order(by: "timestamp", descending: false)
+                .getDocuments()
+            
+            var messages: [[String: Any]] = []
+            
+            for messageDoc in messagesSnapshot.documents {
+                let messageData = messageDoc.data()
+                messages.append(messageData)
+            }
+            
+            sessionData["messages"] = messages
+            sessions.append(sessionData)
+        }
+        exportData["chatSessions"] = sessions
+        
+        // Export mood entries
+        let moodSnapshot = try await firestore
+            .collection(moodEntriesCollection)
+            .whereField("userId", isEqualTo: userId)
+            .getDocuments()
+        
+        exportData["moodEntries"] = moodSnapshot.documents.map { $0.data() }
+        
+        // Export journal entries
+        let journalSnapshot = try await firestore
+            .collection(journalEntriesCollection)
+            .whereField("userId", isEqualTo: userId)
+            .getDocuments()
+        
+        exportData["journalEntries"] = journalSnapshot.documents.map { $0.data() }
+        
+        // Add export metadata
+        exportData["exportMetadata"] = [
+            "exportDate": ISO8601DateFormatter().string(from: Date()),
+            "appVersion": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown",
+            "dataFormat": "JSON",
+            "encryptionNote": "All encrypted messages have been decrypted for this export"
+        ]
+        
+        return exportData
     }
 }
 

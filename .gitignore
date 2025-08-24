@@ -121,3 +121,8 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# Sensitive credentials - DO NOT COMMIT
+WEBHOOK_CREDENTIALS.md
+LOCAL_SECRETS_README.md
+GET_WEBHOOK_TOKEN.md

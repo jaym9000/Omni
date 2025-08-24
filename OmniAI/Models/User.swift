@@ -36,8 +36,25 @@ struct User: Codable, Identifiable {
     
     // Guest user properties
     var isGuest: Bool = false
-    var guestMessageCount: Int = 0
-    var maxGuestMessages: Int = 20
+    var guestMessageCount: Int = 0  // Deprecated - kept for backward compatibility
+    var maxGuestMessages: Int = 1   // Reduced from 20 for aggressive monetization
+    
+    
+    // RevenueCat subscription properties
+    var revenueCatUserId: String?
+    var subscriptionProductId: String?
+    var subscriptionExpiresDate: Date?
+    
+    // User metadata for storing preferences
+    var metadata: [String: Any]?
+    var subscriptionEnvironment: String?
+    var subscriptionStore: String?
+    var subscriptionIsActive: Bool = false
+    var subscriptionPeriodType: String?
+    var subscriptionIsSandbox: Bool = false
+    var lastSubscriptionEvent: String?
+    var lastSubscriptionEventAt: Date?
+    var hasBillingIssue: Bool = false
     
     // Computed properties for date handling
     var createdAt: Date {
@@ -86,6 +103,17 @@ struct User: Codable, Identifiable {
         case isGuest = "is_guest"
         case guestMessageCount = "guest_message_count"
         case maxGuestMessages = "max_guest_messages"
+        case revenueCatUserId = "revenuecat_user_id"
+        case subscriptionProductId = "subscription_product_id"
+        case subscriptionExpiresDate = "subscription_expires_date"
+        case subscriptionEnvironment = "subscription_environment"
+        case subscriptionStore = "subscription_store"
+        case subscriptionIsActive = "subscription_is_active"
+        case subscriptionPeriodType = "subscription_period_type"
+        case subscriptionIsSandbox = "subscription_is_sandbox"
+        case lastSubscriptionEvent = "last_subscription_event"
+        case lastSubscriptionEventAt = "last_subscription_event_at"
+        case hasBillingIssue = "has_billing_issue"
     }
     
     // Custom initializer for database compatibility
@@ -114,6 +142,7 @@ struct User: Codable, Identifiable {
         )
         guestUser.isGuest = true
         guestUser.guestMessageCount = 0
+        guestUser.maxGuestMessages = 1  // Only 1 message for guests
         return guestUser
     }
 }

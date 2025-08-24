@@ -1,4 +1,5 @@
 import SwiftUI
+import RevenueCatUI
 
 struct MoodBottomSheet: View {
     let selectedMood: MoodType?
@@ -11,6 +12,8 @@ struct MoodBottomSheet: View {
     @State private var emojiRotation: Double = -15
     @State private var buttonsOffset: CGFloat = 30
     @State private var buttonsOpacity: Double = 0
+    @State private var showPaywall = false
+    @EnvironmentObject var authManager: AuthenticationManager
     
     var body: some View {
         VStack(spacing: 24) {
@@ -72,10 +75,15 @@ struct MoodBottomSheet: View {
                 .buttonStyle(TherapeuticPressStyle())
                 .scaleEffect(buttonsOpacity > 0 ? 1.0 : 0.95)
                 
-                // Journal Button
+                // Journal Button - Now Premium Only
                 Button(action: { 
-                    onJournal(selectedMood)
-                    onClose()
+                    // All journaling is now premium
+                    if authManager.currentUser?.isPremium == true {
+                        onJournal(selectedMood)
+                        onClose()
+                    } else {
+                        showPaywall = true
+                    }
                 }) {
                     HStack {
                         Image(systemName: "square.and.pencil")
@@ -108,6 +116,31 @@ struct MoodBottomSheet: View {
         )
         .onAppear {
             animateEntrance()
+        }
+        .sheet(isPresented: $showPaywall) {
+            Group {
+                if let offering = RevenueCatManager.shared.currentOffering {
+                    RevenueCatUI.PaywallView(offering: offering)
+                } else {
+                    RevenueCatUI.PaywallView()
+                }
+            }
+            .onPurchaseCompleted { _ in
+                showPaywall = false
+                Task {
+                    await RevenueCatManager.shared.checkSubscriptionStatus()
+                }
+            }
+            .onRestoreCompleted { _ in
+                if RevenueCatManager.shared.isPremium {
+                    showPaywall = false
+                }
+            }
+            .task {
+                if RevenueCatManager.shared.offerings == nil {
+                    await RevenueCatManager.shared.fetchOfferings()
+                }
+            }
         }
     }
     

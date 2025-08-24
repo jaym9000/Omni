@@ -1,4 +1,5 @@
 import SwiftUI
+import RevenueCatUI
 
 struct ChatView: View {
     @Environment(\.dismiss) var dismiss
@@ -15,7 +16,7 @@ struct ChatView: View {
     @State private var sendButtonScale: CGFloat = 1.0
     @State private var micButtonScale: CGFloat = 1.0
     @State private var isSettingUp = false
-    @State private var showGuestLimitAlert = false
+    @State private var showVoiceComingSoon = false
     
     let initialPrompt: String?
     let existingSessionId: UUID?
@@ -33,16 +34,8 @@ struct ChatView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Guest counter if needed
-                if let user = authManager.currentUser, user.isGuest {
-                    GuestMessageCounter(
-                        messagesUsed: user.guestMessageCount,
-                        maxMessages: user.maxGuestMessages
-                    )
-                }
-                
                 // Input mode selector
-                InputModeSelector(selectedMode: $selectedInputMode)
+                InputModeSelector(selectedMode: $selectedInputMode, showVoiceComingSoon: $showVoiceComingSoon)
                 
                 // Messages ScrollView
                 ScrollViewReader { proxy in
@@ -131,6 +124,11 @@ struct ChatView: View {
                     }
                 }
         )
+        .alert("Voice Mode Coming Soon!", isPresented: $showVoiceComingSoon) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("We're working on bringing you voice conversations with Omni. This feature will be available in a future update!")
+        }
         .task {
             await setupChatSafely()
             // Auto-focus for better UX
@@ -139,13 +137,6 @@ struct ChatView: View {
                     isInputFocused = true
                 }
             }
-        }
-        .alert("Upgrade to Continue", isPresented: $showGuestLimitAlert) {
-            Button("OK") {
-                showGuestLimitAlert = false
-            }
-        } message: {
-            Text("You've used all 20 free messages. Please sign up to continue chatting with Omni.")
         }
     }
     
@@ -225,6 +216,8 @@ struct ChatView: View {
         guard let sessionId = currentSessionId else { return }
         guard !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         
+        // Check if free user has hit limit (show paywall after 1 message)
+        
         let userInput = inputText
         inputText = ""
         
@@ -271,13 +264,7 @@ struct ChatView: View {
                 
                 try await chatService.sendMessage(content: userInput, sessionId: sessionId)
             } catch {
-                if case ChatError.guestLimitReached = error {
-                    await MainActor.run {
-                        showGuestLimitAlert = true
-                    }
-                } else {
-                    print("Failed to send message: \(error)")
-                }
+                print("Failed to send message: \(error)")
             }
         }
     }
@@ -286,6 +273,8 @@ struct ChatView: View {
 // MARK: - Input Mode Selector
 struct InputModeSelector: View {
     @Binding var selectedMode: ChatView.InputMode
+    @Binding var showVoiceComingSoon: Bool
+    @EnvironmentObject var authManager: AuthenticationManager
     
     var body: some View {
         HStack(spacing: 0) {
@@ -307,7 +296,10 @@ struct InputModeSelector: View {
                 .cornerRadius(22)
             }
             
-            Button(action: { selectedMode = .voice }) {
+            Button(action: { 
+                // Show coming soon alert for voice feature
+                showVoiceComingSoon = true
+            }) {
                 HStack {
                     Image(systemName: "mic")
                         .font(.system(size: 16))
@@ -518,82 +510,6 @@ struct TypingIndicator: View {
     }
 }
 
-// MARK: - Guest Message Counter
-struct GuestMessageCounter: View {
-    let messagesUsed: Int
-    let maxMessages: Int
-    
-    private var messagesRemaining: Int {
-        max(0, maxMessages - messagesUsed)
-    }
-    
-    private var isLowOnMessages: Bool {
-        messagesRemaining <= 5
-    }
-    
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: isLowOnMessages ? "exclamationmark.triangle.fill" : "message.circle.fill")
-                .font(.system(size: 16))
-                .foregroundColor(isLowOnMessages ? .orange : .omniPrimary)
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Guest Trial")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.omniTextSecondary)
-                
-                if messagesRemaining > 0 {
-                    Text("\(messagesUsed)/\(maxMessages) free messages")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(isLowOnMessages ? .orange : .omniTextPrimary)
-                } else {
-                    Text("Message limit reached")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.red)
-                }
-            }
-            
-            Spacer()
-            
-            if messagesRemaining <= 5 {
-                Button("Upgrade") {
-                    NotificationCenter.default.post(
-                        name: NSNotification.Name("ShowGuestUpgradeModal"),
-                        object: nil,
-                        userInfo: [
-                            "messagesUsed": messagesUsed,
-                            "messagesRemaining": messagesRemaining
-                        ]
-                    )
-                }
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(.white)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(
-                    LinearGradient(
-                        colors: [Color.omniPrimary, Color.omniSecondary],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .cornerRadius(12)
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(isLowOnMessages ? Color.orange.opacity(0.1) : Color.omniSecondaryBackground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(isLowOnMessages ? Color.orange.opacity(0.3) : Color.clear, lineWidth: 1)
-                )
-        )
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
-    }
-}
 
 #Preview {
     ChatView()

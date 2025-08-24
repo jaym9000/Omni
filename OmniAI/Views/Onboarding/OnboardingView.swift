@@ -1,4 +1,5 @@
 import SwiftUI
+import RevenueCatUI
 
 struct OnboardingView: View {
     @EnvironmentObject var authManager: AuthenticationManager
@@ -6,6 +7,7 @@ struct OnboardingView: View {
     @State private var companionName = "Omni"
     @State private var selectedGoals: Set<String> = []
     @State private var selectedPersonality = "supportive"
+    @State private var showPaywall = false
     
     let pages = [
         OnboardingPage(
@@ -57,9 +59,9 @@ struct OnboardingView: View {
             .ignoresSafeArea()
             
             VStack {
-                // Progress indicator
+                // Progress indicator - Now 6 steps
                 HStack(spacing: 8) {
-                    ForEach(0..<5) { index in
+                    ForEach(0..<6) { index in
                         RoundedRectangle(cornerRadius: 2)
                             .fill(index <= currentPage ? Color.omniPrimary : Color.omniPrimary.opacity(0.3))
                             .frame(height: 4)
@@ -90,6 +92,10 @@ struct OnboardingView: View {
                         goals: goals
                     )
                     .tag(4)
+                    
+                    // Page 5: Premium Trial (New!)
+                    PremiumTrialView(showPaywall: $showPaywall)
+                        .tag(5)
                 }
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
                 
@@ -107,7 +113,7 @@ struct OnboardingView: View {
                     Spacer()
                     
                     Button(action: nextAction) {
-                        Text(currentPage == 4 ? "Get Started" : "Next")
+                        Text(currentPage == 5 ? "Complete Setup" : currentPage == 4 ? "Next" : "Next")
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(.white)
                             .padding(.horizontal, 30)
@@ -129,9 +135,13 @@ struct OnboardingView: View {
     }
     
     private func nextAction() {
-        if currentPage < 4 {
+        if currentPage < 5 {
             withAnimation {
                 currentPage += 1
+            }
+            // Show paywall when reaching the premium page
+            if currentPage == 5 {
+                showPaywall = true
             }
         } else {
             completeOnboarding()
@@ -152,6 +162,99 @@ struct OnboardingView: View {
             
             // Save selected goals locally
             UserDefaults.standard.set(Array(selectedGoals), forKey: "userGoals")
+        }
+    }
+}
+
+// MARK: - Premium Trial View
+struct PremiumTrialView: View {
+    @Binding var showPaywall: Bool
+    
+    var body: some View {
+        VStack(spacing: 32) {
+            Spacer()
+            
+            // Premium icon
+            Image(systemName: "crown.fill")
+                .font(.system(size: 72))
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [Color.yellow, Color.orange],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+            
+            VStack(spacing: 16) {
+                Text("Unlock Everything")
+                    .font(.system(size: 32, weight: .bold))
+                    .foregroundColor(.omniTextPrimary)
+                
+                Text("Start your 7-day free trial")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(.omniPrimary)
+            }
+            
+            // Benefits list
+            VStack(alignment: .leading, spacing: 16) {
+                PremiumBenefit(icon: "infinity", text: "Unlimited AI conversations")
+                PremiumBenefit(icon: "book.fill", text: "All journal types unlocked")
+                PremiumBenefit(icon: "chart.line.uptrend.xyaxis", text: "Advanced mood analytics")
+                PremiumBenefit(icon: "bolt.fill", text: "Instant responses (no waiting)")
+                PremiumBenefit(icon: "clock.arrow.circlepath", text: "Chat history & session saving")
+            }
+            .padding(.horizontal, 40)
+            
+            Text("Cancel anytime • Just $14.99/month after trial")
+                .font(.system(size: 12))
+                .foregroundColor(.omniTextTertiary)
+            
+            Spacer()
+            
+            Button(action: { showPaywall = true }) {
+                Text("Start Free Trial")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 56)
+                    .background(
+                        LinearGradient(
+                            colors: [Color.omniPrimary, Color.omniSecondary],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .cornerRadius(28)
+            }
+            .padding(.horizontal, 40)
+            
+            Button("Maybe later") {
+                // Just continue without premium
+            }
+            .foregroundColor(.omniTextSecondary)
+            .font(.system(size: 14))
+            
+            Spacer()
+        }
+    }
+}
+
+struct PremiumBenefit: View {
+    let icon: String
+    let text: String
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.omniPrimary)
+                .frame(width: 24)
+            
+            Text(text)
+                .font(.system(size: 16))
+                .foregroundColor(.omniTextPrimary)
+            
+            Spacer()
         }
     }
 }

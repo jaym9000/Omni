@@ -97,6 +97,11 @@ class AuthenticationManager: ObservableObject {
                                 try? await self.tokenManager.saveFirebaseToken()
                             }
                         }
+                        
+                        // Identify user to RevenueCat
+                        Task {
+                            await RevenueCatManager.shared.identifyUser(userId: firebaseUser.uid)
+                        }
                     } else if firebaseUser.isAnonymous {
                         // Handle anonymous user
                         let guestUser = User.createGuestUser(
@@ -108,6 +113,11 @@ class AuthenticationManager: ObservableObject {
                             self.currentUser = guestUser
                             self.isAuthenticated = true
                             self.isEmailVerified = true
+                        }
+                        
+                        // Identify anonymous user to RevenueCat
+                        Task {
+                            await RevenueCatManager.shared.identifyUser(userId: firebaseUser.uid)
                         }
                     }
                 } else {
@@ -192,6 +202,11 @@ class AuthenticationManager: ObservableObject {
             Task {
                 try? await tokenManager.saveFirebaseToken()
             }
+            
+            // Identify user to RevenueCat
+            Task {
+                await RevenueCatManager.shared.identifyUser(userId: firebaseUser.uid)
+            }
         } catch {
             // Record failed attempt for rate limiting
             let lockResult = try rateLimiter.recordFailedAttempt(for: email)
@@ -266,6 +281,11 @@ class AuthenticationManager: ObservableObject {
                 
                 // Save to Keychain (secure storage)
                 try? self.keychainManager.save(userProfile, for: .userProfile)
+            }
+            
+            // Identify new user to RevenueCat
+            Task {
+                await RevenueCatManager.shared.identifyUser(userId: firebaseUser.uid)
             }
         } catch {
             // Convert Firebase errors to our custom errors
@@ -464,6 +484,11 @@ class AuthenticationManager: ObservableObject {
                 }
             }
             
+            // Identify user to RevenueCat
+            Task {
+                await RevenueCatManager.shared.identifyUser(userId: firebaseUser.uid)
+            }
+            
         case .failure(let error):
             print("❌ Apple Sign-In failed with error: \(error)")
             print("   - Error type: \(type(of: error))")
@@ -605,6 +630,11 @@ class AuthenticationManager: ObservableObject {
             // Clear Keychain
             try keychainManager.delete(for: .userProfile)
             
+            // Log out from RevenueCat
+            Task {
+                await RevenueCatManager.shared.logOut()
+            }
+            
             // Reset rate limiting
             try rateLimiter.recordSuccessfulLogin()
             
@@ -703,11 +733,12 @@ class AuthenticationManager: ObservableObject {
         // Save to Firestore
         try await firebaseManager.saveUser(user)
         
+        let updatedUser = user
         await MainActor.run {
-            self.currentUser = user
+            self.currentUser = updatedUser
             
             // Save to Keychain
-            try? self.keychainManager.save(user, for: .userProfile)
+            try? self.keychainManager.save(updatedUser, for: .userProfile)
         }
         
         print("✅ Profile updated successfully")
@@ -724,14 +755,77 @@ class AuthenticationManager: ObservableObject {
             try await firebaseManager.saveUser(user)
             print("✅ Onboarding completion saved to Firebase")
             
+            let updatedUser = user
             await MainActor.run {
-                self.currentUser = user
+                self.currentUser = updatedUser
                 
                 // Save to Keychain
-                try? self.keychainManager.save(user, for: .userProfile)
+                try? self.keychainManager.save(updatedUser, for: .userProfile)
             }
         } catch {
             print("❌ Failed to save onboarding completion to Firebase: \(error)")
+        }
+    }
+    
+    func signInAnonymously() async throws {
+        // Sign in anonymously with Firebase
+        let result = try await firebaseManager.auth.signInAnonymously()
+        
+        // Create a basic user profile
+        var user = User(
+            id: UUID(),
+            authUserId: result.user.uid,
+            email: "anonymous@omni.ai",
+            displayName: "Anonymous User",
+            emailVerified: true,
+            authProvider: .anonymous
+        )
+        
+        // Set additional properties
+        user.isGuest = true
+        user.hasCompletedOnboarding = true
+        
+        // Save to Firebase
+        try await firebaseManager.saveUser(user)
+        
+        // Create a final copy to avoid concurrency issues
+        let finalUser = user
+        
+        await MainActor.run {
+            self.currentUser = finalUser
+            self.isAuthenticated = true
+            self.isEmailVerified = true // Anonymous users don't need email verification
+        }
+    }
+    
+    func updateUserPreferences(goal: String? = nil, mood: Int? = nil) async {
+        guard var user = self.currentUser else { return }
+        
+        // Store preferences in user metadata
+        var metadata = user.metadata ?? [:]
+        if let goal = goal {
+            metadata["selectedGoal"] = goal
+        }
+        if let mood = mood {
+            metadata["selectedMood"] = mood
+        }
+        user.metadata = metadata
+        user.updatedAt = Date()
+        
+        // Update in Firebase
+        do {
+            try await firebaseManager.saveUser(user)
+            print("✅ User preferences saved to Firebase")
+            
+            let updatedUser = user
+            await MainActor.run {
+                self.currentUser = updatedUser
+                
+                // Save to Keychain
+                try? self.keychainManager.save(updatedUser, for: .userProfile)
+            }
+        } catch {
+            print("❌ Failed to save user preferences: \(error)")
         }
     }
     
@@ -747,11 +841,12 @@ class AuthenticationManager: ObservableObject {
             try await firebaseManager.saveUser(user)
             print("✅ Companion settings saved to Firebase")
             
+            let updatedUser = user
             await MainActor.run {
-                self.currentUser = user
+                self.currentUser = updatedUser
                 
                 // Save to Keychain
-                try? self.keychainManager.save(user, for: .userProfile)
+                try? self.keychainManager.save(updatedUser, for: .userProfile)
             }
         } catch {
             print("❌ Failed to save companion settings to Firebase: \(error)")
@@ -800,11 +895,12 @@ class AuthenticationManager: ObservableObject {
         // Update in Firebase
         try await firebaseManager.saveUser(user)
         
+        let updatedUser = user
         await MainActor.run {
-            self.currentUser = user
+            self.currentUser = updatedUser
             
             // Save to Keychain
-            try? self.keychainManager.save(user, for: .userProfile)
+            try? self.keychainManager.save(updatedUser, for: .userProfile)
         }
         
         print("💬 Guest message count: \(user.guestMessageCount)/\(user.maxGuestMessages)")

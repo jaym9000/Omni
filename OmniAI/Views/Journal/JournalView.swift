@@ -1,4 +1,5 @@
 import SwiftUI
+import RevenueCatUI
 
 struct JournalView: View {
     @EnvironmentObject var journalManager: JournalManager
@@ -30,7 +31,7 @@ struct JournalView: View {
                             .foregroundColor(.omniTextPrimary)
                         
                         VStack(spacing: 12) {
-                            // Free-form text entry with staggered animation
+                            // Free-form text entry - NOW PREMIUM
                             JournalOptionRow(
                                 icon: "pencil",
                                 title: "Free-form text entry",
@@ -47,7 +48,7 @@ struct JournalView: View {
                                 value: optionsVisible
                             )
                             
-                            // Tag entries with mood or topics
+                            // Tag entries with mood or topics (Premium)
                             JournalOptionRow(
                                 icon: "tag",
                                 title: "Tag entries with mood or topics",
@@ -64,7 +65,7 @@ struct JournalView: View {
                                 value: optionsVisible
                             )
                             
-                            // Referenced journal themes
+                            // Referenced journal themes (Premium)
                             JournalOptionRow(
                                 icon: "book.closed",
                                 title: "Referenced journal themes",
@@ -92,12 +93,15 @@ struct JournalView: View {
                             
                             Spacer()
                             
-                            Button(action: { showCalendar = true }) {
+                            Button(action: { 
+                                showCalendar = true
+                            }) {
                                 HStack(spacing: 4) {
                                     Image(systemName: "calendar")
                                         .font(.system(size: 14))
                                     Text("Calendar")
                                         .font(.system(size: 14, weight: .medium))
+                                    
                                 }
                                 .foregroundColor(.omniPrimary)
                             }
@@ -211,6 +215,7 @@ struct JournalOptionRow: View {
                 Text(title)
                     .font(.system(size: 16, weight: .medium))
                     .foregroundColor(.omniTextPrimary)
+                
                 
                 Spacer()
                 

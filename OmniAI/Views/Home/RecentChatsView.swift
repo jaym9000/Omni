@@ -184,13 +184,14 @@ struct RecentChatsView: View {
     
     private func loadChatSessionsAsync() async {
         isLoading = true
-        guard let userId = authManager.currentUser?.id else {
+        guard let userId = authManager.currentUser?.id,
+              let authUserId = authManager.currentUser?.authUserId else {
             isLoading = false
             return
         }
         
-        print("🔄 Refreshing chat sessions for user: \(userId)")
-        await chatService.loadUserSessions(userId: userId)
+        print("🔄 Refreshing chat sessions for user: \(userId) with authUserId: \(authUserId)")
+        await chatService.loadUserSessions(userId: userId, authUserId: authUserId)
         
         await MainActor.run {
             chatSessions = chatService.chatSessions
@@ -260,10 +261,19 @@ struct RecentChatsView: View {
             }
         }
         
-        // Then delete from Firebase in background
+        // Then delete from Firebase in background with privacy-compliant deletion
         Task {
             for index in offsets {
-                await chatService.deleteSession(sessions[index])
+                if let userId = authManager.currentUser?.id {
+                    do {
+                        try await FirebaseManager.shared.deleteChatSession(
+                            sessionId: sessions[index].id.uuidString,
+                            userId: userId.uuidString
+                        )
+                    } catch {
+                        print("Error deleting session: \(error)")
+                    }
+                }
             }
             // Reload to ensure sync with Firebase
             await loadChatSessionsAsync()
