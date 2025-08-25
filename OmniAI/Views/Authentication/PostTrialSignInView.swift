@@ -4,7 +4,7 @@ import AuthenticationServices
 struct PostTrialSignInView: View {
     @EnvironmentObject var authManager: AuthenticationManager
     @EnvironmentObject var premiumManager: PremiumManager
-    @State private var showEmailSignUp = false
+    @State private var showEmailLogin = false
     @State private var showErrorAlert = false
     @State private var errorMessage = ""
     @State private var isLoading = false
@@ -85,9 +85,9 @@ struct PostTrialSignInView: View {
                         .cornerRadius(28)
                         .disabled(isLoading)
                         
-                        // Email sign up
+                        // Email sign in - changed to go to LoginView
                         Button(action: {
-                            showEmailSignUp = true
+                            showEmailLogin = true
                         }) {
                             HStack {
                                 Image(systemName: "envelope")
@@ -104,15 +104,6 @@ struct PostTrialSignInView: View {
                             )
                         }
                         .disabled(isLoading)
-                        
-                        // Skip for now (not recommended)
-                        Button(action: skipSignIn) {
-                            Text("Skip for now")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.omniTextTertiary)
-                        }
-                        .padding(.top, 8)
-                        .disabled(isLoading)
                     }
                     .padding(.horizontal, 24)
                     .padding(.bottom, 50)
@@ -127,8 +118,8 @@ struct PostTrialSignInView: View {
                         .scaleEffect(1.5)
                 }
             }
-            .navigationDestination(isPresented: $showEmailSignUp) {
-                SignUpView()
+            .navigationDestination(isPresented: $showEmailLogin) {
+                LoginView()
             }
             .alert("Error", isPresented: $showErrorAlert) {
                 Button("OK", role: .cancel) { }
@@ -158,33 +149,6 @@ struct PostTrialSignInView: View {
                 await MainActor.run {
                     isLoading = false
                     errorMessage = "Sign in failed. Please try again."
-                    showErrorAlert = true
-                }
-            }
-        }
-    }
-    
-    private func skipSignIn() {
-        // Create anonymous account
-        isLoading = true
-        
-        Task {
-            do {
-                try await authManager.signInAnonymously()
-                
-                // Save setup preferences
-                if let goal = UserDefaults.standard.string(forKey: "tempSelectedGoal") {
-                    await authManager.updateUserPreferences(goal: goal)
-                }
-                
-                await MainActor.run {
-                    isLoading = false
-                    // Navigation handled by ContentView
-                }
-            } catch {
-                await MainActor.run {
-                    isLoading = false
-                    errorMessage = "Unable to continue. Please try signing in."
                     showErrorAlert = true
                 }
             }

@@ -33,7 +33,7 @@ struct SimpleWelcomeView: View {
                         .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: isAnimating)
                     
                     VStack(spacing: 16) {
-                        Text("Your AI therapist,\navailable 24/7")
+                        Text("Your AI therapist\navailable 24/7")
                             .font(.system(size: 32, weight: .bold, design: .rounded))
                             .foregroundColor(.omniTextPrimary)
                             .multilineTextAlignment(.center)
@@ -91,7 +91,7 @@ struct SimpleWelcomeView: View {
                     HStack(spacing: 4) {
                         Button(action: {
                             // Open privacy policy
-                            if let url = URL(string: "https://omniapp.com/privacy") {
+                            if let url = URL(string: "http://omnitherapy.co/privacy.html") {
                                 UIApplication.shared.open(url)
                             }
                         }) {
@@ -107,7 +107,7 @@ struct SimpleWelcomeView: View {
                         
                         Button(action: {
                             // Open terms
-                            if let url = URL(string: "https://omniapp.com/terms") {
+                            if let url = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/") {
                                 UIApplication.shared.open(url)
                             }
                         }) {

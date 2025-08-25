@@ -1,8 +1,22 @@
 import SwiftUI
 import WebKit
 
+struct WebView: UIViewRepresentable {
+    let url: URL
+    
+    func makeUIView(context: Context) -> WKWebView {
+        return WKWebView()
+    }
+    
+    func updateUIView(_ uiView: WKWebView, context: Context) {
+        let request = URLRequest(url: url)
+        uiView.load(request)
+    }
+}
+
 struct PrivacyPolicyView: View {
     @Environment(\.dismiss) var dismiss
+    @State private var showFullPolicy = false
     
     var body: some View {
         NavigationStack {
@@ -14,7 +28,7 @@ struct PrivacyPolicyView: View {
                             .font(.system(size: 32, weight: .bold))
                             .foregroundColor(.omniTextPrimary)
                         
-                        Text("Effective Date: January 1, 2025")
+                        Text("Last Updated: January 24, 2025")
                             .font(.system(size: 14))
                             .foregroundColor(.omniTextSecondary)
                     }
@@ -28,14 +42,14 @@ struct PrivacyPolicyView: View {
                         
                         PrivacyFeatureRow(
                             icon: "lock.shield.fill",
-                            title: "End-to-End Encryption",
-                            description: "Your chat messages are encrypted on your device before being stored."
+                            title: "AES-256 Encryption",
+                            description: "Your sensitive messages are encrypted using military-grade AES-256 encryption."
                         )
                         
                         PrivacyFeatureRow(
                             icon: "eye.slash.fill",
-                            title: "Zero-Knowledge Architecture",
-                            description: "We cannot read your encrypted messages, even in our database."
+                            title: "Privacy by Design",
+                            description: "Your encrypted data is protected with keys stored securely in iOS Keychain."
                         )
                         
                         PrivacyFeatureRow(
@@ -59,45 +73,79 @@ struct PrivacyPolicyView: View {
                         PrivacySection(
                             title: "Information We Collect",
                             content: """
-                            • Account information (email, name)
-                            • Health information (mood entries, journal entries, chat conversations)
-                            • Usage information (app interactions, timestamps)
-                            • Device information (device type, OS version)
+                            • Account information (email, display name)
+                            • Health & wellness data (mood tracking, journal entries, AI chat conversations)
+                            • Usage analytics (feature engagement, session duration)
+                            • Device information (device type, OS version, app version)
+                            • Subscription status (via RevenueCat and App Store)
                             """
                         )
                         
                         PrivacySection(
                             title: "How We Protect Your Data",
                             content: """
-                            • AES-256 encryption for data at rest
-                            • TLS 1.3 for data in transit
-                            • Encryption keys stored in iOS Keychain
-                            • Strict Firebase Security Rules
-                            • Regular security audits
+                            • AES-256 client-side encryption for sensitive data
+                            • HTTPS/TLS for all data transmission
+                            • Secure key storage in iOS Keychain
+                            • Firebase security rules with user-level access control
+                            • Rate limiting and audit logging
+                            • Regular security updates and monitoring
                             """
                         )
                         
                         PrivacySection(
                             title: "Your Rights",
                             content: """
-                            • Access your personal information
-                            • Correct inaccurate information
-                            • Delete your account and all data
+                            • Access all your personal information
+                            • Edit or delete chat messages and journal entries
+                            • Request complete account deletion (30-day processing)
                             • Export your data in portable format
-                            • Withdraw consent at any time
+                            • Cancel subscription at any time
+                            • Disable analytics tracking
+                            • GDPR/CCPA rights for EU/California residents
                             """
                         )
                         
                         PrivacySection(
-                            title: "Compliance",
+                            title: "Third-Party Services",
                             content: """
-                            We comply with:
-                            • Canada's PIPEDA
-                            • New Brunswick's PHIPAA
-                            • Apple App Store Guidelines
-                            • Industry best practices
+                            We use these trusted services:
+                            • Firebase (Google) - Backend infrastructure
+                            • OpenAI GPT-4 - AI chat processing
+                            • RevenueCat - Subscription management
+                            • Apple - Sign in & payments
+                            
+                            We never sell your personal data to third parties.
                             """
                         )
+                        
+                        PrivacySection(
+                            title: "Compliance & Age Requirements",
+                            content: """
+                            • GDPR compliant (EU residents)
+                            • CCPA compliant (California residents)
+                            • COPPA compliant (13+ age requirement)
+                            • Apple App Store Guidelines
+                            • HIPAA-aligned security practices
+                            """
+                        )
+                    }
+                    
+                    // View Full Policy Button
+                    Button(action: {
+                        showFullPolicy = true
+                    }) {
+                        HStack {
+                            Text("View Complete Privacy Policy")
+                                .font(.system(size: 16, weight: .semibold))
+                            Spacer()
+                            Image(systemName: "arrow.right.circle.fill")
+                                .font(.system(size: 20))
+                        }
+                        .foregroundColor(.white)
+                        .padding()
+                        .background(Color.omniPrimary)
+                        .cornerRadius(12)
                     }
                     
                     // Contact Information
@@ -106,11 +154,11 @@ struct PrivacyPolicyView: View {
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundColor(.omniTextPrimary)
                         
-                        Text("For privacy-related questions or to exercise your rights:")
+                        Text("For privacy inquiries or to exercise your rights:")
                             .font(.system(size: 14))
                             .foregroundColor(.omniTextSecondary)
                         
-                        Link("privacy@omniapp.com", destination: URL(string: "mailto:privacy@omniapp.com")!)
+                        Link("support@omnitherapy.co", destination: URL(string: "mailto:support@omnitherapy.co")!)
                             .font(.system(size: 14))
                             .foregroundColor(.omniPrimary)
                     }
@@ -130,6 +178,29 @@ struct PrivacyPolicyView: View {
                     .foregroundColor(.omniPrimary)
                 }
             }
+            .sheet(isPresented: $showFullPolicy) {
+                FullPrivacyPolicyView()
+            }
+        }
+    }
+}
+
+struct FullPrivacyPolicyView: View {
+    @Environment(\.dismiss) var dismiss
+    
+    var body: some View {
+        NavigationStack {
+            WebView(url: URL(string: "http://omnitherapy.co/privacy.html")!)
+                .navigationTitle("Privacy Policy")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("Done") {
+                            dismiss()
+                        }
+                        .foregroundColor(.omniPrimary)
+                    }
+                }
         }
     }
 }

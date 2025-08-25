@@ -64,6 +64,7 @@
 		EF9799360C9DE9BEB143ECA8 /* OmniAI/Models/MoodEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 834A7D4AD0D5712C865894D6 /* OmniAI/Models/MoodEntry.swift */; };
 		F1A2B3C4D5E6F7890123456A /* OmniAI/Services/JournalManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6789012345678 /* OmniAI/Services/JournalManager.swift */; };
 		F2B3C4D5E6F7890123456AB1 /* OmniAI/Views/Journal/JournalCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6789012345678A1 /* OmniAI/Views/Journal/JournalCalendarView.swift */; };
+		F3C4D5E6F7890123456ABC2 /* OmniAI/Views/Journal/ThemedJournalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F6789012345678AB2 /* OmniAI/Views/Journal/ThemedJournalView.swift */; };
 		F43E33E4E978E51A338029D6 /* MoodManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 338CC29195CF25AD5A7A4C13 /* MoodManager.swift */; };
 		FB1A2B3C4D5E6F7890123456 /* OmniAI/Services/FirebaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB1A2B3C4D5E6F7890123455 /* OmniAI/Services/FirebaseManager.swift */; };
 		KM1A2B3C4D5E6F78901234AB /* KeychainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = KM1A2B3C4D5E6F7890123456 /* KeychainManager.swift */; };
@@ -71,12 +72,6 @@
 		S2A2B3C4D5E6F7890123456C /* OmniAI/Services/ChatService.swift in Sources */ = {isa = PBXBuildFile; fileRef = S2A2B3C4D5E6F7890123456B /* OmniAI/Services/ChatService.swift */; };
 		S3A2B3C4D5E6F7890123456D /* OmniAI/Services/OfflineManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = S3A2B3C4D5E6F7890123456C /* OmniAI/Services/OfflineManager.swift */; };
 		TM1A2B3C4D5E6F78901234AC /* TokenManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = TM1A2B3C4D5E6F7890123457 /* TokenManager.swift */; };
-		77942587D1E245039EA2792E /* CertificatePinner.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5E8C5BD265D4AE28D1C5018 /* CertificatePinner.swift */; };
-		16888E65DFE54ACF84F8BE90 /* NetworkSecurityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ECA80B77E314E409432275F /* NetworkSecurityManager.swift */; };
-		C941602677C0437B81F89826 /* BiometricAuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A981F6CDB8F4A898F2D0481 /* BiometricAuthManager.swift */; };
-		4412CE265EB848568947A7E1 /* SecureStorageMigrator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1009D9F7CAB481BA953C47F /* SecureStorageMigrator.swift */; };
-		FDEC8CA3285443619FA118BA /* AuditLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C6EA470E5C44DA39E86FF9C /* AuditLogger.swift */; };
-		5AFE0E3115E549899EE04556 /* LocalAuthentication.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AF776B3FEFFE436E8FAB5CDA /* LocalAuthentication.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -122,6 +117,7 @@
 		B1A7EE9C48B345A4ADCF4605 /* OmniAI/Views/Profile/EditProfileSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Profile/EditProfileSheet.swift; sourceTree = "<group>"; };
 		B2C3D4E5F6789012345678A1 /* OmniAI/Views/Journal/JournalCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Journal/JournalCalendarView.swift; sourceTree = "<group>"; };
 		C27F4403DD61671FC7C8170A /* Onboarding/QuickSetupView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Onboarding/QuickSetupView.swift; sourceTree = "<group>"; };
+		C3D4E5F6789012345678AB2 /* OmniAI/Views/Journal/ThemedJournalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Journal/ThemedJournalView.swift; sourceTree = "<group>"; };
 		C77B97B1DC9465688BF64806 /* OmniAI/Views/Components/MoodBottomSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Components/MoodBottomSheet.swift; sourceTree = "<group>"; };
 		CH1A2B3C4D5E6F7890123456 /* OmniAI/Views/Home/ChatHistoryCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Home/ChatHistoryCalendarView.swift; sourceTree = "<group>"; };
 		DD511E3928CE6D15E6615DFB /* OmniAI/Views/Home/AnxietySessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Views/Home/AnxietySessionView.swift; sourceTree = "<group>"; };
@@ -138,12 +134,6 @@
 		S2A2B3C4D5E6F7890123456B /* OmniAI/Services/ChatService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Services/ChatService.swift; sourceTree = "<group>"; };
 		S3A2B3C4D5E6F7890123456C /* OmniAI/Services/OfflineManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniAI/Services/OfflineManager.swift; sourceTree = "<group>"; };
 		TM1A2B3C4D5E6F7890123457 /* TokenManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenManager.swift; sourceTree = "<group>"; };
-		C5E8C5BD265D4AE28D1C5018 /* CertificatePinner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CertificatePinner.swift; sourceTree = "<group>"; };
-		4ECA80B77E314E409432275F /* NetworkSecurityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkSecurityManager.swift; sourceTree = "<group>"; };
-		2A981F6CDB8F4A898F2D0481 /* BiometricAuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiometricAuthManager.swift; sourceTree = "<group>"; };
-		B1009D9F7CAB481BA953C47F /* SecureStorageMigrator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureStorageMigrator.swift; sourceTree = "<group>"; };
-		5C6EA470E5C44DA39E86FF9C /* AuditLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuditLogger.swift; sourceTree = "<group>"; };
-		AF776B3FEFFE436E8FAB5CDA /* LocalAuthentication.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = LocalAuthentication.framework; path = System/Library/Frameworks/LocalAuthentication.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -161,7 +151,6 @@
 				88A783E32E58AD6300A44B22 /* StoreKit.framework in Frameworks */,
 				888E27082E553E3E00609191 /* FirebaseFirestore in Frameworks */,
 				888E27022E553E3E00609191 /* FirebaseAuth in Frameworks */,
-							5AFE0E3115E549899EE04556 /* LocalAuthentication.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -205,7 +194,6 @@
 				1D1A1A2D2C8F123500123456 /* Assets.xcassets */,
 				1D1A1A2F2C8F123500123456 /* Info.plist */,
 				888E26FC2E55387500609191 /* GoogleService-Info.plist */,
-							8380CF87942A44B99FB37DBB /* Security */,
 			);
 			path = OmniAI;
 			sourceTree = "<group>";
@@ -301,6 +289,7 @@
 				4EC01F6CF44E27459759CD44 /* OmniAI/Services/ThemeManager.swift */,
 				A1B2C3D4E5F6789012345678 /* OmniAI/Services/JournalManager.swift */,
 				B2C3D4E5F6789012345678A1 /* OmniAI/Views/Journal/JournalCalendarView.swift */,
+				C3D4E5F6789012345678AB2 /* OmniAI/Views/Journal/ThemedJournalView.swift */,
 				S2A2B3C4D5E6F7890123456B /* OmniAI/Services/ChatService.swift */,
 				S3A2B3C4D5E6F7890123456C /* OmniAI/Services/OfflineManager.swift */,
 				FB1A2B3C4D5E6F7890123455 /* OmniAI/Services/FirebaseManager.swift */,
@@ -335,19 +324,6 @@
 				A3C6436D9A5097AE37024036 /* MoodHistoryView.swift */,
 			);
 			name = Home;
-			sourceTree = "<group>";
-		};
-
-		8380CF87942A44B99FB37DBB /* Security */ = {
-			isa = PBXGroup;
-			children = (
-				C5E8C5BD265D4AE28D1C5018 /* CertificatePinner.swift */,
-				4ECA80B77E314E409432275F /* NetworkSecurityManager.swift */,
-				2A981F6CDB8F4A898F2D0481 /* BiometricAuthManager.swift */,
-				B1009D9F7CAB481BA953C47F /* SecureStorageMigrator.swift */,
-				5C6EA470E5C44DA39E86FF9C /* AuditLogger.swift */,
-			);
-			path = Security;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -459,6 +435,7 @@
 				S3A2B3C4D5E6F7890123456D /* OmniAI/Services/OfflineManager.swift in Sources */,
 				FB1A2B3C4D5E6F7890123456 /* OmniAI/Services/FirebaseManager.swift in Sources */,
 				F2B3C4D5E6F7890123456AB1 /* OmniAI/Views/Journal/JournalCalendarView.swift in Sources */,
+				F3C4D5E6F7890123456ABC2 /* OmniAI/Views/Journal/ThemedJournalView.swift in Sources */,
 				CH1A2B3C4D5E6F78901234AB /* OmniAI/Views/Home/ChatHistoryCalendarView.swift in Sources */,
 				F43E33E4E978E51A338029D6 /* MoodManager.swift in Sources */,
 				5E002263827A6EAD12A94944 /* MoodAnalyticsView.swift in Sources */,
@@ -476,11 +453,6 @@
 				403D44F9FE7537AAD4A435D2 /* Onboarding/AIPreviewView.swift in Sources */,
 				8D85ED8A24F47E3D4013FBDA /* Authentication/PostTrialSignInView.swift in Sources */,
 				98AA1FC67593DFEB4C458DA4 /* AnalyticsManager.swift in Sources */,
-							77942587D1E245039EA2792E /* CertificatePinner.swift in Sources */,
-				16888E65DFE54ACF84F8BE90 /* NetworkSecurityManager.swift in Sources */,
-				C941602677C0437B81F89826 /* BiometricAuthManager.swift in Sources */,
-				4412CE265EB848568947A7E1 /* SecureStorageMigrator.swift in Sources */,
-				FDEC8CA3285443619FA118BA /* AuditLogger.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -614,7 +586,7 @@
 				CODE_SIGN_ENTITLEMENTS = OmniAI/OmniAI.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 29;
+				CURRENT_PROJECT_VERSION = 28;
 				DEVELOPMENT_TEAM = 92493ZAN98;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -656,7 +628,7 @@
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 29;
+				CURRENT_PROJECT_VERSION = 28;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 92493ZAN98;
 				ENABLE_PREVIEWS = YES;
@@ -778,11 +750,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 888E26FE2E553E3E00609191 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseStorage;
-		};
-		6CC6E2FC82DE4E59AAC6A7F4 /* FirebaseAppCheck */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 888E26FE2E553E3E00609191 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseAppCheck;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

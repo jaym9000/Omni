@@ -1,9 +1,13 @@
 import * as functions from "firebase-functions";
 import {onRequest} from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
+import {getAppCheck} from "firebase-admin/app-check";
 import {OpenAI} from "openai";
 import * as cors from "cors";
 import {defineSecret} from "firebase-functions/params";
+import {InputValidator} from "./security/inputValidator";
+import {ContentModerator} from "./security/contentModerator";
+// Rate limiter removed - paid-only app, no limits
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -39,6 +43,18 @@ export const aiChat = onRequest(
         });
 
         try {
+          // Verify App Check token (optional for backward compatibility)
+          const appCheckToken = request.headers["x-firebase-appcheck"] as string;
+          if (appCheckToken) {
+            try {
+              const appCheckClaims = await getAppCheck().verifyToken(appCheckToken);
+              console.log("App Check verification successful:", appCheckClaims.appId);
+            } catch (error) {
+              console.warn("App Check verification failed:", error);
+              // Continue processing but log the failure for monitoring
+            }
+          }
+
           // Verify authentication - Allow anonymous users
           const authHeader = request.headers.authorization;
           let userId = null;
@@ -54,110 +70,81 @@ export const aiChat = onRequest(
               console.log(`Successfully verified Firebase ID token for ${userType} user:`, userId);
             } catch (error) {
               console.error("Failed to verify Firebase ID token:", error);
-              // For guest users, allow fallback without authentication
-              console.log("Allowing request without authentication for guest fallback");
-              userId = `guest_${Date.now()}`; // Generate temporary ID for session
-              isAnonymous = true;
-            }
-          } else {
-            // No token provided - treat as guest
-            console.log("No Bearer token provided - treating as guest user");
-            userId = `guest_${Date.now()}`;
-            isAnonymous = true;
-          }
-
-          // Get request data
-          const {message, sessionId, mood} = request.body;
-
-          if (!message || !sessionId) {
-            response.status(400).json({error: "Missing required fields"});
-            return;
-          }
-
-          // Check if user is guest/anonymous and enforce daily limits
-          let isGuest = isAnonymous;
-          let userData: Record<string, unknown> = {};
-          let dailyMessageCount = 0;
-          const maxDailyMessages = 3; // Reduced daily limit for aggressive monetization
-
-          // Get current date (server time)
-          const now = new Date();
-          const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-          // Only try to fetch user data if we have a valid Firebase user ID
-          if (userId && !userId.startsWith("guest_")) {
-            try {
-              const userDoc = await db.collection("users").doc(userId).get();
-              if (userDoc.exists) {
-                userData = userDoc.data() || {};
-                isGuest = Boolean(userData?.isGuest) || isAnonymous;
-
-                // Check if we need to reset daily count
-                const lastMessageDateField = userData?.lastMessageDate as
-                  admin.firestore.Timestamp | undefined;
-                const lastMessageDate = lastMessageDateField?.toDate ?
-                  lastMessageDateField.toDate() : null;
-
-                if (lastMessageDate) {
-                  const lastDate = new Date(lastMessageDate.getFullYear(),
-                      lastMessageDate.getMonth(), lastMessageDate.getDate());
-
-                  // If last message was on a different day, reset count
-                  if (lastDate.getTime() !== today.getTime()) {
-                    dailyMessageCount = 0;
-                    // Reset the count in Firestore
-                    await db.collection("users").doc(userId).update({
-                      dailyMessageCount: 0,
-                      lastMessageDate: admin.firestore.FieldValue.serverTimestamp(),
-                    });
-                  } else {
-                    dailyMessageCount = Number(userData?.dailyMessageCount || 0);
-                  }
-                } else {
-                  // First message ever
-                  dailyMessageCount = 0;
-                }
-              }
-            } catch (error) {
-              console.log("Could not fetch user data, treating as guest:", error);
-              isGuest = true;
-            }
-          }
-
-          // For guest/free users, check daily message limit
-          if (isGuest) {
-            console.log(`Daily message count: ${dailyMessageCount}/${maxDailyMessages}`);
-
-            if (dailyMessageCount >= maxDailyMessages) {
-              // Calculate time until midnight for reset
-              const tomorrow = new Date(today);
-              tomorrow.setDate(tomorrow.getDate() + 1);
-              const hoursUntilReset = Math.ceil((tomorrow.getTime() - now.getTime()) / (1000 * 60 * 60));
-
-              response.status(429).json({
-                error: "daily_limit_reached",
-                message: `You've used all ${maxDailyMessages} free messages today. ` +
-                  "Come back tomorrow or upgrade to premium for unlimited access!",
-                dailyMessagesUsed: dailyMessageCount,
-                maxDailyMessages: maxDailyMessages,
-                resetInHours: hoursUntilReset,
+              // PAID ONLY - Authentication required
+              response.status(401).json({
+                error: "Authentication required",
+                message: "This is a paid-only service. Please authenticate to continue."
               });
               return;
             }
-
-            // Increment daily message count for guest users
-            if (userId && !userId.startsWith("guest_")) {
-              try {
-                await db.collection("users").doc(userId).update({
-                  dailyMessageCount: admin.firestore.FieldValue.increment(1),
-                  lastMessageDate: admin.firestore.FieldValue.serverTimestamp(),
-                  updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-                });
-              } catch (error) {
-                console.log("Could not update daily message count:", error);
-              }
-            }
+          } else {
+            // PAID ONLY - No guest access
+            console.log("No Bearer token provided - authentication required");
+            response.status(401).json({
+              error: "Authentication required",
+              message: "This is a paid-only service. Please authenticate to continue."
+            });
+            return;
           }
+
+          // Validate and sanitize request data
+          let validatedData;
+          try {
+            validatedData = InputValidator.validateRequestBody(request.body);
+          } catch (error) {
+            console.error("Input validation failed:", error);
+            response.status(400).json({error: error instanceof Error ? error.message : "Invalid input"});
+            return;
+          }
+
+          const {message, sessionId, mood} = validatedData;
+
+          // Check for suspicious content patterns - TEMPORARILY DISABLED
+          // TODO: Re-enable with better thresholds after testing
+          /*
+          if (InputValidator.isSuspiciousContent(message)) {
+            console.warn("Suspicious content detected:", {userId, sessionId});
+            response.status(400).json({error: "Content appears to be spam or malicious"});
+            return;
+          }
+          */
+
+          // Content moderation
+          const moderator = new ContentModerator(openaiApiKey.value());
+          const moderationResult = await moderator.isContentSafe(message);
+          
+          if (!moderationResult.safe) {
+            console.warn("Content moderation failed:", {
+              userId,
+              sessionId,
+              reason: moderationResult.reason,
+              categories: moderationResult.categories,
+            });
+            
+            // Check if this is crisis content that needs resources
+            if (ContentModerator.detectCrisisContent(message)) {
+              response.status(200).json({
+                result: {
+                  response: "I notice you might be going through a difficult time. Please reach out for support:\n\n" +
+                           "• National Suicide Prevention Lifeline: 988 or 1-800-273-8255\n" +
+                           "• Crisis Text Line: Text HOME to 741741\n" +
+                           "• International Crisis Lines: findahelpline.com\n\n" +
+                           "You're not alone, and help is available 24/7.",
+                  isCrisisResponse: true,
+                },
+              });
+              return;
+            }
+            
+            response.status(400).json({
+              error: moderationResult.reason || "Content violates usage policies",
+            });
+            return;
+          }
+
+          // NO LIMITS - ALL USERS ARE PAID
+          // Removed all guest/free tier logic as this is a paid-only app
+          console.log(`Processing request for paid user: ${userId}`);
 
           // Prepare conversation history - reduced for faster response
           const messagesSnapshot = await db.collection("chat_sessions")
@@ -179,6 +166,9 @@ export const aiChat = onRequest(
           // Add current message to history
           conversationHistory.push({role: "user" as const, content: message});
 
+          // NO RATE LIMITING - All users are paid/premium
+          // Removed rate limiting as this is a paid-only app
+          
           // Generate AI response using OpenAI
           const systemPrompt = `You are Omni, a friendly AI assistant. Be natural and conversational.
 
@@ -214,9 +204,27 @@ ${mood ? `Current mood: ${mood}` : ""}`;
 
           // Check if session exists first (for testing and guest users)
           const sessionDoc = await db.collection("chat_sessions").doc(sessionId).get();
+          
+          // Get current timestamp for proper ordering
+          const userMessageTimestamp = admin.firestore.Timestamp.now();
+          // AI response should be 1 second later to ensure proper ordering
+          const aiMessageTimestamp = admin.firestore.Timestamp.fromMillis(
+            userMessageTimestamp.toMillis() + 1000
+          );
 
           if (!sessionDoc.exists) {
-            // Create the session if it doesn't exist (for testing/guest users)
+            // Save the user message FIRST for new sessions
+            await db.collection("chat_sessions")
+                .doc(sessionId)
+                .collection("messages")
+                .add({
+                  content: message,
+                  role: "user",
+                  timestamp: userMessageTimestamp,
+                  userId: userId || "guest",
+                });
+            
+            // Then create the session
             await db.collection("chat_sessions").doc(sessionId).set({
               userId: userId || "guest",
               authUserId: userId || "guest",
@@ -225,18 +233,18 @@ ${mood ? `Current mood: ${mood}` : ""}`;
               updatedAt: admin.firestore.FieldValue.serverTimestamp(),
               lastMessage: aiResponse.substring(0, 100),
             });
-
-            // Also save the user message for new sessions
+          } else {
+            // For existing sessions, save user message with current timestamp
             await db.collection("chat_sessions")
                 .doc(sessionId)
                 .collection("messages")
                 .add({
                   content: message,
                   role: "user",
-                  timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                  timestamp: userMessageTimestamp,
                   userId: userId || "guest",
                 });
-          } else {
+            
             // Update existing session timestamp
             await db.collection("chat_sessions").doc(sessionId).update({
               updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -244,27 +252,22 @@ ${mood ? `Current mood: ${mood}` : ""}`;
             });
           }
 
-          // Save the AI response to Firestore
+          // Save the AI response to Firestore with slightly later timestamp
           await db.collection("chat_sessions")
               .doc(sessionId)
               .collection("messages")
               .add({
                 content: aiResponse,
                 role: "assistant",
-                timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                timestamp: aiMessageTimestamp,
                 requiresCrisisIntervention,
               });
 
-          // Send response
+          // Send response - NO LIMITS OR WARNINGS
           response.json({
             response: aiResponse,
             requiresCrisisIntervention,
-            guestInfo: isGuest ? {
-              dailyMessagesUsed: dailyMessageCount + 1,
-              dailyMessagesRemaining: Math.max(0, maxDailyMessages - (dailyMessageCount + 1)),
-              maxDailyMessages: maxDailyMessages,
-              isGuest: true,
-            } : undefined,
+            // No rate limits or guest info - all users are premium
           });
         } catch (error) {
           console.error("Error in aiChat function:", error);

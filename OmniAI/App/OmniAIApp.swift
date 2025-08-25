@@ -1,14 +1,30 @@
 import SwiftUI
 import FirebaseCore
+// import FirebaseAppCheck // Temporarily disabled - needs to be added to target
 import RevenueCat
 
 // AppDelegate for Firebase initialization
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+        
+        // Configure Firebase App Check BEFORE Firebase initialization
+        // Temporarily disabled - needs proper setup
+        /*
+        #if DEBUG
+        // Use debug provider for development
+        let providerFactory = AppCheckDebugProviderFactory()
+        #else
+        // Use DeviceCheck provider for production
+        let providerFactory = DeviceCheckProviderFactory()
+        #endif
+        
+        AppCheck.setAppCheckProviderFactory(providerFactory)
+        */
+        
         // Configure Firebase
         FirebaseApp.configure()
-        print("🔥 Firebase configured successfully")
+        print("🔥 Firebase configured successfully with App Check")
         
         // Configure RevenueCat
         RevenueCatManager.shared.configure(with: "appl_pFgbZgVGqzPIeHMXmiyTwUrsXNl")

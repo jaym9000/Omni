@@ -1,163 +1,283 @@
-# Privacy Policy for Omni Mental Health Support App
+# Privacy Policy for OmniAI
 
-**Effective Date**: January 1, 2025  
-**Last Updated**: December 2024
+**Effective Date: August 24, 2025**  
+**Last Updated: August 24, 2025**
 
-## 1. Introduction
+## Introduction
 
-Omni ("we," "our," or "us") is committed to protecting your privacy and ensuring the security of your personal health information. This Privacy Policy explains how we collect, use, protect, and handle your information in compliance with:
+OmniAI ("we," "our," or "us") is committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mental health companion mobile application (the "App").
 
-- Canada's Personal Information Protection and Electronic Documents Act (PIPEDA)
-- New Brunswick's Personal Health Information Privacy and Access Act (PHIPAA)
-- Apple App Store Guidelines
-- Industry best practices for mental health applications
+By using OmniAI, you agree to the collection and use of information in accordance with this Privacy Policy. If you do not agree with the terms of this policy, please do not use our App.
 
-## 2. Information We Collect
+## 1. Information We Collect
 
-### 2.1 Information You Provide
-- **Account Information**: Email address, name, and password (securely hashed)
-- **Profile Information**: Companion name preferences, personal goals
-- **Health Information**: Mood entries, journal entries, chat conversations with AI
-- **Usage Information**: App interaction data, session information
+### 1.1 Personal Information
+When you create an account, we collect:
+- **Email address** (for authentication and account recovery)
+- **Display name** (for personalization)
+- **Authentication credentials** (securely managed through Firebase Auth)
+- **Apple ID** (when using Sign in with Apple)
 
-### 2.2 Automatically Collected Information
-- **Device Information**: Device type, operating system version
-- **Analytics Data**: App performance metrics, crash reports (anonymized)
-- **Timestamps**: When you use various features
+### 1.2 Health & Wellness Information
+Through your use of the App, we collect:
+- **Chat conversations** with the AI companion (encrypted)
+- **Mood tracking data** (5-point scale mood entries)
+- **Journal entries** (free-form, tagged, and themed entries)
+- **Mental health goals** (set during onboarding)
+- **Crisis resource interactions** (for safety purposes)
 
-## 3. How We Protect Your Information
+### 1.3 Usage Information
+We automatically collect:
+- **Session data** (app opens, feature usage, session duration)
+- **Device information** (device type, OS version, app version)
+- **Analytics data** (feature engagement, conversion events)
+- **Performance metrics** (crash reports, load times)
 
-### 3.1 Encryption
-- **End-to-End Encryption**: All chat messages are encrypted on your device before transmission
-- **At Rest**: Data stored in our databases is encrypted using AES-256 encryption
-- **In Transit**: All data transmission uses TLS 1.3 with Perfect Forward Secrecy
-- **Key Management**: Encryption keys are stored securely in iOS Keychain, never on our servers
+### 1.4 Subscription Information
+For premium features, we collect:
+- **Subscription status** (via RevenueCat)
+- **Purchase history** (managed by Apple App Store)
+- **Trial usage** (7-day free trial tracking)
 
-### 3.2 Access Controls
-- **Zero-Knowledge Architecture**: Chat message content is encrypted in a way that prevents us from reading it
-- **Firebase Security Rules**: Strict access controls ensure users can only access their own data
-- **Audit Logging**: All administrative actions are logged for compliance
-- **No Third-Party Access**: We never sell or share your personal health information
+## 2. How We Use Your Information
 
-## 4. How We Use Your Information
+We use your information to:
 
-### 4.1 Primary Uses
-- Providing mental health support through AI conversations
-- Tracking your mood and wellness journey
-- Personalizing your experience based on your preferences
-- Maintaining and improving app functionality
+### 2.1 Provide Core Services
+- Deliver personalized AI-powered mental health support
+- Generate contextually appropriate therapeutic responses
+- Track and analyze mood patterns over time
+- Maintain chat history and journal entries
+- Provide crisis resources when needed
 
-### 4.2 What We DON'T Do
-- We do NOT read your encrypted chat messages
-- We do NOT sell your data to third parties
-- We do NOT use your health data for advertising
-- We do NOT share your data with marketers
+### 2.2 Improve Our Services
+- Enhance AI response quality and relevance
+- Develop new features based on usage patterns
+- Optimize app performance and user experience
+- Conduct research on mental health support effectiveness
 
-## 5. Data Retention and Deletion
+### 2.3 Account Management
+- Authenticate and secure your account
+- Process subscription payments
+- Send important service updates
+- Provide customer support
 
-### 5.1 Retention Period
-- Active account data: Retained while your account is active
-- Inactive accounts: Data deleted after 12 months of inactivity
-- Deleted data: Permanently removed within 30 days
+### 2.4 Safety & Security
+- Detect and prevent fraudulent activity
+- Enforce rate limiting to prevent abuse
+- Comply with legal obligations
+- Protect users and the service from harm
 
-### 5.2 Your Right to Delete
-You can delete your data at any time:
-- Individual chat sessions can be deleted
-- Full account deletion removes all associated data
-- Deletion includes encryption keys, making data unrecoverable
+## 3. How We Process Your Data
 
-## 6. Your Rights Under PIPEDA/PHIPAA
+### 3.1 AI Processing
+- Chat messages are processed by OpenAI's GPT-4 model
+- Processing occurs through secure Firebase Cloud Functions
+- Messages are not stored by OpenAI after processing
+- AI responses are tailored for therapeutic support
 
-You have the right to:
-- **Access**: Request a copy of all your personal information
-- **Correct**: Request corrections to inaccurate information
-- **Delete**: Request deletion of your personal information
-- **Port**: Export your data in a portable format (JSON)
-- **Withdraw Consent**: Stop using the app at any time
-- **Complain**: File a complaint with the Privacy Commissioner
+### 3.2 Data Storage
+- All user data is stored in Firebase Firestore
+- Data is segregated by user ID with strict access controls
+- Sensitive messages are encrypted using AES-256 encryption
+- Encryption keys are stored securely in iOS Keychain
 
-## 7. Data Export
+### 3.3 Data Security Measures
+- **Client-side encryption** for sensitive data
+- **Firebase security rules** enforcing user-level access control
+- **HTTPS-only** communication
+- **Token-based authentication** with automatic refresh
+- **Rate limiting** on API endpoints
+- **Audit logging** for administrative access
 
-You can export all your data at any time through the app settings:
-- Exports include all profile information, chat history, mood entries, and journal entries
-- Data is provided in JSON format
-- Encrypted messages are decrypted for export to ensure you have access to your complete data
+## 4. Third-Party Services
 
-## 8. Third-Party Services
+We use the following third-party services:
 
-### 8.1 Services We Use
-- **Firebase** (Google): Database and authentication (data encrypted before storage)
-- **OpenAI API**: AI conversation processing (messages sent securely, not stored by OpenAI)
-- **RevenueCat**: Subscription management (no health data shared)
+### 4.1 Firebase (Google)
+- **Purpose**: Backend infrastructure, authentication, database
+- **Data shared**: User profiles, chat data, analytics
+- **Privacy Policy**: https://firebase.google.com/support/privacy
 
-### 8.2 Third-Party Compliance
-All third-party services are required to:
-- Maintain equivalent or stronger privacy protections
-- Comply with applicable privacy laws
-- Not use your data for their own purposes
+### 4.2 OpenAI
+- **Purpose**: AI-powered chat responses
+- **Data shared**: Chat messages (for processing only)
+- **Privacy Policy**: https://openai.com/policies/privacy-policy
 
-## 9. Security Measures
+### 4.3 RevenueCat
+- **Purpose**: Subscription management and payments
+- **Data shared**: User ID, subscription status
+- **Privacy Policy**: https://www.revenuecat.com/privacy
 
-- Regular security audits
-- Secure development practices
+### 4.4 Apple
+- **Purpose**: Sign in with Apple, App Store payments
+- **Data shared**: Authentication tokens, purchase information
+- **Privacy Policy**: https://www.apple.com/privacy
+
+## 5. Data Retention
+
+- **Active accounts**: Data retained while account is active
+- **Chat messages**: Retained until manually deleted by user
+- **Journal entries**: Retained until manually deleted by user
+- **Mood data**: Retained for pattern analysis (user can delete)
+- **Deleted accounts**: Data permanently deleted within 30 days
+- **Subscription data**: Retained per Apple App Store requirements
+
+## 6. Data Sharing and Disclosure
+
+We do not sell, trade, or rent your personal information. We may share your information only in the following circumstances:
+
+### 6.1 With Your Consent
+- When you explicitly agree to share information
+- When you choose to export your data
+
+### 6.2 For Legal Reasons
+- To comply with legal obligations or court orders
+- To protect our rights, privacy, safety, or property
+- To prevent fraud or security issues
+- In case of emergency involving danger to health or safety
+
+### 6.3 Business Transfers
+- If we are involved in a merger, acquisition, or sale of assets
+- Your information may be transferred as part of that transaction
+- We will notify you of any change in ownership
+
+## 7. Your Rights and Choices
+
+### 7.1 Access and Portability
+- View all your data within the app
+- Export your journal entries and mood data
+- Request a copy of your personal information
+
+### 7.2 Correction
+- Update your profile information at any time
+- Edit or delete chat messages and journal entries
+- Modify your companion settings
+
+### 7.3 Deletion
+- Delete individual chat sessions or journal entries
+- Request complete account deletion
+- Data will be permanently removed within 30 days
+
+### 7.4 Opt-Out
+- Disable analytics tracking in app settings
+- Turn off notifications
+- Cancel subscription at any time
+
+### 7.5 Data Protection Rights (GDPR/CCPA)
+If you are a resident of the EU or California, you have additional rights:
+- Right to be informed about data collection
+- Right to rectification of inaccurate data
+- Right to erasure ("right to be forgotten")
+- Right to restrict processing
+- Right to data portability
+- Right to object to processing
+- Right not to be subject to automated decision-making
+
+## 8. Children's Privacy
+
+OmniAI is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13. If you are a parent or guardian and believe your child has provided us with personal information, please contact us immediately.
+
+For users aged 13-17:
+- Parental consent may be required in some jurisdictions
+- Content is appropriate for teenage mental health support
+- Crisis resources are prominently displayed
+
+## 9. International Data Transfers
+
+Your information may be transferred to and processed in countries other than your country of residence. These countries may have data protection laws different from your country. We ensure appropriate safeguards are in place to protect your information in accordance with this Privacy Policy.
+
+## 10. California Privacy Rights
+
+California residents have additional rights under the California Consumer Privacy Act (CCPA):
+- Right to know what personal information is collected
+- Right to know if personal information is sold or disclosed
+- Right to say no to the sale of personal information
+- Right to equal service and price
+
+We do not sell personal information to third parties.
+
+## 11. Security Measures
+
+We implement appropriate technical and organizational measures to protect your personal information:
+
+### Technical Measures
+- AES-256 encryption for sensitive data
+- Secure key storage in iOS Keychain
+- TLS/SSL for data transmission
+- Firebase security rules with user-level access control
+- Regular security audits and updates
+
+### Organizational Measures
+- Limited access to personal information
+- Employee training on data protection
 - Incident response procedures
-- Employee access restrictions
-- Regular security updates
+- Regular security assessments
 
-## 10. Children's Privacy
+## 12. Biometric Data
 
-Our app is not intended for children under 13. We do not knowingly collect information from children under 13. If we discover we have collected information from a child under 13, we will delete it immediately.
+If you enable Face ID or Touch ID for app authentication:
+- Biometric data is processed entirely on your device
+- We do not have access to your biometric information
+- Authentication tokens are stored securely in Keychain
+- You can disable biometric authentication at any time
 
-## 11. Changes to This Policy
+## 13. Updates to This Policy
 
-We may update this Privacy Policy from time to time. We will notify you of any material changes through:
-- In-app notifications
-- Email notifications
-- Update notices in the App Store
+We may update this Privacy Policy from time to time. We will notify you of any changes by:
+- Updating the "Last Updated" date
+- Sending an in-app notification for material changes
+- Requesting your consent where required by law
 
-## 12. Contact Information
+## 14. Contact Information
 
-For privacy-related questions or to exercise your rights:
+If you have questions or concerns about this Privacy Policy or our data practices, please contact us:
 
-**Email**: privacy@omniapp.com  
-**Mail**: [Your Company Address]
+**Email**: omniappofficial@gmail.com
+**Developer**: JM Mahoro
 
-## 13. Supervisory Authority
+## 15. Legal Basis for Processing (GDPR)
 
-You have the right to lodge a complaint with:
+If you are in the European Economic Area, our legal basis for processing your personal information includes:
+- **Consent**: For health data and optional features
+- **Contract**: To provide our services to you
+- **Legitimate Interests**: For improving our services and security
+- **Legal Obligations**: To comply with applicable laws
 
-**Office of the Privacy Commissioner of Canada**  
-30 Victoria Street  
-Gatineau, Quebec K1A 1H3  
-Toll-free: 1-800-282-1376  
-Website: www.priv.gc.ca
+## 16. Data Protection Officer
 
-**New Brunswick Office of the Ombud**  
-PO Box 6000  
-Fredericton, NB E3B 5H1  
-Phone: 1-888-465-1100
+While not legally required to have a DPO, we take data protection seriously. Privacy inquiries can be directed to: privacy@omniai.app
 
-## 14. Data Processing Location
+## 17. Dispute Resolution
 
-Your data is processed and stored in:
-- Primary: Google Cloud Platform (North America)
-- Device: Local encryption on your iOS device
+Any disputes relating to this Privacy Policy will be resolved through:
+1. Good faith negotiations
+2. Mediation if negotiations fail
+3. Binding arbitration as a last resort
 
-## 15. Legal Basis for Processing
+## 18. Accessibility
 
-We process your personal information based on:
-- Your explicit consent
-- Legitimate interests in providing mental health support
-- Compliance with legal obligations
+This Privacy Policy is available in alternative formats upon request for users with disabilities. Please contact us for assistance.
 
-## 16. Transparency Report
+## 19. Mental Health Disclaimer
 
-We publish an annual transparency report detailing:
-- Number of data requests received
-- Number of accounts affected
-- Types of requests
-- Our response to requests
+While OmniAI provides therapeutic support:
+- We are not a replacement for professional mental health treatment
+- In crisis situations, please contact emergency services
+- We provide crisis resources but cannot provide emergency intervention
+- Your data may be disclosed if there is imminent danger to health or safety
+
+## 20. Consent and Agreement
+
+By using OmniAI, you acknowledge that you have read, understood, and agree to be bound by this Privacy Policy. If you do not agree to these terms, please do not use our App.
 
 ---
 
-**By using Omni, you acknowledge that you have read and understood this Privacy Policy and agree to the collection, use, and protection of your information as described herein.**
+**Mental Health Resources:**
+- National Suicide Prevention Lifeline: 988
+- Crisis Text Line: Text "HELLO" to 741741
+- Emergency Services: 911
+
+---
+
+© 2025 OmniAI. All rights reserved.

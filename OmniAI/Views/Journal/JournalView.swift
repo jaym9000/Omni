@@ -4,8 +4,7 @@ import RevenueCatUI
 struct JournalView: View {
     @EnvironmentObject var journalManager: JournalManager
     @EnvironmentObject var authManager: AuthenticationManager
-    @State private var showNewEntry = false
-    @State private var selectedEntryType: JournalType = .freeForm
+    @State private var presentedJournalType: JournalType?
     @State private var showCalendar = false
     @State private var headerOpacity: Double = 0
     @State private var optionsVisible = false
@@ -36,8 +35,7 @@ struct JournalView: View {
                                 icon: "pencil",
                                 title: "Free-form text entry",
                                 action: {
-                                    selectedEntryType = .freeForm
-                                    showNewEntry = true
+                                    presentedJournalType = .freeForm
                                 }
                             )
                             .opacity(optionsVisible ? 1 : 0)
@@ -53,8 +51,7 @@ struct JournalView: View {
                                 icon: "tag",
                                 title: "Tag entries with mood or topics",
                                 action: {
-                                    selectedEntryType = .tagged
-                                    showNewEntry = true
+                                    presentedJournalType = .tagged
                                 }
                             )
                             .opacity(optionsVisible ? 1 : 0)
@@ -70,8 +67,7 @@ struct JournalView: View {
                                 icon: "book.closed",
                                 title: "Referenced journal themes",
                                 action: {
-                                    selectedEntryType = .themed
-                                    showNewEntry = true
+                                    presentedJournalType = .themed
                                 }
                             )
                             .opacity(optionsVisible ? 1 : 0)
@@ -166,11 +162,20 @@ struct JournalView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showNewEntry) {
-                if selectedEntryType == .themed {
+            .sheet(item: $presentedJournalType) { journalType in
+                switch journalType {
+                case .themed:
                     ThemedJournalEntryView()
-                } else {
-                    JournalEntryView(type: selectedEntryType)
+                        .environmentObject(journalManager)
+                        .environmentObject(authManager)
+                case .dailyPrompt:
+                    ReferencedPromptsView()
+                        .environmentObject(journalManager)
+                        .environmentObject(authManager)
+                case .freeForm, .tagged:
+                    JournalEntryView(type: journalType)
+                        .environmentObject(journalManager)
+                        .environmentObject(authManager)
                 }
             }
             .sheet(isPresented: $showCalendar) {
@@ -405,43 +410,6 @@ struct JournalEntryView: View {
                             .cornerRadius(12)
                     }
                     
-                    // Mood selector for non-tagged entries
-                    if type != .tagged {
-                        VStack(alignment: .leading, spacing: 16) {
-                            Text("How are you feeling?")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(.omniTextPrimary)
-                            
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 16) {
-                                    ForEach(MoodType.allCases, id: \.self) { mood in
-                                        VStack(spacing: 8) {
-                                            Button(action: { selectedMood = mood }) {
-                                                Text(mood.emoji)
-                                                    .font(.system(size: 24))
-                                                    .frame(width: 50, height: 50)
-                                                    .background(
-                                                        Circle()
-                                                            .fill(selectedMood == mood ? mood.color.opacity(0.2) : Color.clear)
-                                                    )
-                                                    .overlay(
-                                                        Circle()
-                                                            .stroke(selectedMood == mood ? mood.color : Color.clear, lineWidth: 2)
-                                                    )
-                                            }
-                                            .scaleEffect(selectedMood == mood ? 1.1 : 1.0)
-                                            .animation(.spring(response: 0.3), value: selectedMood)
-                                            
-                                            Text(mood.label)
-                                                .font(.system(size: 12, weight: .medium))
-                                                .foregroundColor(selectedMood == mood ? mood.color : .omniTextSecondary)
-                                        }
-                                    }
-                                }
-                                .padding(.horizontal)
-                            }
-                        }
-                    }
                     
                     // Tags (for tagged entries)
                     if type == .tagged {
@@ -467,6 +435,7 @@ struct JournalEntryView: View {
                                                         Circle()
                                                             .stroke(selectedMood == mood ? mood.color : Color.clear, lineWidth: 2)
                                                     )
+                                                    .padding(4) // Add padding to prevent clipping
                                             }
                                             .scaleEffect(selectedMood == mood ? 1.1 : 1.0)
                                             .animation(.spring(response: 0.3), value: selectedMood)
@@ -612,6 +581,7 @@ struct TopicTagChip: View {
                         Circle()
                             .stroke(isSelected ? Color.omniPrimary : Color.clear, lineWidth: 2)
                     )
+                    .padding(2) // Add padding to prevent circle clipping
                 
                 Text(text)
                     .font(.system(size: 12, weight: .medium))
@@ -700,163 +670,371 @@ struct FlowLayout: Layout {
 // MARK: - Themed Journal Entry View
 struct ThemedJournalEntryView: View {
     @Environment(\.dismiss) var dismiss
-    @State private var currentPrompt = "What's one small win you had today, no matter how minor?"
-    @State private var responseText = ""
-    @State private var isCompleted = false
+    @EnvironmentObject var journalManager: JournalManager
+    @EnvironmentObject var authManager: AuthenticationManager
+    @State private var selectedTheme: JournalTheme = .gratitude
+    @State private var currentQuestionIndex = 0
+    @State private var responses: [String] = ["", "", "", "", ""]
+    @State private var showThemeSelection = true
     
-    let prompts = [
-        "What's one small win you had today, no matter how minor?",
-        "How are you feeling this morning, and what's contributing to that mood?",
-        "What's something you're grateful for right now?",
-        "What challenge are you facing, and how might you approach it?",
-        "Describe a moment when you felt truly peaceful today."
-    ]
+    enum JournalTheme: String, CaseIterable {
+        case gratitude = "Gratitude & Wins"
+        case reflection = "Self-Reflection"
+        case goals = "Goal Setting"
+        case mindfulness = "Mindfulness"
+        case emotional = "Emotional Check-in"
+        
+        var icon: String {
+            switch self {
+            case .gratitude: return "star.fill"
+            case .reflection: return "brain.head.profile"
+            case .goals: return "target"
+            case .mindfulness: return "leaf.fill"
+            case .emotional: return "heart.fill"
+            }
+        }
+        
+        var color: Color {
+            switch self {
+            case .gratitude: return .moodHappy
+            case .reflection: return .omniPrimary
+            case .goals: return .moodCalm
+            case .mindfulness: return .green
+            case .emotional: return .moodAnxious
+            }
+        }
+        
+        var questions: [String] {
+            switch self {
+            case .gratitude:
+                return [
+                    "What's one small win you had today?",
+                    "Who or what are you grateful for right now?",
+                    "What made you smile today?",
+                    "What strength did you show today?",
+                    "What are you looking forward to tomorrow?"
+                ]
+            case .reflection:
+                return [
+                    "How are you feeling right now, in this moment?",
+                    "What's been on your mind the most today?",
+                    "What did you learn about yourself recently?",
+                    "What would you like to let go of?",
+                    "How have you grown this week?"
+                ]
+            case .goals:
+                return [
+                    "What's one goal you want to focus on?",
+                    "What small step can you take today?",
+                    "What might get in your way?",
+                    "Who or what can support you?",
+                    "How will you celebrate progress?"
+                ]
+            case .mindfulness:
+                return [
+                    "What do you notice in your body right now?",
+                    "What sounds can you hear around you?",
+                    "Describe something beautiful you saw today.",
+                    "What are you feeling without judgment?",
+                    "What simple pleasure did you enjoy?"
+                ]
+            case .emotional:
+                return [
+                    "Name the emotions you're experiencing.",
+                    "What triggered these feelings?",
+                    "Where do you feel this in your body?",
+                    "What do you need right now?",
+                    "What would self-compassion look like?"
+                ]
+            }
+        }
+    }
     
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    // Header
-                    VStack(spacing: 8) {
-                        Text("Themed Journal")
-                            .font(.system(size: 28, weight: .bold))
-                            .foregroundColor(.omniTextPrimary)
-                    }
-                    .padding(.top, 16)
-                    
-                    // Guided Journal Prompt Section
-                    VStack(alignment: .leading, spacing: 16) {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Guided Journal Prompt")
-                                    .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(.omniTextSecondary)
-                            }
-                            
-                            Spacer()
-                            
-                            Button(action: {
-                                currentPrompt = prompts.randomElement() ?? prompts[0]
-                            }) {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "arrow.clockwise")
-                                        .font(.system(size: 14))
-                                    Text("New Prompt")
-                                        .font(.system(size: 14, weight: .medium))
+            if showThemeSelection {
+                // Theme Selection View
+                ScrollView {
+                    VStack(spacing: 24) {
+                        // Header
+                        VStack(spacing: 8) {
+                            Text("Choose Your Journal Theme")
+                                .font(.system(size: 28, weight: .bold))
+                                .foregroundColor(.omniTextPrimary)
+                            Text("Select a guided journaling theme to get started")
+                                .font(.system(size: 16))
+                                .foregroundColor(.omniTextSecondary)
+                        }
+                        .padding(.top, 16)
+                        
+                        // Theme Cards
+                        VStack(spacing: 12) {
+                            ForEach(JournalTheme.allCases, id: \.self) { theme in
+                                Button(action: {
+                                    selectedTheme = theme
+                                    showThemeSelection = false
+                                    responses = Array(repeating: "", count: theme.questions.count)
+                                }) {
+                                    HStack(spacing: 16) {
+                                        Image(systemName: theme.icon)
+                                            .font(.system(size: 24))
+                                            .foregroundColor(theme.color)
+                                            .frame(width: 50, height: 50)
+                                            .background(
+                                                Circle()
+                                                    .fill(theme.color.opacity(0.1))
+                                            )
+                                        
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(theme.rawValue)
+                                                .font(.system(size: 18, weight: .semibold))
+                                                .foregroundColor(.omniTextPrimary)
+                                            Text("\(theme.questions.count) guided prompts")
+                                                .font(.system(size: 14))
+                                                .foregroundColor(.omniTextSecondary)
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.omniTextTertiary)
+                                    }
+                                    .padding()
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(Color(UIColor.secondarySystemBackground))
+                                    )
                                 }
-                                .foregroundColor(.omniPrimary)
+                                .buttonStyle(PlainButtonStyle())
                             }
                         }
                         
-                        // Prompt Display
-                        VStack(alignment: .leading, spacing: 16) {
-                            HStack(spacing: 12) {
-                                Image(systemName: "bookmark.fill")
-                                    .font(.system(size: 16))
-                                    .foregroundColor(.omniPrimary)
+                        Spacer(minLength: 40)
+                    }
+                    .padding()
+                }
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("Cancel") {
+                            dismiss()
+                        }
+                        .foregroundColor(.omniPrimary)
+                    }
+                }
+            } else {
+                // Guided Questions View
+                ScrollView {
+                    VStack(spacing: 24) {
+                        // Progress Header
+                        VStack(spacing: 12) {
+                            HStack {
+                                Button(action: {
+                                    if currentQuestionIndex > 0 {
+                                        currentQuestionIndex -= 1
+                                    } else {
+                                        showThemeSelection = true
+                                    }
+                                }) {
+                                    Image(systemName: "chevron.left")
+                                        .foregroundColor(.omniPrimary)
+                                }
                                 
-                                Text("GRATITUDE & WINS")
-                                    .font(.system(size: 12, weight: .bold))
-                                    .foregroundColor(.omniPrimary)
-                                    .textCase(.uppercase)
+                                Spacer()
+                                
+                                Text("\(currentQuestionIndex + 1) of \(selectedTheme.questions.count)")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(.omniTextSecondary)
+                                
+                                Spacer()
+                                
+                                Button(action: {
+                                    showThemeSelection = true
+                                }) {
+                                    Image(systemName: "xmark")
+                                        .foregroundColor(.omniTextSecondary)
+                                }
                             }
                             
-                            Text(currentPrompt)
-                                .font(.system(size: 20, weight: .medium))
+                            // Progress Bar
+                            GeometryReader { geometry in
+                                ZStack(alignment: .leading) {
+                                    Rectangle()
+                                        .fill(Color.omniSecondaryBackground)
+                                        .frame(height: 4)
+                                        .cornerRadius(2)
+                                    
+                                    Rectangle()
+                                        .fill(selectedTheme.color)
+                                        .frame(width: geometry.size.width * CGFloat(currentQuestionIndex + 1) / CGFloat(selectedTheme.questions.count), height: 4)
+                                        .cornerRadius(2)
+                                        .animation(.spring(), value: currentQuestionIndex)
+                                }
+                            }
+                            .frame(height: 4)
+                        }
+                        .padding(.top, 16)
+                        
+                        // Theme Badge
+                        HStack(spacing: 8) {
+                            Image(systemName: selectedTheme.icon)
+                                .font(.system(size: 16))
+                                .foregroundColor(selectedTheme.color)
+                            
+                            Text(selectedTheme.rawValue.uppercased())
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(selectedTheme.color)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(
+                            Capsule()
+                                .fill(selectedTheme.color.opacity(0.1))
+                        )
+                        
+                        // Current Question
+                        VStack(alignment: .leading, spacing: 20) {
+                            Text(selectedTheme.questions[currentQuestionIndex])
+                                .font(.system(size: 22, weight: .semibold))
                                 .foregroundColor(.omniTextPrimary)
                                 .lineSpacing(4)
-                        }
-                        .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.omniPrimary.opacity(0.06))
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.omniPrimary.opacity(0.2), lineWidth: 1)
-                        )
-                    }
-                    
-                    // Text Input Area
-                    VStack(spacing: 16) {
-                        ZStack(alignment: .topLeading) {
-                            if responseText.isEmpty {
-                                Text("Write your thoughts here...")
-                                    .font(.system(size: 16))
+                                .fixedSize(horizontal: false, vertical: true)
+                            
+                            // Text Input
+                            VStack(alignment: .leading, spacing: 8) {
+                                ZStack(alignment: .topLeading) {
+                                    if responses[currentQuestionIndex].isEmpty {
+                                        Text("Write your thoughts here...")
+                                            .font(.system(size: 16))
+                                            .foregroundColor(.omniTextTertiary)
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 16)
+                                    }
+                                    
+                                    TextEditor(text: $responses[currentQuestionIndex])
+                                        .font(.system(size: 16))
+                                        .foregroundColor(.omniTextPrimary)
+                                        .padding(8)
+                                        .frame(minHeight: 150)
+                                        .background(Color.clear)
+                                }
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color(UIColor.systemBackground))
+                                        .shadow(color: Color.black.opacity(0.08), radius: 2, x: 0, y: 1)
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(responses[currentQuestionIndex].isEmpty ? Color.clear : selectedTheme.color.opacity(0.3), lineWidth: 1)
+                                )
+                                
+                                Text("\(responses[currentQuestionIndex].count) characters")
+                                    .font(.system(size: 12))
                                     .foregroundColor(.omniTextTertiary)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 16)
                             }
-                            
-                            TextEditor(text: $responseText)
-                                .font(.system(size: 16))
-                                .foregroundColor(.omniTextPrimary)
-                                .padding(8)
-                                .frame(minHeight: 200)
-                                .background(Color.clear)
                         }
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color(UIColor.systemBackground))
-                                .shadow(color: Color.black.opacity(0.08), radius: 2, x: 0, y: 1)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(responseText.isEmpty ? Color.clear : Color.omniPrimary.opacity(0.3), lineWidth: 1)
-                        )
                         
-                        // Character counter and save button
-                        HStack {
-                            Text("\(responseText.count) characters")
-                                .font(.system(size: 12))
-                                .foregroundColor(.omniTextTertiary)
-                            
-                            Spacer()
-                            
-                            Button(action: saveEntry) {
-                                Text("Save Entry")
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(.white)
+                        // Navigation Buttons
+                        HStack(spacing: 12) {
+                            if currentQuestionIndex < selectedTheme.questions.count - 1 {
+                                Button(action: {
+                                    currentQuestionIndex += 1
+                                }) {
+                                    Text("Skip")
+                                        .font(.system(size: 16, weight: .medium))
+                                        .foregroundColor(.omniTextSecondary)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.omniTextTertiary, lineWidth: 1)
+                                )
+                                
+                                Button(action: {
+                                    currentQuestionIndex += 1
+                                }) {
+                                    Text("Next")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(.white)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(selectedTheme.color)
+                                )
+                            } else {
+                                Button(action: saveEntry) {
+                                    Text("Save Journal Entry")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(.white)
+                                }
+                                .disabled(responses.allSatisfy { $0.isEmpty })
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(responses.allSatisfy { $0.isEmpty } ? Color.gray.opacity(0.3) : selectedTheme.color)
+                                )
                             }
-                            .disabled(responseText.isEmpty)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 12)
-                            .background(
-                                RoundedRectangle(cornerRadius: 22)
-                                    .fill(responseText.isEmpty ? Color.gray.opacity(0.3) : Color.omniPrimary)
-                            )
                         }
+                        
+                        Spacer(minLength: 40)
                     }
-                    
-                    Spacer(minLength: 40)
+                    .padding()
                 }
-                .padding()
-            }
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("Cancel") {
+                            dismiss()
+                        }
+                        .foregroundColor(.omniPrimary)
                     }
-                    .foregroundColor(.omniPrimary)
                 }
             }
         }
     }
     
     private func saveEntry() {
-        guard !responseText.isEmpty else { return }
+        // Filter out empty responses and create Q&A pairs
+        var content = "Theme: \(selectedTheme.rawValue)\n\n"
+        var hasContent = false
         
-        let _ = JournalEntry(
-            userId: UUID(),
-            title: "Themed Entry",
-            content: responseText,
+        for (index, question) in selectedTheme.questions.enumerated() {
+            if !responses[index].isEmpty {
+                content += "Q: \(question)\n"
+                content += "A: \(responses[index])\n\n"
+                hasContent = true
+            }
+        }
+        
+        guard hasContent else { return }
+        
+        // Create journal entry with all Q&A pairs
+        var entry = JournalEntry(
+            userId: authManager.currentUser?.id ?? UUID(),
+            title: "Themed: \(selectedTheme.rawValue)",
+            content: content.trimmingCharacters(in: .whitespacesAndNewlines),
             type: .themed
         )
         
-        // Note: In a real app, we would inject JournalManager here
-        // For now, this creates the entry structure
-        dismiss()
+        // Set the theme as the prompt
+        entry.prompt = selectedTheme.rawValue
+        
+        // Save through JournalManager
+        Task {
+            do {
+                try await journalManager.saveEntry(entry)
+                await MainActor.run {
+                    dismiss()
+                }
+            } catch {
+                print("Failed to save themed entry: \(error)")
+            }
+        }
     }
 }
 
@@ -1027,6 +1205,246 @@ struct JournalDetailView: View {
                 dismiss()
             } catch {
                 print("Failed to delete entry: \(error)")
+            }
+        }
+    }
+}
+
+// MARK: - Referenced Prompts View
+struct ReferencedPromptsView: View {
+    @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var journalManager: JournalManager
+    @EnvironmentObject var authManager: AuthenticationManager
+    @State private var selectedPrompt: JournalPrompt?
+    @State private var showWritingView = false
+    @State private var title = ""
+    @State private var content = ""
+    
+    // Group prompts by category
+    private var groupedPrompts: [String: [JournalPrompt]] {
+        Dictionary(grouping: JournalPrompt.dailyPrompts, by: { $0.category })
+    }
+    
+    var body: some View {
+        NavigationStack {
+            if let selectedPrompt = selectedPrompt, showWritingView {
+                // Writing view for selected prompt
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 24) {
+                        // Selected Prompt Display
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Writing Prompt")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.omniTextSecondary)
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Text(selectedPrompt.category.uppercased())
+                                        .font(.system(size: 12, weight: .bold))
+                                        .foregroundColor(.omniPrimary)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 4)
+                                        .background(Color.omniPrimary.opacity(0.1))
+                                        .cornerRadius(8)
+                                    
+                                    Spacer()
+                                }
+                                
+                                Text(selectedPrompt.text)
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundColor(.omniTextPrimary)
+                                    .lineSpacing(4)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .padding()
+                            .background(Color.omniCardBeige)
+                            .cornerRadius(12)
+                        }
+                        
+                        // Title Input
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Entry Title")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.omniTextSecondary)
+                            
+                            TextField("Give your entry a title", text: $title)
+                                .font(.system(size: 18))
+                                .padding()
+                                .background(Color.omniSecondaryBackground)
+                                .cornerRadius(12)
+                        }
+                        
+                        // Content Input
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Your Response")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.omniTextSecondary)
+                            
+                            ZStack(alignment: .topLeading) {
+                                if content.isEmpty {
+                                    Text("Write your thoughts about this prompt...")
+                                        .font(.system(size: 16))
+                                        .foregroundColor(.omniTextTertiary)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 16)
+                                }
+                                
+                                TextEditor(text: $content)
+                                    .font(.system(size: 16))
+                                    .foregroundColor(.omniTextPrimary)
+                                    .padding(8)
+                                    .frame(minHeight: 200)
+                                    .background(Color.clear)
+                            }
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.omniSecondaryBackground)
+                            )
+                            
+                            Text("\(content.count) characters")
+                                .font(.system(size: 12))
+                                .foregroundColor(.omniTextTertiary)
+                        }
+                        
+                        Spacer(minLength: 40)
+                    }
+                    .padding()
+                }
+                .navigationTitle("Write Entry")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("Back") {
+                            showWritingView = false
+                        }
+                        .foregroundColor(.omniPrimary)
+                    }
+                    
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("Save") {
+                            saveEntry()
+                        }
+                        .foregroundColor(.omniPrimary)
+                        .fontWeight(.semibold)
+                        .disabled(title.isEmpty || content.isEmpty)
+                    }
+                }
+            } else {
+                // Prompt Selection View
+                ScrollView {
+                    VStack(spacing: 24) {
+                        // Header
+                        VStack(spacing: 8) {
+                            Text("Referenced Journal Prompts")
+                                .font(.system(size: 28, weight: .bold))
+                                .foregroundColor(.omniTextPrimary)
+                            Text("Choose a prompt to guide your journaling")
+                                .font(.system(size: 16))
+                                .foregroundColor(.omniTextSecondary)
+                        }
+                        .padding(.top, 16)
+                        
+                        // Prompts grouped by category
+                        ForEach(groupedPrompts.keys.sorted(), id: \.self) { category in
+                            VStack(alignment: .leading, spacing: 12) {
+                                // Category Header
+                                HStack {
+                                    Text(category)
+                                        .font(.system(size: 20, weight: .semibold))
+                                        .foregroundColor(.omniTextPrimary)
+                                    
+                                    Spacer()
+                                    
+                                    Text("\(groupedPrompts[category]?.count ?? 0) prompts")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.omniTextSecondary)
+                                }
+                                
+                                // Category Prompts
+                                VStack(spacing: 8) {
+                                    ForEach(groupedPrompts[category] ?? [], id: \.id) { prompt in
+                                        Button(action: {
+                                            selectedPrompt = prompt
+                                            title = ""
+                                            content = ""
+                                            showWritingView = true
+                                        }) {
+                                            HStack(alignment: .top, spacing: 12) {
+                                                Image(systemName: "quote.bubble")
+                                                    .font(.system(size: 18))
+                                                    .foregroundColor(.omniPrimary)
+                                                    .frame(width: 24)
+                                                
+                                                VStack(alignment: .leading, spacing: 4) {
+                                                    Text(prompt.text)
+                                                        .font(.system(size: 16, weight: .medium))
+                                                        .foregroundColor(.omniTextPrimary)
+                                                        .multilineTextAlignment(.leading)
+                                                        .fixedSize(horizontal: false, vertical: true)
+                                                    
+                                                    Text("Tap to write about this")
+                                                        .font(.system(size: 14))
+                                                        .foregroundColor(.omniTextSecondary)
+                                                }
+                                                
+                                                Spacer()
+                                                
+                                                Image(systemName: "chevron.right")
+                                                    .font(.system(size: 14))
+                                                    .foregroundColor(.omniTextTertiary)
+                                            }
+                                            .padding()
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 12)
+                                                    .fill(Color(UIColor.secondarySystemBackground))
+                                            )
+                                        }
+                                        .buttonStyle(PlainButtonStyle())
+                                    }
+                                }
+                            }
+                        }
+                        
+                        Spacer(minLength: 40)
+                    }
+                    .padding()
+                }
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("Cancel") {
+                            dismiss()
+                        }
+                        .foregroundColor(.omniPrimary)
+                    }
+                }
+            }
+        }
+    }
+    
+    private func saveEntry() {
+        guard let selectedPrompt = selectedPrompt else { return }
+        
+        // Create journal entry with selected prompt
+        var entry = JournalEntry(
+            userId: authManager.currentUser?.id ?? UUID(),
+            title: title,
+            content: content,
+            type: .dailyPrompt
+        )
+        
+        // Set the prompt text for reference
+        entry.prompt = selectedPrompt.text
+        
+        // Save through JournalManager
+        Task {
+            do {
+                try await journalManager.saveEntry(entry)
+                await MainActor.run {
+                    dismiss()
+                }
+            } catch {
+                print("Failed to save prompt-based entry: \(error)")
             }
         }
     }

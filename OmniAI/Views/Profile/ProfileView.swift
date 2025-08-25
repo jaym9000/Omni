@@ -1,5 +1,16 @@
 import SwiftUI
 import RevenueCatUI
+import SafariServices
+
+struct SafariWebView: UIViewControllerRepresentable {
+    let url: URL
+    
+    func makeUIViewController(context: Context) -> SFSafariViewController {
+        return SFSafariViewController(url: url)
+    }
+    
+    func updateUIViewController(_ uiViewController: SFSafariViewController, context: Context) {}
+}
 
 struct ProfileView: View {
     @EnvironmentObject var authManager: AuthenticationManager
@@ -16,6 +27,7 @@ struct ProfileView: View {
     @State private var showSubscriptionManagement = false
     @State private var showPaywall = false
     @State private var showPrivacyPolicy = false
+    @State private var showTermsOfService = false
     
     private var appVersion: String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
@@ -73,6 +85,9 @@ struct ProfileView: View {
                 }
                 .sheet(isPresented: $showPrivacyPolicy) {
                     PrivacyPolicySheet()
+                }
+                .sheet(isPresented: $showTermsOfService) {
+                    TermsOfServiceSheet()
                 }
                 .sheet(isPresented: $showPaywall) {
                     RevenueCatUI.PaywallView()
@@ -287,7 +302,7 @@ struct ProfileView: View {
                                 icon: "doc.text.fill",
                                 iconColor: .purple,
                                 title: "Terms & Conditions",
-                                action: {}
+                                action: { showTermsOfService = true }
                             )
                         }
                         .background(Color.omniCardBeige)
@@ -428,55 +443,36 @@ struct PrivacyPolicySheet: View {
     
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    Text("Privacy Policy")
-                        .font(.system(size: 32, weight: .bold))
-                        .padding(.bottom)
-                    
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("🔒 Your Privacy is Our Priority")
-                            .font(.system(size: 20, weight: .semibold))
-                        
-                        Text("• End-to-end encryption for all messages")
-                        Text("• Your data never leaves your device unencrypted")
-                        Text("• No third-party access to your conversations")
-                        Text("• Complete data deletion upon account removal")
-                        Text("• PIPEDA & PHIPAA compliant")
-                    }
-                    .font(.system(size: 16))
-                    
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Your Rights")
-                            .font(.system(size: 20, weight: .semibold))
-                        
-                        Text("• Access your data anytime")
-                        Text("• Export your data in standard formats")
-                        Text("• Delete your account and all data")
-                        Text("• Control what information is collected")
-                    }
-                    .font(.system(size: 16))
-                    
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Contact")
-                            .font(.system(size: 20, weight: .semibold))
-                        
-                        Text("For privacy inquiries: privacy@omniapp.ca")
-                            .font(.system(size: 16))
-                            .foregroundColor(.omniPrimary)
+            SafariWebView(url: URL(string: "http://omnitherapy.co/privacy.html")!)
+                .navigationTitle("Privacy Policy")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("Done") {
+                            dismiss()
+                        }
                     }
                 }
-                .padding()
-            }
-            .navigationTitle("Privacy Policy")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        dismiss()
+        }
+    }
+}
+
+// MARK: - Terms of Service Sheet
+struct TermsOfServiceSheet: View {
+    @Environment(\.dismiss) var dismiss
+    
+    var body: some View {
+        NavigationStack {
+            SafariWebView(url: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
+                .navigationTitle("Terms & Conditions")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("Done") {
+                            dismiss()
+                        }
                     }
                 }
-            }
         }
     }
 }

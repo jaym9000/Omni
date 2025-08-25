@@ -500,6 +500,9 @@ class AuthenticationManager: ObservableObject {
         }
     }
     
+    // MARK: - Guest Session (Disabled - Hard Paywall Model)
+    // Keeping this code commented out in case we need to re-enable guest access in the future
+    /*
     func startGuestSession() async throws {
         await MainActor.run { isLoading = true }
         defer { 
@@ -540,6 +543,7 @@ class AuthenticationManager: ObservableObject {
             throw AuthError.signInFailed
         }
     }
+    */
     
     func convertGuestToRealAccount(email: String, password: String, displayName: String) async throws {
         guard let currentUser = currentUser, currentUser.isGuest else {
@@ -767,6 +771,9 @@ class AuthenticationManager: ObservableObject {
         }
     }
     
+    // MARK: - Anonymous Sign-In (Disabled - Hard Paywall Model)
+    // Keeping this code commented out in case we need to re-enable guest access in the future
+    /*
     func signInAnonymously() async throws {
         // Sign in anonymously with Firebase
         let result = try await firebaseManager.auth.signInAnonymously()
@@ -797,6 +804,7 @@ class AuthenticationManager: ObservableObject {
             self.isEmailVerified = true // Anonymous users don't need email verification
         }
     }
+    */
     
     func updateUserPreferences(goal: String? = nil, mood: Int? = nil) async {
         guard var user = self.currentUser else { return }

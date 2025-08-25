@@ -250,24 +250,12 @@ class ChatService: ObservableObject {
         // Generate AI response immediately (before saving to database for speed)
         await generateAIResponse(for: sessionId, userMessage: content)
         
-        // Save to Firebase Firestore in background
-        let firebaseMessage = FirebaseMessage(
-            id: userMessage.id,
-            content: content,
-            role: .user,
-            timestamp: Date(),
-            mood: nil
-        )
+        // NOTE: User message is now saved by the Firebase Cloud Function
+        // to ensure proper ordering with timestamps. We don't save it here
+        // to avoid duplicates and ordering issues.
         
-        Task {
-            do {
-                try await firebaseManager.saveChatMessage(firebaseMessage, sessionId: sessionId.uuidString)
-                print("✅ User message saved to Firestore")
-            } catch {
-                print("⚠️ Failed to save user message to Firestore: \(error)")
-                // Continue anyway for offline support
-            }
-        }
+        // The Firebase function will save both user and AI messages with
+        // proper timestamps to ensure correct ordering in chat history
         
         // Update session timestamp, title, and lastMessage in background
         Task {
@@ -372,7 +360,7 @@ class ChatService: ObservableObject {
         
         request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
         
-        // Make the request
+        // Make the request using URLSession (NetworkSecurityManager temporarily disabled)
         let (data, response) = try await URLSession.shared.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse else {
@@ -403,14 +391,14 @@ class ChatService: ObservableObject {
         }
         
         
-        // Create and save the AI message
+        // Create the AI message for tracking
         let aiMessage = ChatMessage(content: aiResponse, isUser: false, sessionId: sessionId)
         
         // AI response is already saved by the Firebase function, no need to save again
         
-        // Add to local messages (check for duplicates)
+        // Add to local messages immediately for responsive UI (check for duplicates)
         await MainActor.run {
-            // Only add if not already present (prevent duplicates)
+            // Only add if not already present (prevent duplicates when Firebase syncs)
             if !messages.contains(where: { $0.id == aiMessage.id }) {
                 messages.append(aiMessage)
             }

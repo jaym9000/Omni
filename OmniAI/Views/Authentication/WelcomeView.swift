@@ -103,12 +103,12 @@ struct WelcomeView: View {
                     .frame(height: 56)
                     .cornerRadius(28)
                     
-                    // Email sign up
-                    Button(action: { showSignUp = true }) {
+                    // Email sign in - changed to go to LoginView
+                    Button(action: { showLogin = true }) {
                         HStack {
                             Image(systemName: "envelope")
                                 .font(.system(size: 16))
-                            Text("Sign up with Email")
+                            Text("Continue with Email")
                                 .font(.system(size: 16, weight: .medium))
                         }
                         .foregroundColor(.omniPrimary)
@@ -119,14 +119,6 @@ struct WelcomeView: View {
                                 .stroke(Color.omniPrimary, lineWidth: 2)
                         )
                     }
-                    
-                    // Sign in link
-                    Button(action: { showLogin = true }) {
-                        Text("Already have an account? Sign in")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.omniTextSecondary)
-                    }
-                    .padding(.top, 8)
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 50)

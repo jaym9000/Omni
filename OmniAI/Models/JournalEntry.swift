@@ -1,10 +1,12 @@
 import Foundation
 
-enum JournalType: String, Codable {
+enum JournalType: String, Codable, Identifiable {
     case freeForm = "free_form"
     case tagged = "tagged"
     case themed = "themed"
     case dailyPrompt = "daily_prompt"
+    
+    var id: String { self.rawValue }
 }
 
 struct JournalEntry: Codable, Identifiable {

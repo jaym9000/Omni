@@ -1,4 +1,15 @@
 import SwiftUI
+import SafariServices
+
+struct SafariView: UIViewControllerRepresentable {
+    let url: URL
+    
+    func makeUIViewController(context: Context) -> SFSafariViewController {
+        return SFSafariViewController(url: url)
+    }
+    
+    func updateUIViewController(_ uiViewController: SFSafariViewController, context: Context) {}
+}
 
 struct SignUpView: View {
     @EnvironmentObject var authManager: AuthenticationManager
@@ -11,6 +22,9 @@ struct SignUpView: View {
     @State private var agreedToTerms = false
     @State private var showError = false
     @State private var errorMessage = ""
+    @State private var showLogin = false
+    @State private var showPrivacyPolicy = false
+    @State private var showTermsOfService = false
     @FocusState private var focusedField: Field?
     
     enum Field {
@@ -193,18 +207,29 @@ struct SignUpView: View {
                                 .font(.system(size: 20))
                         }
                         
-                        Text("I agree to the ")
-                            .font(.system(size: 14))
-                            .foregroundColor(.omniTextSecondary)
-                        + Text("Terms & Conditions")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.omniPrimary)
-                        + Text(" and ")
-                            .font(.system(size: 14))
-                            .foregroundColor(.omniTextSecondary)
-                        + Text("Privacy Policy")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.omniPrimary)
+                        HStack(spacing: 4) {
+                            Text("I agree to the")
+                                .font(.system(size: 14))
+                                .foregroundColor(.omniTextSecondary)
+                            
+                            Button(action: { showTermsOfService = true }) {
+                                Text("Terms & Conditions")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(.omniPrimary)
+                                    .underline()
+                            }
+                            
+                            Text("and")
+                                .font(.system(size: 14))
+                                .foregroundColor(.omniTextSecondary)
+                            
+                            Button(action: { showPrivacyPolicy = true }) {
+                                Text("Privacy Policy")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(.omniPrimary)
+                                    .underline()
+                            }
+                        }
                         
                         Spacer()
                     }
@@ -269,6 +294,14 @@ struct SignUpView: View {
                 }
                 .padding(.horizontal, 24)
                 
+                // Sign in link for existing users
+                Button(action: { showLogin = true }) {
+                    Text("Already have an account? Sign in")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.omniTextSecondary)
+                }
+                .padding(.top, 16)
+                
                 Spacer(minLength: 50)
             }
         }
@@ -285,6 +318,15 @@ struct SignUpView: View {
             Button("OK", role: .cancel) { }
         } message: {
             Text(errorMessage)
+        }
+        .navigationDestination(isPresented: $showLogin) {
+            LoginView()
+        }
+        .sheet(isPresented: $showPrivacyPolicy) {
+            SafariView(url: URL(string: "http://omnitherapy.co/privacy.html")!)
+        }
+        .sheet(isPresented: $showTermsOfService) {
+            SafariView(url: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
         }
     }
     

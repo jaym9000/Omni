@@ -18,6 +18,7 @@ enum KeychainKey: String, CaseIterable {
     case loginAttempts = "com.jns.Omni.loginAttempts"
     case lastFailedLogin = "com.jns.Omni.lastFailedLogin"
     case accountLockTime = "com.jns.Omni.accountLockTime"
+    // case lastBiometricAuth = "com.jns.Omni.lastBiometricAuth" // Temporarily disabled
 }
 
 class KeychainManager {
@@ -102,6 +103,20 @@ class KeychainManager {
         try? delete(for: .authToken)
         try? delete(for: .refreshToken)
         try? delete(for: .firebaseToken)
+    }
+    
+    // Generic save and get for Data
+    func save(_ data: Data, forKey key: KeychainKey) throws {
+        try save(data, for: key.rawValue)
+    }
+    
+    func get(forKey key: KeychainKey) -> Data? {
+        return try? retrieve(for: key.rawValue)
+    }
+    
+    // Overloaded delete method
+    func delete(_ key: KeychainKey) throws {
+        try delete(for: key.rawValue)
     }
     
     // MARK: - Rate Limiting Support

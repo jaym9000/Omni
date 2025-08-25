@@ -5,13 +5,14 @@ A production-ready iOS mental health companion app featuring AI-powered therapeu
 ## 🚀 Production Features
 
 ### Core Functionality
-- **AI Therapy Chat**: GPT-4 powered conversations via Firebase Cloud Functions
+- **AI Therapy Chat**: Unlimited GPT-4 powered conversations via Firebase Cloud Functions
 - **Mood Tracking**: Daily mood logging with analytics and insights
 - **Journal System**: Free-form, tagged, and themed journal entries
 - **Daily Prompts**: Gratitude exercises and reflection prompts
 - **Anxiety Management**: Breathing exercises and grounding techniques
-- **Hard Paywall Model**: Subscription required upfront with 7-day free trial
+- **Paid-Only Model**: Premium subscription required (NO FREE TIER)
 - **Premium Subscriptions**: RevenueCat integration with App Store subscriptions
+- **No Rate Limits**: Unlimited messages for all paid users
 
 ### Technical Features
 - **Real-time Sync**: Firebase Firestore for instant data updates
@@ -186,13 +187,23 @@ The app includes:
 
 ## 🔐 Security & Privacy
 
+### Core Security Features
 - **Client-side encryption** using AES-256 via CryptoKit
-- **Secure authentication** with Firebase Auth
+- **Secure authentication** with Firebase Auth and biometric support
 - **Token management** with Keychain Services
-- **Rate limiting** on Firebase Cloud Functions
+- **Rate limiting** on Firebase Cloud Functions (60 req/min per user)
 - **Crisis detection** with support resource links
 - **Privacy-first design** with minimal data collection
 - **Audit logging** for administrative access
+
+### Advanced Security Implementations
+- **Firebase App Check** for API protection
+- **Certificate pinning** to prevent MITM attacks
+- **Jailbreak detection** for compromised devices
+- **Input validation** and content moderation
+- **Security monitoring** with real-time alerts
+- **OWASP Mobile Top 10** full compliance
+- **End-to-end encryption** for sensitive messages
 
 ## 📈 Business Model
 
@@ -211,11 +222,12 @@ The app includes:
 
 ## 🚀 Deployment Status
 
-- **App Store**: Version 1.1 (Build 26) ready for submission
+- **App Store**: Version 1.1 (Build 29) production ready
 - **Bundle ID**: com.jns.Omni
 - **Firebase Project**: omni-ai-8d5d2 (us-central1)
-- **Cloud Functions**: Deployed and active (aiChat function)
+- **Cloud Functions**: Deployed and active (aiChat function with security layers)
 - **RevenueCat**: "Omni New" offering configured with "Omni_Final" paywall
+- **Security**: Full OWASP Mobile Top 10 compliance implemented
 
 ## 📱 Installation
 
@@ -233,9 +245,17 @@ Download from the App Store (pending approval) or join TestFlight beta.
 
 Run test scripts from the Testing directory:
 ```bash
+# Monetization and subscription tests
 ./Testing/test_monetization_flows.sh
 ./Testing/verify_monetization_config.sh
+
+# End-to-end functionality tests
 ./Testing/test_end_to_end.sh
+
+# Security testing suite
+./Scripts/security_test_suite.sh
+./Scripts/test_security_implementation.sh
+./Scripts/verify_security_integration.sh
 ```
 
 ## 📄 License

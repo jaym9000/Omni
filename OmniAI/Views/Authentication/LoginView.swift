@@ -9,6 +9,7 @@ struct LoginView: View {
     @State private var showError = false
     @State private var errorMessage = ""
     @State private var showForgotPassword = false
+    @State private var showSignUp = false
     @FocusState private var focusedField: Field?
     
     enum Field {
@@ -179,6 +180,14 @@ struct LoginView: View {
                 }
                 .padding(.horizontal, 24)
                 
+                // Sign up link for new users
+                Button(action: { showSignUp = true }) {
+                    Text("New user? Create account")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.omniTextSecondary)
+                }
+                .padding(.top, 16)
+                
                 Spacer(minLength: 50)
             }
         }
@@ -198,6 +207,9 @@ struct LoginView: View {
         }
         .sheet(isPresented: $showForgotPassword) {
             ForgotPasswordView()
+        }
+        .navigationDestination(isPresented: $showSignUp) {
+            SignUpView()
         }
     }
     
