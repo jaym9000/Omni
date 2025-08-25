@@ -102,6 +102,8 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+functions/lib/
+functions/node_modules/
 
 # OS generated files
 .DS_Store
@@ -121,6 +123,12 @@ Thumbs.db
 *.swp
 *.swo
 *~
+Temp/
+test_results/
+test_screenshots/
+*.backup
+build_output.txt
+pglite-debug.log
 
 # Sensitive credentials - DO NOT COMMIT
 WEBHOOK_CREDENTIALS.md
